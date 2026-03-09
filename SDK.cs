@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -78,7 +79,7 @@ namespace michitai
             {
                 response = JsonSerializer.Deserialize<T>(str, _jsonOptions)!;
             }
-            catch(JsonException)
+            catch (JsonException)
             {
                 _logger?.Warn(str);
 
@@ -351,6 +352,63 @@ namespace michitai
                 }
             );
         }
+
+        /// <summary>
+        /// Sends updates to specific players in the room.
+        /// </summary>
+        /// <param name="gamePlayerToken">The player's authentication token.</param>
+        /// <param name="request">The update request containing target players and data.</param>
+        /// <returns>Task containing the update response.</returns>
+        public Task<UpdatePlayersResponse> UpdatePlayersAsync(
+            string gamePlayerToken,
+            UpdatePlayersRequest request)
+        {
+            return Send<UpdatePlayersResponse>(
+                HttpMethod.Post,
+                Url("game_room.php/updates", $"&game_player_token={gamePlayerToken}"),
+                new
+                {
+                    targetPlayerIds = request.TargetPlayerIds,
+                    type = request.Type,
+                    dataJson = request.DataJson
+                }
+            );
+        }
+
+        /// <summary>
+        /// Polls for player updates in the room.
+        /// </summary>
+        /// <param name="gamePlayerToken">The player's authentication token.</param>
+        /// <param name="lastUpdateId">Optional last update ID to get updates after this point.</param>
+        /// <returns>Task containing the poll updates response.</returns>
+        public Task<PollUpdatesResponse> PollUpdatesAsync(
+            string gamePlayerToken,
+            string? lastUpdateId = null)
+        {
+            string extra = $"&game_player_token={gamePlayerToken}";
+            if (!string.IsNullOrEmpty(lastUpdateId))
+            {
+                extra += $"&lastUpdateId={lastUpdateId}";
+            }
+
+            return Send<PollUpdatesResponse>(
+                HttpMethod.Get,
+                Url("game_room.php/updates/poll", extra)
+            );
+        }
+
+        /// <summary>
+        /// Gets the current room information for the player.
+        /// </summary>
+        /// <param name="gamePlayerToken">The player's authentication token.</param>
+        /// <returns>Task containing the current room response.</returns>
+        public Task<CurrentRoomResponse> GetCurrentRoomAsync(string gamePlayerToken)
+        {
+            return Send<CurrentRoomResponse>(
+                HttpMethod.Get,
+                Url("game_room.php/current", $"&game_player_token={gamePlayerToken}")
+            );
+        }
     }
 
 
@@ -475,6 +533,7 @@ namespace michitai
         public required string Player_name { get; set; }
         public int Is_host { get; set; }
         public int Is_online { get; set; }
+        public required string Last_heartbeat { get; set; }
     }
 
     public class RoomPlayersResponse
@@ -507,7 +566,7 @@ namespace michitai
     {
         public required string Action_id { get; set; }
         public required string Action_type { get; set; }
-        public string? Response_data { get; set; }
+        public object? Response_data { get; set; }
         public required string Status { get; set; }
     }
 
@@ -522,7 +581,7 @@ namespace michitai
         public required string Action_id { get; set; }
         public required string Player_id { get; set; }
         public required string Action_type { get; set; }
-        public required string Request_data { get; set; }
+        public object? Request_data { get; set; }
         public required string Created_at { get; set; }
         public required string Player_name { get; set; }
     }
@@ -560,5 +619,70 @@ namespace michitai
         Completed,
         Failed,
         Read
+    }
+
+    public class UpdatePlayersRequest
+    {
+        public object? TargetPlayerIds { get; set; }
+        public required string Type { get; set; }
+        public required object DataJson { get; set; }
+
+        [SetsRequiredMembers]
+        public UpdatePlayersRequest(object targetPlayerIds, string type, object dataJson)
+        {
+            TargetPlayerIds = targetPlayerIds;
+            Type = type;
+            DataJson = dataJson;
+        }
+    }
+
+    public class UpdatePlayersResponse
+    {
+        public bool Success { get; set; }
+        public int Updates_sent { get; set; }
+        public required List<string> Update_ids { get; set; }
+        public required List<string> Target_players { get; set; }
+    }
+
+    public class PlayerUpdate
+    {
+        public required string Update_id { get; set; }
+        public required string From_player_id { get; set; }
+        public required string Type { get; set; }
+        public required object Data_json { get; set; }
+        public required string Created_at { get; set; }
+    }
+
+    public class PollUpdatesResponse
+    {
+        public bool Success { get; set; }
+        public required List<PlayerUpdate> Updates { get; set; }
+        public required string Last_update_id { get; set; }
+    }
+
+    public class CurrentRoomInfo
+    {
+        public required string Room_id { get; set; }
+        public required string Room_name { get; set; }
+        public bool Is_host { get; set; }
+        public bool Is_online { get; set; }
+        public int Max_players { get; set; }
+        public int Current_players { get; set; }
+        public bool Has_password { get; set; }
+        public bool Is_active { get; set; }
+        public required string Player_name { get; set; }
+        public required string Joined_at { get; set; }
+        public required string Last_heartbeat { get; set; }
+        public required string Room_created_at { get; set; }
+        public required string Room_last_activity { get; set; }
+    }
+
+    public class CurrentRoomResponse
+    {
+        public bool Success { get; set; }
+        public bool In_room { get; set; }
+        public CurrentRoomInfo? Room { get; set; }
+        public required List<object> Pending_actions { get; set; }
+        public required List<object> Pending_updates { get; set; }
     }
 }

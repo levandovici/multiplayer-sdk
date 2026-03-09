@@ -145,7 +145,7 @@ public class Game
         Console.WriteLine($"[ROOM] Players in room ({roomPlayers.Players.Count}):");
         foreach (var player in roomPlayers.Players)
         {
-            Console.WriteLine($" - {player.Player_name} (ID: {player.Player_id}, Host: {player.Is_host == 1}, Online: {player.Is_online})");
+            Console.WriteLine($" - {player.Player_name} (ID: {player.Player_id}, Host: {player.Is_host == 1}, Online: {player.Is_online}, Last Heartbeat: {player.Last_heartbeat})");
         }
         Console.WriteLine();
 
@@ -171,8 +171,10 @@ public class Game
         {
             foreach (var pendingAction in pendingActions.Actions)
             {
+                string requestDataStr = pendingAction.Request_data != null ?
+                    JsonSerializer.Serialize(pendingAction.Request_data) : "null";
                 Console.WriteLine($"[ACTION] Pending: {pendingAction.Action_type}, " +
-                               $"Request: {pendingAction.Request_data}");
+                               $"Request: {requestDataStr}");
             }
         }
         else
@@ -200,8 +202,10 @@ public class Game
         {
             foreach (var completedAction in completedActions.Actions)
             {
+                string responseDataStr = completedAction.Response_data != null ?
+                    JsonSerializer.Serialize(completedAction.Response_data) : "null";
                 Console.WriteLine($"[ACTION] Completed: {completedAction.Action_type}, " +
-                               $"Result: {completedAction.Response_data}");
+                               $"Result: {responseDataStr}");
             }
         }
         else
@@ -209,7 +213,71 @@ public class Game
             Console.WriteLine("[ACTION] No completed actions found\n");
         }
 
-        // 1️⃣9️⃣ Leave the room
+        // 1️⃣9️⃣ Get current room information
+        Console.WriteLine("[ROOM] Getting current room info...");
+        var currentRoom = await sdk.GetCurrentRoomAsync(playerToken);
+        if (currentRoom.Success && currentRoom.In_room && currentRoom.Room != null)
+        {
+            var room = currentRoom.Room;
+            Console.WriteLine($"[ROOM] Current Room: {room.Room_name} (ID: {room.Room_id})");
+            Console.WriteLine($"[ROOM] Players: {room.Current_players}/{room.Max_players}, Host: {room.Is_host}");
+            Console.WriteLine($"[ROOM] Joined: {room.Joined_at}, Last Activity: {room.Room_last_activity}\n");
+        }
+        else
+        {
+            Console.WriteLine("[ROOM] Not currently in any room\n");
+        }
+
+        // 2️⃣0️⃣ Send update to all players
+        Console.WriteLine("[UPDATE] Sending update to all players...");
+        var updateAll = await sdk.UpdatePlayersAsync(
+            playerToken,
+            new UpdatePlayersRequest(
+                "all",
+                "play_animation",
+                new { animation = "victory", duration = 2.0 }
+            )
+        );
+        Console.WriteLine($"[UPDATE] Sent to {updateAll.Updates_sent} players, Update IDs: [{string.Join(", ", updateAll.Update_ids)}]\n");
+
+        // 2️⃣1️⃣ Send update to specific player
+        Console.WriteLine("[UPDATE] Sending update to specific player...");
+        var updateSpecific = await sdk.UpdatePlayersAsync(
+            playerToken,
+            new UpdatePlayersRequest(
+                new string[] { $"{roomPlayers.Players[0].Player_id}" },
+                "spawn_effect",
+                new { effect = "explosion", position = new { x = 10, y = 20 } }
+            )
+        );
+        Console.WriteLine($"[UPDATE] Sent to {updateSpecific.Updates_sent} players, Target: [{string.Join(", ", updateSpecific.Target_players)}]\n");
+
+        // 2️⃣2️⃣ Poll for player updates
+        Console.WriteLine("[UPDATE] Polling for player updates...");
+        var pollUpdates = await sdk.PollUpdatesAsync(playerToken);
+        if (pollUpdates.Updates.Count > 0)
+        {
+            Console.WriteLine($"[UPDATE] Found {pollUpdates.Updates.Count} updates (Last ID: {pollUpdates.Last_update_id}):");
+            foreach (var update in pollUpdates.Updates)
+            {
+                string dataStr = JsonSerializer.Serialize(update.Data_json);
+                Console.WriteLine($" - From {update.From_player_id}: {update.Type} -> {dataStr} at {update.Created_at}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("[UPDATE] No new updates found\n");
+        }
+
+        // 2️⃣3️⃣ Poll for updates after specific ID
+        if (!string.IsNullOrEmpty(pollUpdates.Last_update_id))
+        {
+            Console.WriteLine("[UPDATE] Polling for updates after last ID...");
+            var pollAfter = await sdk.PollUpdatesAsync(playerToken, pollUpdates.Last_update_id);
+            Console.WriteLine($"[UPDATE] Found {pollAfter.Updates.Count} new updates since last poll\n");
+        }
+
+        // 2️⃣4️⃣ Leave the room
         Console.WriteLine("[ROOM] Leaving the room...");
         var leaveRoom = await sdk.LeaveRoomAsync(playerToken);
         Console.WriteLine($"[ROOM] {leaveRoom.Message}\n");
