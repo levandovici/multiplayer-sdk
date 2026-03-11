@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
@@ -10,8 +10,17 @@ using System.Threading.Tasks;
 namespace michitai
 {
     /// <summary>
+    /// Interface for API responses that have success/error fields.
+    /// </summary>
+    public interface IApiResponse
+    {
+        bool Success { get; set; }
+        string? Error { get; set; }
+    }
+
+    /// <summary>
     /// Provides a client for interacting with the MICHITAI Game API.
-    /// Handles authentication, player management, game rooms, and actions.
+    /// Handles authentication, player management, game rooms, matchmaking, and actions.
     /// </summary>
     public class GameSDK
     {
@@ -26,6 +35,15 @@ namespace michitai
             PropertyNameCaseInsensitive = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
+
+        /// <summary>
+        /// Matchmaking join request actions.
+        /// </summary>
+        public enum MatchmakingRequestAction
+        {
+            Approve,
+            Reject
+        }
 
         /// <summary>
         /// Initializes a new instance of the GameSDK class.
@@ -73,20 +91,54 @@ namespace michitai
             var res = await _http.SendAsync(req);
             string str = await res.Content.ReadAsStringAsync();
 
+            // Log the raw response for debugging
+            _logger?.Log($"API Response: {str}");
+
             T response;
 
             try
             {
                 response = JsonSerializer.Deserialize<T>(str, _jsonOptions)!;
+                
+                // Check if the response indicates an error
+                if (response is IApiResponse apiResponse && !apiResponse.Success)
+                {
+                    _logger?.Error($"API Error: {str}");
+                    throw new ApiException(apiResponse.Error ?? "Unknown API error", str);
+                }
             }
-            catch (JsonException)
+            catch(JsonException ex)
             {
-                _logger?.Warn(str);
-
+                _logger?.Warn($"JSON Deserialization Error: {ex.Message}. Response: {str}");
+                
+                // Try to parse as error response
+                try
+                {
+                    var errorResponse = JsonSerializer.Deserialize<ErrorResponse>(str, _jsonOptions);
+                    if (errorResponse != null && !errorResponse.Success)
+                    {
+                        throw new ApiException(errorResponse.Error ?? "API error", str);
+                    }
+                }
+                catch
+                {
+                    // If we can't parse as error response, throw the original JSON exception
+                    throw new ApiException($"JSON deserialization failed: {ex.Message}", str);
+                }
+                
                 throw;
             }
 
             return response;
+        }
+
+        /// <summary>
+        /// Interface for API responses that have success/error fields.
+        /// </summary>
+        private interface IApiResponse
+        {
+            bool Success { get; set; }
+            string? Error { get; set; }
         }
 
         /// <summary>
@@ -390,7 +442,7 @@ namespace michitai
             {
                 extra += $"&lastUpdateId={lastUpdateId}";
             }
-
+            
             return Send<PollUpdatesResponse>(
                 HttpMethod.Get,
                 Url("game_room.php/updates/poll", extra)
@@ -407,6 +459,192 @@ namespace michitai
             return Send<CurrentRoomResponse>(
                 HttpMethod.Get,
                 Url("game_room.php/current", $"&game_player_token={gamePlayerToken}")
+            );
+        }
+
+        /// <summary>
+        /// Lists all available matchmaking lobbies.
+        /// </summary>
+        /// <returns>Task containing the list of available matchmaking lobbies.</returns>
+        public Task<MatchmakingListResponse> GetMatchmakingLobbiesAsync()
+        {
+            return Send<MatchmakingListResponse>(
+                HttpMethod.Get,
+                Url("matchmaking.php/list")
+            );
+        }
+
+        /// <summary>
+        /// Creates a new matchmaking lobby.
+        /// </summary>
+        /// <param name="gamePlayerToken">The player's authentication token.</param>
+        /// <param name="maxPlayers">Maximum number of players allowed (2-16).</param>
+        /// <param name="strictFull">Whether the game can only start when the lobby is full.</param>
+        /// <param name="joinByRequests">Whether players can only join via host approval.</param>
+        /// <param name="extraJsonString">Additional host-defined criteria (rank, level, etc.).</param>
+        /// <returns>Task containing the matchmaking lobby creation response.</returns>
+        public Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync(
+            string gamePlayerToken,
+            int maxPlayers = 4,
+            bool strictFull = false,
+            bool joinByRequests = false,
+            object? extraJsonString = null)
+        {
+            return Send<MatchmakingCreateResponse>(
+                HttpMethod.Post,
+                Url("matchmaking.php/create", $"&game_player_token={gamePlayerToken}"),
+                new
+                {
+                    maxPlayers = maxPlayers,
+                    strictFull = strictFull,
+                    joinByRequests = joinByRequests,
+                    extraJsonString = extraJsonString
+                }
+            );
+        }
+
+        /// <summary>
+        /// Requests to join a matchmaking lobby that requires host approval.
+        /// </summary>
+        /// <param name="gamePlayerToken">The player's authentication token.</param>
+        /// <param name="matchmakingId">ID of the matchmaking lobby to request to join.</param>
+        /// <returns>Task containing the join request response.</returns>
+        public Task<MatchmakingJoinRequestResponse> RequestToJoinMatchmakingAsync(
+            string gamePlayerToken,
+            string matchmakingId)
+        {
+            return Send<MatchmakingJoinRequestResponse>(
+                HttpMethod.Post,
+                Url($"matchmaking.php/{matchmakingId}/request", $"&game_player_token={gamePlayerToken}")
+            );
+        }
+
+        /// <summary>
+        /// Responds to a matchmaking join request (approve or reject).
+        /// </summary>
+        /// <param name="gamePlayerToken">The host player's authentication token.</param>
+        /// <param name="matchmakingId">ID of the matchmaking lobby.</param>
+        /// <param name="action">Action to take: Approve or Reject.</param>
+        /// <returns>Task containing the response to the join request.</returns>
+        public Task<MatchmakingRequestResponse> RespondToJoinRequestAsync(
+            string gamePlayerToken,
+            string matchmakingId,
+            MatchmakingRequestAction action)
+        {
+            return Send<MatchmakingRequestResponse>(
+                HttpMethod.Post,
+                Url($"matchmaking.php/{matchmakingId}/response", $"&game_player_token={gamePlayerToken}"),
+                new { action = action.ToString().ToLower() }
+            );
+        }
+
+        /// <summary>
+        /// Checks the status of a matchmaking join request.
+        /// </summary>
+        /// <param name="gamePlayerToken">The player's authentication token.</param>
+        /// <param name="requestId">ID of the join request to check.</param>
+        /// <returns>Task containing the join request status.</returns>
+        public Task<MatchmakingRequestStatusResponse> CheckJoinRequestStatusAsync(
+            string gamePlayerToken,
+            string requestId)
+        {
+            return Send<MatchmakingRequestStatusResponse>(
+                HttpMethod.Get,
+                Url($"matchmaking.php/{requestId}/status", $"&game_player_token={gamePlayerToken}")
+            );
+        }
+
+        /// <summary>
+        /// Gets the current player's matchmaking status and lobby information.
+        /// </summary>
+        /// <param name="gamePlayerToken">The player's authentication token.</param>
+        /// <returns>Task containing the current matchmaking status.</returns>
+        public Task<MatchmakingCurrentResponse> GetCurrentMatchmakingStatusAsync(string gamePlayerToken)
+        {
+            return Send<MatchmakingCurrentResponse>(
+                HttpMethod.Get,
+                Url("matchmaking.php/current", $"&game_player_token={gamePlayerToken}")
+            );
+        }
+
+        /// <summary>
+        /// Joins a matchmaking lobby directly (only works if lobby doesn't require approval).
+        /// </summary>
+        /// <param name="gamePlayerToken">The player's authentication token.</param>
+        /// <param name="matchmakingId">ID of the matchmaking lobby to join.</param>
+        /// <returns>Task containing the direct join response.</returns>
+        public Task<MatchmakingDirectJoinResponse> JoinMatchmakingDirectlyAsync(
+            string gamePlayerToken,
+            string matchmakingId)
+        {
+            return Send<MatchmakingDirectJoinResponse>(
+                HttpMethod.Post,
+                Url($"matchmaking.php/{matchmakingId}/join", $"&game_player_token={gamePlayerToken}")
+            );
+        }
+
+        /// <summary>
+        /// Leaves the current matchmaking lobby.
+        /// </summary>
+        /// <param name="gamePlayerToken">The player's authentication token.</param>
+        /// <returns>Task indicating success or failure of leaving the matchmaking lobby.</returns>
+        public Task<MatchmakingLeaveResponse> LeaveMatchmakingAsync(string gamePlayerToken)
+        {
+            return Send<MatchmakingLeaveResponse>(
+                HttpMethod.Post,
+                Url("matchmaking.php/leave", $"&game_player_token={gamePlayerToken}")
+            );
+        }
+
+        /// <summary>
+        /// Lists all players in the current matchmaking lobby.
+        /// </summary>
+        /// <param name="gamePlayerToken">The player's authentication token.</param>
+        /// <returns>Task containing the list of players in the matchmaking lobby.</returns>
+        public Task<MatchmakingPlayersResponse> GetMatchmakingPlayersAsync(string gamePlayerToken)
+        {
+            return Send<MatchmakingPlayersResponse>(
+                HttpMethod.Get,
+                Url("matchmaking.php/players", $"&game_player_token={gamePlayerToken}")
+            );
+        }
+
+        /// <summary>
+        /// Sends a heartbeat to keep the player active in the matchmaking lobby.
+        /// </summary>
+        /// <param name="gamePlayerToken">The player's authentication token.</param>
+        /// <returns>Task containing the heartbeat response.</returns>
+        public Task<MatchmakingHeartbeatResponse> SendMatchmakingHeartbeatAsync(string gamePlayerToken)
+        {
+            return Send<MatchmakingHeartbeatResponse>(
+                HttpMethod.Post,
+                Url("matchmaking.php/heartbeat", $"&game_player_token={gamePlayerToken}")
+            );
+        }
+
+        /// <summary>
+        /// Removes the matchmaking lobby (host only).
+        /// </summary>
+        /// <param name="gamePlayerToken">The host player's authentication token.</param>
+        /// <returns>Task indicating success or failure of removing the matchmaking lobby.</returns>
+        public Task<MatchmakingRemoveResponse> RemoveMatchmakingLobbyAsync(string gamePlayerToken)
+        {
+            return Send<MatchmakingRemoveResponse>(
+                HttpMethod.Post,
+                Url("matchmaking.php/remove", $"&game_player_token={gamePlayerToken}")
+            );
+        }
+
+        /// <summary>
+        /// Starts a game from the matchmaking lobby (host only).
+        /// </summary>
+        /// <param name="gamePlayerToken">The host player's authentication token.</param>
+        /// <returns>Task containing the game start response.</returns>
+        public Task<MatchmakingStartResponse> StartGameFromMatchmakingAsync(string gamePlayerToken)
+        {
+            return Send<MatchmakingStartResponse>(
+                HttpMethod.Post,
+                Url("matchmaking.php/start", $"&game_player_token={gamePlayerToken}")
             );
         }
     }
@@ -543,9 +781,10 @@ namespace michitai
         public required string Last_updated { get; set; }
     }
 
-    public class RoomLeaveResponse
+    public class RoomLeaveResponse : IApiResponse
     {
         public bool Success { get; set; }
+        public string? Error { get; set; }
         public required string Message { get; set; }
     }
 
@@ -555,9 +794,10 @@ namespace michitai
         public required string Status { get; set; }
     }
 
-    public class ActionSubmitResponse
+    public class ActionSubmitResponse : IApiResponse
     {
         public bool Success { get; set; }
+        public string? Error { get; set; }
         public required string Action_id { get; set; }
         public required string Status { get; set; }
     }
@@ -653,9 +893,10 @@ namespace michitai
         public required string Created_at { get; set; }
     }
 
-    public class PollUpdatesResponse
+    public class PollUpdatesResponse : IApiResponse
     {
         public bool Success { get; set; }
+        public string? Error { get; set; }
         public required List<PlayerUpdate> Updates { get; set; }
         public required string Last_update_id { get; set; }
     }
@@ -677,12 +918,182 @@ namespace michitai
         public required string Room_last_activity { get; set; }
     }
 
-    public class CurrentRoomResponse
+    public class CurrentRoomResponse : IApiResponse
     {
         public bool Success { get; set; }
+        public string? Error { get; set; }
         public bool In_room { get; set; }
         public CurrentRoomInfo? Room { get; set; }
-        public required List<object> Pending_actions { get; set; }
-        public required List<object> Pending_updates { get; set; }
+        public List<object>? Pending_actions { get; set; }
+        public List<object>? Pending_updates { get; set; }
+    }
+
+    public class MatchmakingListResponse
+    {
+        public bool Success { get; set; }
+        public required List<MatchmakingLobby> Lobbies { get; set; }
+    }
+
+    public class MatchmakingLobby
+    {
+        public required string Matchmaking_id { get; set; }
+        public int Host_player_id { get; set; }
+        public int Max_players { get; set; }
+        public int Strict_full { get; set; }
+        public object? Extra_json_string { get; set; }
+        public required string Created_at { get; set; }
+        public required string Last_heartbeat { get; set; }
+        public int Current_players { get; set; }
+        public required string Host_name { get; set; }
+    }
+
+    public class MatchmakingCreateResponse
+    {
+        public bool Success { get; set; }
+        public required string Matchmaking_id { get; set; }
+        public int Max_players { get; set; }
+        public bool Strict_full { get; set; }
+        public bool Join_by_requests { get; set; }
+        public bool Is_host { get; set; }
+    }
+
+    public class MatchmakingJoinRequestResponse
+    {
+        public bool Success { get; set; }
+        public required string Request_id { get; set; }
+        public required string Message { get; set; }
+    }
+
+    public class MatchmakingRequestResponse : IApiResponse
+    {
+        public bool Success { get; set; }
+        public string? Error { get; set; }
+        public required string Message { get; set; }
+        public required string Request_id { get; set; }
+        public required string Action { get; set; }
+    }
+
+    public class MatchmakingRequestStatusResponse
+    {
+        public bool Success { get; set; }
+        public required MatchmakingRequestInfo Request { get; set; }
+    }
+
+    public class MatchmakingRequestInfo
+    {
+        public required string Request_id { get; set; }
+        public required string Matchmaking_id { get; set; }
+        public required string Status { get; set; }
+        public required string Requested_at { get; set; }
+        public string? Responded_at { get; set; }
+        public int? Responded_by { get; set; }
+        public string? Responder_name { get; set; }
+        public bool Join_by_requests { get; set; }
+    }
+
+    public class MatchmakingCurrentResponse
+    {
+        public bool Success { get; set; }
+        public bool In_matchmaking { get; set; }
+        public MatchmakingInfo? Matchmaking { get; set; }
+        public required List<object> Pending_requests { get; set; }
+    }
+
+    public class MatchmakingInfo
+    {
+        public required string Matchmaking_id { get; set; }
+        public bool Is_host { get; set; }
+        public int Max_players { get; set; }
+        public int Current_players { get; set; }
+        public bool Strict_full { get; set; }
+        public bool Join_by_requests { get; set; }
+        public object? Extra_json_string { get; set; }
+        public required string Joined_at { get; set; }
+        public required string Player_status { get; set; }
+        public required string Last_heartbeat { get; set; }
+        public required string Lobby_heartbeat { get; set; }
+        public bool Is_started { get; set; }
+        public object? Started_at { get; set; }
+    }
+
+    public class MatchmakingDirectJoinResponse : IApiResponse
+    {
+        public bool Success { get; set; }
+        public string? Error { get; set; }
+        public required string Message { get; set; }
+        public required string Matchmaking_id { get; set; }
+    }
+
+    public class MatchmakingLeaveResponse : IApiResponse
+    {
+        public bool Success { get; set; }
+        public string? Error { get; set; }
+        public required string Message { get; set; }
+    }
+
+    public class MatchmakingPlayersResponse
+    {
+        public bool Success { get; set; }
+        public required List<MatchmakingPlayer> Players { get; set; }
+    }
+
+    public class MatchmakingPlayer
+    {
+        public int Player_id { get; set; }
+        public required string Joined_at { get; set; }
+        public required string Last_heartbeat { get; set; }
+        public required string Status { get; set; }
+        public required string Player_name { get; set; }
+        public int Seconds_since_heartbeat { get; set; }
+        public int Is_host { get; set; }
+    }
+
+    public class MatchmakingHeartbeatResponse : IApiResponse
+    {
+        public bool Success { get; set; }
+        public string? Error { get; set; }
+        public string? Status { get; set; }  // Made optional for error responses
+    }
+
+    public class MatchmakingRemoveResponse : IApiResponse
+    {
+        public bool Success { get; set; }
+        public string? Error { get; set; }
+        public required string Message { get; set; }
+    }
+
+    public class MatchmakingStartResponse : IApiResponse
+    {
+        public bool Success { get; set; }
+        public string? Error { get; set; }
+        public required string Room_id { get; set; }
+        public required string Room_name { get; set; }
+        public int Players_transferred { get; set; }
+        public required string Message { get; set; }
+    }
+
+    // Exception and Error Handling Classes
+    public class ApiException : Exception
+    {
+        public string? ErrorResponse { get; }
+        public string? ApiError { get; }
+
+        public ApiException(string message, string? errorResponse = null) : base(message)
+        {
+            ErrorResponse = errorResponse;
+            ApiError = message;
+        }
+
+        public ApiException(string message, string? errorResponse, Exception innerException) : base(message, innerException)
+        {
+            ErrorResponse = errorResponse;
+            ApiError = message;
+        }
+    }
+
+    public class ErrorResponse : IApiResponse
+    {
+        public bool Success { get; set; }
+        public string? Error { get; set; }
     }
 }

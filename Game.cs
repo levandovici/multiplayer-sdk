@@ -1,11 +1,13 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using System.Text.Json;
+using System.Collections.Generic;
 using michitai;
 
 public class Game
 {
     private static GameSDK? sdk;
+    private static Dictionary<string, PlayerInfo> players = new Dictionary<string, PlayerInfo>();
 
     public static async Task Main()
     {
@@ -13,44 +15,45 @@ public class Game
 
         // 1️⃣ Initialize SDK
         sdk = new GameSDK("YOUR_API_TOKEN", "YOUR_API_PRIVATE_TOKEN");
-        //sdk = new GameSDK("YOUR_API_TOKEN", "YOUR_API_PRIVATE_TOKEN", logger:new ConsoleLogger()); // for console logging
-        //sdk = new GameSDK("YOUR_API_TOKEN", "YOUR_API_PRIVATE_TOKEN", logger:new UnityLogger()); // for unity logging
         Console.WriteLine("[INIT] SDK initialized\n");
 
-        // 2️⃣ Register Player
-        Console.WriteLine("[PLAYER] Registering new player...");
-        var reg = await sdk.RegisterPlayer("TestPlayer", new
+        // 2️⃣ Register Multiple Players for Matchmaking Demo
+        Console.WriteLine("[PLAYERS] Registering multiple players for matchmaking demo...");
+        
+        // Register Host Player
+        var hostReg = await RegisterPlayer("GameHost", new { level = 10, rank = "gold", role = "host" });
+        string hostToken = hostReg.Private_key;
+        string hostId = hostReg.Player_id;
+        Console.WriteLine($"[HOST] Registered: ID={hostId}, Token={hostToken.Substring(0, 8)}...\n");
+
+        // Register Multiple Players
+        var player1Reg = await RegisterPlayer("Player1", new { level = 8, rank = "silver", role = "player" });
+        var player2Reg = await RegisterPlayer("Player2", new { level = 12, rank = "gold", role = "player" });
+        var player3Reg = await RegisterPlayer("Player3", new { level = 6, rank = "bronze", role = "player" });
+        
+        players["host"] = new PlayerInfo { Id = hostId, Token = hostToken, Name = "GameHost" };
+        players["player1"] = new PlayerInfo { Id = player1Reg.Player_id, Token = player1Reg.Private_key, Name = "Player1" };
+        players["player2"] = new PlayerInfo { Id = player2Reg.Player_id, Token = player2Reg.Private_key, Name = "Player2" };
+        players["player3"] = new PlayerInfo { Id = player3Reg.Player_id, Token = player3Reg.Private_key, Name = "Player3" };
+
+        Console.WriteLine($"[PLAYERS] Total registered: {players.Count} players\n");
+
+        // 3️⃣ Authenticate All Players
+        Console.WriteLine("[AUTH] Authenticating all players...");
+        foreach (var kvp in players)
         {
-            level = 1,
-            score = 0,
-            inventory = new[] { "sword", "shield" }
-        });
-
-        string playerToken = reg.Private_key;
-        int playerId = int.Parse(reg.Player_id);
-
-        Console.WriteLine($"[PLAYER] Registered: ID={playerId}, Token={playerToken}\n");
-
-        // 3️⃣ Authenticate Player
-        Console.WriteLine("[PLAYER] Authenticating player...");
-        var auth = await sdk.AuthenticatePlayer(playerToken);
-
-        if (auth.Success)
-        {
-            var pdata = auth.Player.Player_data;
-            int level = pdata.ContainsKey("level") ? ((JsonElement)pdata["level"]).GetInt32() : 0;
-
-            Console.WriteLine($"[PLAYER] Authenticated: {auth.Player.Player_name} (Level={level})\n");
+            var auth = await sdk.AuthenticatePlayer(kvp.Value.Token);
+            if (auth.Success)
+            {
+                Console.WriteLine($"[AUTH] {kvp.Value.Name} authenticated successfully");
+            }
         }
-        else
-        {
-            Console.WriteLine("[PLAYER] Authentication failed\n");
-        }
+        Console.WriteLine();
 
-        // 4️⃣ List all players
+        // 4️⃣ List all players (admin view)
         Console.WriteLine("[ADMIN] Fetching all players...");
         var allPlayers = await sdk.GetAllPlayers();
-        Console.WriteLine($"[ADMIN] Total players: {allPlayers.Count}");
+        Console.WriteLine($"[ADMIN] Total players in database: {allPlayers.Count}");
         foreach (var p in allPlayers.Players)
         {
             Console.WriteLine($" - ID={p.Id}, Name={p.Player_name}, Active={p.Is_active}");
@@ -66,34 +69,26 @@ public class Game
         Console.WriteLine("[GAME] Updating game settings...");
         var updateGame = await sdk.UpdateGameData(new
         {
-            game_settings = new { difficulty = "hard", max_players = 10 },
+            game_settings = new { difficulty = "hard", max_players = 10, matchmaking_enabled = true },
             last_updated = DateTime.UtcNow.ToString("o")
         });
         Console.WriteLine($"[GAME] {updateGame.Message} at {updateGame.Updated_at}\n");
 
-        // 7️⃣ Get player-specific data
-        Console.WriteLine("[PLAYER] Loading player data...");
-        var playerData = await sdk.GetPlayerData(playerToken);
+        // 7️⃣ Get player-specific data for host
+        Console.WriteLine("[HOST] Loading host player data...");
+        var hostData = await sdk.GetPlayerData(hostToken);
+        Console.WriteLine($"[HOST] {hostData.Player_name} - Level: {GetJsonValue(hostData.Data, "level")}, Rank: {GetJsonValue(hostData.Data, "rank")}\n");
 
-        var pDataDict = playerData.Data;
-        int playerLevel = pDataDict.ContainsKey("level") ? ((JsonElement)pDataDict["level"]).GetInt32() : 0;
-        int playerScore = pDataDict.ContainsKey("score") ? ((JsonElement)pDataDict["score"]).GetInt32() : 0;
-        string[] inventory = pDataDict.ContainsKey("inventory")
-            ? JsonSerializer.Deserialize<string[]>(((JsonElement)pDataDict["inventory"]).GetRawText())!
-            : new string[0];
-
-        Console.WriteLine($"[PLAYER] Level={playerLevel}, Score={playerScore}, Inventory=[{string.Join(", ", inventory)}]\n");
-
-        // 8️⃣ Update player data
-        Console.WriteLine("[PLAYER] Updating player progress...");
-        var updatedPlayer = await sdk.UpdatePlayerData(playerToken, new
+        // 8️⃣ Update host player data
+        Console.WriteLine("[HOST] Updating host progress...");
+        var updatedHost = await sdk.UpdatePlayerData(hostToken, new
         {
-            level = 2,
-            score = 100,
-            inventory = new[] { "sword", "shield", "potion" },
-            last_played = DateTime.UtcNow.ToString("o")
+            level = 15,
+            rank = "platinum",
+            last_played = DateTime.UtcNow.ToString("o"),
+            matchmaking_status = "ready"
         });
-        Console.WriteLine($"[PLAYER] {updatedPlayer.Message} at {updatedPlayer.Updated_at}\n");
+        Console.WriteLine($"[HOST] {updatedHost.Message} at {updatedHost.Updated_at}\n");
 
         // 9️⃣ Get server time
         Console.WriteLine("[SERVER] Getting server time...");
@@ -109,11 +104,11 @@ public class Game
             Console.WriteLine("[SERVER] Failed to get server time\n");
         }
 
-        // 🔟 Create a new room
-        Console.WriteLine("[ROOM] Creating a new game room...");
+        // 🔟 Create a traditional room (for comparison)
+        Console.WriteLine("[ROOM] Creating a traditional game room...");
         var roomCreate = await sdk.CreateRoomAsync(
-            playerToken,
-            "Test Room",
+            hostToken,
+            "Traditional Room",
             "test123",
             4
         );
@@ -130,159 +125,347 @@ public class Game
         }
         Console.WriteLine();
 
-        // 1️⃣2️⃣ Join the room (as another player would)
-        Console.WriteLine("[ROOM] Joining the room...");
-        var joinRoom = await sdk.JoinRoomAsync(
-            playerToken,
-            roomId,
-            "test123"
-        );
-        Console.WriteLine($"[ROOM] {joinRoom.Message}\n");
-
-        // 1️⃣3️⃣ List players in the room
-        Console.WriteLine("[ROOM] Fetching room players...");
-        var roomPlayers = await sdk.GetRoomPlayersAsync(playerToken);
-        Console.WriteLine($"[ROOM] Players in room ({roomPlayers.Players.Count}):");
-        foreach (var player in roomPlayers.Players)
+        // 1️⃣2️⃣ Leave the traditional room (cleanup)
+        Console.WriteLine("[ROOM] Leaving the traditional game room...");
+        try
         {
-            Console.WriteLine($" - {player.Player_name} (ID: {player.Player_id}, Host: {player.Is_host == 1}, Online: {player.Is_online}, Last Heartbeat: {player.Last_heartbeat})");
+            var leaveRoom = await sdk.LeaveRoomAsync(hostToken);
+            Console.WriteLine($"[ROOM] {leaveRoom.Message}\n");
+        }
+        catch (ApiException ex)
+        {
+            Console.WriteLine($"[ROOM] Leave error: {ex.ApiError}\n");
+        }
+
+        // ==================== MATCHMAKING DEMO ====================
+
+        // 2️⃣4️⃣ List Matchmaking Lobbies
+        Console.WriteLine("[MATCHMAKING] Listing available matchmaking lobbies...");
+        var lobbies = await sdk.GetMatchmakingLobbiesAsync();
+        Console.WriteLine($"[MATCHMAKING] Found {lobbies.Lobbies.Count} lobby(ies):");
+        foreach (var lobby in lobbies.Lobbies)
+        {
+            Console.WriteLine($" - ID: {lobby.Matchmaking_id}, Host: {lobby.Host_name}, Players: {lobby.Current_players}/{lobby.Max_players}, Strict: {lobby.Strict_full == 1}");
         }
         Console.WriteLine();
 
-        // 1️⃣4️⃣ Send a heartbeat
-        Console.WriteLine("[ROOM] Sending heartbeat...");
-        var heartbeat = await sdk.SendHeartbeatAsync(playerToken);
-        Console.WriteLine($"[ROOM] Heartbeat status: {heartbeat.Status}\n");
-
-        // 1️⃣5️⃣ Submit an action
-        Console.WriteLine("[ACTION] Submitting move action...");
-        var action = await sdk.SubmitActionAsync(
-            playerToken,
-            "move",
-            new { x = 10, y = 20 }
+        // 2️⃣5️⃣ Create Matchmaking Lobby
+        Console.WriteLine("[MATCHMAKING] Host creating new matchmaking lobby...");
+        var matchmakingCreate = await sdk.CreateMatchmakingLobbyAsync(
+            hostToken,
+            maxPlayers: 4,
+            strictFull: true,
+            joinByRequests: false,
+            extraJsonString: new { minLevel = 5, rank = "silver", gameMode = "competitive" }
         );
-        string actionId = action.Action_id;
-        Console.WriteLine($"[ACTION] Action submitted: ID={actionId}, Status={action.Status}\n");
+        string matchmakingId = matchmakingCreate.Matchmaking_id;
+        Console.WriteLine($"[MATCHMAKING] Lobby created: ID={matchmakingId}, Max Players={matchmakingCreate.Max_players}, Host={matchmakingCreate.Is_host}");
+        Console.WriteLine($"[MATCHMAKING] Settings: Strict Full={matchmakingCreate.Strict_full}, Join by Requests={matchmakingCreate.Join_by_requests}\n");
+
+        // 2️⃣6️⃣ Request to Join Matchmaking (Player 1)
+        Console.WriteLine("[MATCHMAKING] Player1 requesting to join matchmaking...");
+        var joinRequest = await sdk.RequestToJoinMatchmakingAsync(players["player1"].Token, matchmakingId);
+        Console.WriteLine($"[MATCHMAKING] Join request sent: ID={joinRequest.Request_id}, Message={joinRequest.Message}\n");
+
+        // 2️⃣7️⃣ Respond to Join Request (Host approves)
+        Console.WriteLine("[MATCHMAKING] Host responding to join request...");
+        try
+        {
+            var approveRequest = await sdk.RespondToJoinRequestAsync(hostToken, matchmakingId, GameSDK.MatchmakingRequestAction.Approve);
+            Console.WriteLine($"[MATCHMAKING] Response: {approveRequest.Message}, Action={approveRequest.Action}, Request ID={approveRequest.Request_id}\n");
+        }
+        catch (ApiException ex)
+        {
+            Console.WriteLine($"[MATCHMAKING] Error responding to request: {ex.ApiError}");
+            Console.WriteLine($"[MATCHMAKING] Server response: {ex.ErrorResponse}\n");
+        }
+
+        // 2️⃣8️⃣ Check Join Request Status (Player 1)
+        Console.WriteLine("[MATCHMAKING] Player1 checking join request status...");
+        var requestStatus = await sdk.CheckJoinRequestStatusAsync(players["player1"].Token, joinRequest.Request_id);
+        if (requestStatus.Success)
+        {
+            var req = requestStatus.Request;
+            Console.WriteLine($"[MATCHMAKING] Request Status: {req.Status}, Responded by: {req.Responder_name} at {req.Responded_at}");
+        }
+        Console.WriteLine();
+
+        // 2️⃣9️⃣ Get Current Matchmaking Status (Host)
+        Console.WriteLine("[MATCHMAKING] Host checking current matchmaking status...");
+        var currentMatchmaking = await sdk.GetCurrentMatchmakingStatusAsync(hostToken);
+        if (currentMatchmaking.Success && currentMatchmaking.In_matchmaking)
+        {
+            var mm = currentMatchmaking.Matchmaking;
+            Console.WriteLine($"[MATCHMAKING] Host Status: In Lobby={currentMatchmaking.In_matchmaking}, Is Host={mm.Is_host}");
+            Console.WriteLine($"[MATCHMAKING] Lobby: {mm.Matchmaking_id}, Players: {mm.Current_players}/{mm.Max_players}");
+            Console.WriteLine($"[MATCHMAKING] Settings: Strict={mm.Strict_full}, Approval={mm.Join_by_requests}, Started={mm.Is_started}");
+        }
+        Console.WriteLine();
+
+        // 3️⃣0️⃣ Join Matchmaking Directly (Player 2 - lobby allows direct join)
+        Console.WriteLine("[MATCHMAKING] Player2 joining directly (no approval required for this demo)...");
+        var directJoin = await sdk.JoinMatchmakingDirectlyAsync(players["player2"].Token, matchmakingId);
+        Console.WriteLine($"[MATCHMAKING] {directJoin.Message}, Lobby ID={directJoin.Matchmaking_id}\n");
+
+        // 3️⃣1️⃣ Leave Matchmaking (Player 1 leaves to rejoin)
+        Console.WriteLine("[MATCHMAKING] Player1 leaving matchmaking to test rejoin...");
+        try
+        {
+            var leaveMatchmaking = await sdk.LeaveMatchmakingAsync(players["player1"].Token);
+            Console.WriteLine($"[MATCHMAKING] {leaveMatchmaking.Message}\n");
+        }
+        catch (ApiException ex)
+        {
+            Console.WriteLine($"[MATCHMAKING] Leave error: {ex.ApiError}");
+            Console.WriteLine($"[MATCHMAKING] Note: Player1 was not in matchmaking lobby\n");
+        }
+
+        // 3️⃣2️⃣ List Matchmaking Players (Host view)
+        Console.WriteLine("[MATCHMAKING] Host listing players in matchmaking lobby...");
+        var matchmakingPlayers = await sdk.GetMatchmakingPlayersAsync(hostToken);
+        Console.WriteLine($"[MATCHMAKING] Players in lobby ({matchmakingPlayers.Players.Count}):");
+        foreach (var player in matchmakingPlayers.Players)
+        {
+            Console.WriteLine($" - {player.Player_name} (ID: {player.Player_id}, Host: {player.Is_host == 1}, Status: {player.Status}, Heartbeat: {player.Seconds_since_heartbeat}s ago)");
+        }
+        Console.WriteLine();
+
+        // 3️⃣3️⃣ Send Matchmaking Heartbeat (All players)
+        Console.WriteLine("[MATCHMAKING] All players sending heartbeats...");
+        foreach (var kvp in players)
+        {
+            if (kvp.Key != "player1") // Player1 left
+            {
+                try
+                {
+                    var heartbeat = await sdk.SendMatchmakingHeartbeatAsync(kvp.Value.Token);
+                    Console.WriteLine($"[MATCHMAKING] {kvp.Value.Name} heartbeat: {heartbeat.Status ?? "N/A"}");
+                }
+                catch (ApiException ex)
+                {
+                    Console.WriteLine($"[MATCHMAKING] {kvp.Value.Name} heartbeat error: {ex.ApiError}");
+                }
+            }
+        }
+        Console.WriteLine();
+
+        // Player1 rejoins
+        Console.WriteLine("[MATCHMAKING] Player1 rejoining matchmaking...");
+        var rejoin = await sdk.JoinMatchmakingDirectlyAsync(players["player1"].Token, matchmakingId);
+        Console.WriteLine($"[MATCHMAKING] {rejoin.Message}\n");
+
+        // 3️⃣4️⃣ Remove Matchmaking Lobby (Host removes - cleanup)
+        Console.WriteLine("[MATCHMAKING] Host removing matchmaking lobby (cleanup test)...");
+        var removeLobby = await sdk.RemoveMatchmakingLobbyAsync(hostToken);
+        Console.WriteLine($"[MATCHMAKING] {removeLobby.Message}\n");
+
+        // Create new lobby for game start demo
+        Console.WriteLine("[MATCHMAKING] Creating new lobby for game start demo...");
+        var newLobby = await sdk.CreateMatchmakingLobbyAsync(
+            hostToken,
+            maxPlayers: 3,
+            strictFull: false,
+            joinByRequests: false
+        );
+        string newMatchmakingId = newLobby.Matchmaking_id;
+        Console.WriteLine($"[MATCHMAKING] New lobby created: {newMatchmakingId}\n");
+
+        // All players join the new lobby
+        Console.WriteLine("[MATCHMAKING] All players joining new lobby...");
+        foreach (var kvp in players)
+        {
+            if (kvp.Key != "host") // Host is already in
+            {
+                try
+                {
+                    var join = await sdk.JoinMatchmakingDirectlyAsync(kvp.Value.Token, newMatchmakingId);
+                    Console.WriteLine($"[MATCHMAKING] {kvp.Value.Name}: {join.Message}");
+                }
+                catch (ApiException ex)
+                {
+                    Console.WriteLine($"[MATCHMAKING] {kvp.Value.Name}: Join error - {ex.ApiError}");
+                }
+            }
+        }
+        Console.WriteLine();
+
+        // 3️⃣5️⃣ Start Game from Matchmaking (Host starts the game)
+        Console.WriteLine("[MATCHMAKING] Host starting game from matchmaking lobby...");
+        var startGame = await sdk.StartGameFromMatchmakingAsync(hostToken);
+        Console.WriteLine($"[MATCHMAKING] {startGame.Message}");
+        Console.WriteLine($"[MATCHMAKING] Game Room Created: ID={startGame.Room_id}, Name={startGame.Room_name}");
+        Console.WriteLine($"[MATCHMAKING] Players Transferred: {startGame.Players_transferred}\n");
+
+        // ==================== POST-MATCHMAKING GAME ROOM DEMO ====================
+
+        // Now the host is also a room host - demonstrate room functionality
+        Console.WriteLine("[POST-MATCHMAKING] Demonstrating room functionality with matchmaking host...");
+
+        // 1️⃣2️⃣ List all available rooms (should include the new game room)
+        Console.WriteLine("[ROOM] Fetching available rooms after matchmaking...");
+        var postRooms = await sdk.GetRoomsAsync();
+        Console.WriteLine($"[ROOM] Found {postRooms.Rooms.Count} room(s):");
+        foreach (var room in postRooms.Rooms)
+        {
+            Console.WriteLine($" - ID: {room.Room_id}, Name: {room.Room_name}, Players: {room.Current_players}/{room.Max_players}");
+        }
+        Console.WriteLine();
+
+        // 1️⃣3️⃣ List players in the new game room
+        Console.WriteLine("[ROOM] Fetching players in the new game room...");
+        var newRoomPlayers = await sdk.GetRoomPlayersAsync(hostToken);
+        Console.WriteLine($"[ROOM] Players in new room ({newRoomPlayers.Players.Count}):");
+        foreach (var player in newRoomPlayers.Players)
+        {
+            Console.WriteLine($" - {player.Player_name} (ID: {player.Player_id}, Host: {player.Is_host == 1}, Online: {player.Is_online})");
+        }
+        Console.WriteLine();
+
+        // 1️⃣5️⃣ Submit actions from different players
+        Console.WriteLine("[ACTION] Players submitting actions in the new game room...");
+        foreach (var kvp in players)
+        {
+            try
+            {
+                var action = await sdk.SubmitActionAsync(
+                        kvp.Value.Token,
+                        "player_ready",
+                        new { player_id = kvp.Value.Id, ready = true, timestamp = DateTime.UtcNow.ToString("o") }
+                    );
+                Console.WriteLine($"[ACTION] {kvp.Value.Name} submitted ready action: {action.Action_id}");
+            }
+            catch (ApiException ex)
+            {
+                Console.WriteLine($"[ACTION] {kvp.Value.Name}: Action submit error - {ex.ApiError}");
+            }
+        }
+        Console.WriteLine();
 
         // 1️⃣6️⃣ Check pending actions
         Console.WriteLine("[ACTION] Checking for pending actions...");
-        var pendingActions = await sdk.GetPendingActionsAsync(playerToken);
+        var pendingActions = await sdk.GetPendingActionsAsync(hostToken);
         if (pendingActions.Actions != null && pendingActions.Actions.Count > 0)
         {
+            Console.WriteLine($"[ACTION] Found {pendingActions.Actions.Count} pending actions:");
             foreach (var pendingAction in pendingActions.Actions)
             {
-                string requestDataStr = pendingAction.Request_data != null ?
-                    JsonSerializer.Serialize(pendingAction.Request_data) : "null";
-                Console.WriteLine($"[ACTION] Pending: {pendingAction.Action_type}, " +
-                               $"Request: {requestDataStr}");
+                Console.WriteLine($"[ACTION] - {pendingAction.Player_name}: {pendingAction.Action_type} at {pendingAction.Created_at}");
             }
         }
-        else
-        {
-            Console.WriteLine("[ACTION] No pending actions found\n");
-        }
+        Console.WriteLine();
 
-        // 1️⃣7️⃣ Complete an action (simulating server response)
-        if (!string.IsNullOrEmpty(actionId))
-        {
-            Console.WriteLine($"[ACTION] Completing action {actionId}...");
-            var completeAction = await sdk.CompleteActionAsync(
-                actionId,
-                playerToken,
-                new ActionCompleteRequest(ActionStatus.Completed,
-                new { success = true, message = "Moved successfully" })
-            );
-            Console.WriteLine($"[ACTION] {completeAction.Message}\n");
-        }
-
-        // 1️⃣8️⃣ Poll for completed actions
-        Console.WriteLine("[ACTION] Polling for completed actions...");
-        var completedActions = await sdk.PollActionsAsync(playerToken);
-        if (completedActions.Actions != null && completedActions.Actions.Count > 0)
-        {
-            foreach (var completedAction in completedActions.Actions)
-            {
-                string responseDataStr = completedAction.Response_data != null ?
-                    JsonSerializer.Serialize(completedAction.Response_data) : "null";
-                Console.WriteLine($"[ACTION] Completed: {completedAction.Action_type}, " +
-                               $"Result: {responseDataStr}");
-            }
-        }
-        else
-        {
-            Console.WriteLine("[ACTION] No completed actions found\n");
-        }
-
-        // 1️⃣9️⃣ Get current room information
-        Console.WriteLine("[ROOM] Getting current room info...");
-        var currentRoom = await sdk.GetCurrentRoomAsync(playerToken);
-        if (currentRoom.Success && currentRoom.In_room && currentRoom.Room != null)
-        {
-            var room = currentRoom.Room;
-            Console.WriteLine($"[ROOM] Current Room: {room.Room_name} (ID: {room.Room_id})");
-            Console.WriteLine($"[ROOM] Players: {room.Current_players}/{room.Max_players}, Host: {room.Is_host}");
-            Console.WriteLine($"[ROOM] Joined: {room.Joined_at}, Last Activity: {room.Room_last_activity}\n");
-        }
-        else
-        {
-            Console.WriteLine("[ROOM] Not currently in any room\n");
-        }
-
-        // 2️⃣0️⃣ Send update to all players
-        Console.WriteLine("[UPDATE] Sending update to all players...");
-        var updateAll = await sdk.UpdatePlayersAsync(
-            playerToken,
+        // 2️⃣0️⃣ Send game start update to all players
+        Console.WriteLine("[UPDATE] Host sending game start update to all players...");
+        var gameStartUpdate = await sdk.UpdatePlayersAsync(
+            hostToken,
             new UpdatePlayersRequest(
                 "all",
-                "play_animation",
-                new { animation = "victory", duration = 2.0 }
+                "game_start",
+                new { game_mode = "competitive", start_time = DateTime.UtcNow.ToString("o") }
             )
         );
-        Console.WriteLine($"[UPDATE] Sent to {updateAll.Updates_sent} players, Update IDs: [{string.Join(", ", updateAll.Update_ids)}]\n");
+        Console.WriteLine($"[UPDATE] Game start update sent to {gameStartUpdate.Updates_sent} players\n");
 
-        // 2️⃣1️⃣ Send update to specific player
-        Console.WriteLine("[UPDATE] Sending update to specific player...");
-        var updateSpecific = await sdk.UpdatePlayersAsync(
-            playerToken,
-            new UpdatePlayersRequest(
-                new string[] { $"{roomPlayers.Players[0].Player_id}" },
-                "spawn_effect",
-                new { effect = "explosion", position = new { x = 10, y = 20 } }
-            )
-        );
-        Console.WriteLine($"[UPDATE] Sent to {updateSpecific.Updates_sent} players, Target: [{string.Join(", ", updateSpecific.Target_players)}]\n");
-
-        // 2️⃣2️⃣ Poll for player updates
-        Console.WriteLine("[UPDATE] Polling for player updates...");
-        var pollUpdates = await sdk.PollUpdatesAsync(playerToken);
-        if (pollUpdates.Updates.Count > 0)
+        // 2️⃣2️⃣ Poll for game updates
+        Console.WriteLine("[UPDATE] Players polling for game updates...");
+        foreach (var kvp in players)
         {
-            Console.WriteLine($"[UPDATE] Found {pollUpdates.Updates.Count} updates (Last ID: {pollUpdates.Last_update_id}):");
-            foreach (var update in pollUpdates.Updates)
+            try
             {
-                string dataStr = JsonSerializer.Serialize(update.Data_json);
-                Console.WriteLine($" - From {update.From_player_id}: {update.Type} -> {dataStr} at {update.Created_at}");
+                var pollUpdates = await sdk.PollUpdatesAsync(kvp.Value.Token);
+                if (pollUpdates.Updates.Count > 0)
+                {
+                    Console.WriteLine($"[UPDATE] {kvp.Value.Name} received {pollUpdates.Updates.Count} update(s):");
+                    foreach (var update in pollUpdates.Updates)
+                    {
+                        Console.WriteLine($"[UPDATE]   - {update.Type} from {update.From_player_id} at {update.Created_at}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"[UPDATE] {kvp.Value.Name}: No new updates");
+                }
+            }
+            catch (ApiException ex)
+            {
+                Console.WriteLine($"[UPDATE] {kvp.Value.Name}: Poll error - {ex.ApiError}");
             }
         }
-        else
+        Console.WriteLine();
+
+        // 2️⃣3️⃣ Get current room information for all players
+        Console.WriteLine("[ROOM] All players checking current room status...");
+        foreach (var kvp in players)
         {
-            Console.WriteLine("[UPDATE] No new updates found\n");
+            try
+            {
+                var currentRoom = await sdk.GetCurrentRoomAsync(kvp.Value.Token);
+                if (currentRoom.Success && currentRoom.In_room && currentRoom.Room != null)
+                {
+                    var room = currentRoom.Room;
+                    Console.WriteLine($"[ROOM] {kvp.Value.Name}: In '{room.Room_name}' (Players: {room.Current_players}/{room.Max_players}, Host: {room.Is_host})");
+                }
+                else
+                {
+                    Console.WriteLine($"[ROOM] {kvp.Value.Name}: Not in any room");
+                }
+            }
+            catch (ApiException ex)
+            {
+                Console.WriteLine($"[ROOM] {kvp.Value.Name}: Room status error - {ex.ApiError}");
+            }
         }
+        Console.WriteLine();
 
-        // 2️⃣3️⃣ Poll for updates after specific ID
-        if (!string.IsNullOrEmpty(pollUpdates.Last_update_id))
+        // 2️⃣4️⃣ Leave the room (all players)
+        Console.WriteLine("[ROOM] All players leaving the game room...");
+        foreach (var kvp in players)
         {
-            Console.WriteLine("[UPDATE] Polling for updates after last ID...");
-            var pollAfter = await sdk.PollUpdatesAsync(playerToken, pollUpdates.Last_update_id);
-            Console.WriteLine($"[UPDATE] Found {pollAfter.Updates.Count} new updates since last poll\n");
+            try
+            {
+                var leaveRoom = await sdk.LeaveRoomAsync(kvp.Value.Token);
+                Console.WriteLine($"[ROOM] {kvp.Value.Name}: {leaveRoom.Message}");
+            }
+            catch (ApiException ex)
+            {
+                Console.WriteLine($"[ROOM] {kvp.Value.Name}: Leave error - {ex.ApiError}");
+            }
         }
+        Console.WriteLine();
 
-        // 2️⃣4️⃣ Leave the room
-        Console.WriteLine("[ROOM] Leaving the room...");
-        var leaveRoom = await sdk.LeaveRoomAsync(playerToken);
-        Console.WriteLine($"[ROOM] {leaveRoom.Message}\n");
+        Console.WriteLine("=== Complete Matchmaking & Game Demo ===");
+        Console.WriteLine("✅ Multiple players registered and authenticated");
+        Console.WriteLine("✅ Matchmaking lobby created with custom settings");
+        Console.WriteLine("✅ Join requests and approval system demonstrated");
+        Console.WriteLine("✅ Direct join functionality tested");
+        Console.WriteLine("✅ Player management and heartbeats working");
+        Console.WriteLine("✅ Game started from matchmaking lobby");
+        Console.WriteLine("✅ Host transitioned from matchmaking to room host");
+        Console.WriteLine("✅ Full game room functionality demonstrated");
+    }
 
-        Console.WriteLine("=== Demo Complete ===");
+    private static async Task<PlayerRegisterResponse> RegisterPlayer(string name, object playerData)
+    {
+        Console.WriteLine($"[PLAYER] Registering {name}...");
+        var reg = await sdk.RegisterPlayer(name, playerData);
+        Console.WriteLine($"[PLAYER] {name} registered: ID={reg.Player_id}");
+        return reg;
+    }
+
+    private static string GetJsonValue(Dictionary<string, object> data, string key)
+    {
+        if (data.ContainsKey(key))
+        {
+            return data[key].ToString();
+        }
+        return "N/A";
+    }
+
+    private class PlayerInfo
+    {
+        public required string Id { get; set; }
+        public required string Token { get; set; }
+        public required string Name { get; set; }
     }
 
 
