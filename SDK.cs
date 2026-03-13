@@ -210,7 +210,7 @@ namespace michitai
         /// <returns>Task containing the game data response.</returns>
         public Task<GameDataResponse> GetGameData()
         {
-            return Send<GameDataResponse>(HttpMethod.Get, Url("game_data.php"));
+            return Send<GameDataResponse>(HttpMethod.Get, Url("game_data.php/game/get"));
         }
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace michitai
         /// <returns>Task indicating success or failure of the update.</returns>
         public Task<SuccessResponse> UpdateGameData(object data)
         {
-            return Send<SuccessResponse>(HttpMethod.Put, Url("game_data.php", $"&api_private_token={_apiPrivateToken}"), data);
+            return Send<SuccessResponse>(HttpMethod.Put, Url("game_data.php/game/update", $"&api_private_token={_apiPrivateToken}"), data);
         }
 
         /// <summary>
@@ -232,7 +232,7 @@ namespace michitai
         {
             return Send<PlayerDataResponse>(
                 HttpMethod.Get,
-                Url("game_data.php", $"&game_player_token={playerToken}")
+                Url("game_data.php/player/get", $"&game_player_token={playerToken}")
             );
         }
 
@@ -246,7 +246,7 @@ namespace michitai
         {
             return Send<SuccessResponse>(
                 HttpMethod.Put,
-                Url("game_data.php", $"&game_player_token={playerToken}"),
+                Url("game_data.php/player/update", $"&game_player_token={playerToken}"),
                 data
             );
         }
