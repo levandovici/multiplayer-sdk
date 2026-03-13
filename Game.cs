@@ -129,12 +129,28 @@ public class Game
         Console.WriteLine("[ROOM] Leaving the traditional game room...");
         try
         {
+            // Send heartbeat before leaving room
+            Console.WriteLine("[ROOM] Sending heartbeat before leaving room...");
+            var heartbeat = await sdk.SendPlayerHeartbeatAsync(hostToken);
+            if (heartbeat.Success)
+            {
+                Console.WriteLine($"[ROOM] Heartbeat sent: {heartbeat.Message}");
+            }
+            
             var leaveRoom = await sdk.LeaveRoomAsync(hostToken);
-            Console.WriteLine($"[ROOM] {leaveRoom.Message}\n");
+            Console.WriteLine($"[ROOM] {leaveRoom.Message}");
+            
+            // Logout after leaving room
+            Console.WriteLine("[ROOM] Logging out after leaving room...");
+            var logout = await sdk.LogoutPlayerAsync(hostToken);
+            if (logout.Success)
+            {
+                Console.WriteLine($"[ROOM] {logout.Message}");
+            }
         }
         catch (ApiException ex)
         {
-            Console.WriteLine($"[ROOM] Leave error: {ex.ApiError}\n");
+            Console.WriteLine($"[ROOM] Leave error: {ex.ApiError}");
         }
 
         // ==================== MATCHMAKING DEMO ====================
@@ -423,8 +439,24 @@ public class Game
         {
             try
             {
+                // Send heartbeat before leaving room
+                Console.WriteLine($"[ROOM] {kvp.Value.Name}: Sending heartbeat before leaving room...");
+                var heartbeat = await sdk.SendPlayerHeartbeatAsync(kvp.Value.Token);
+                if (heartbeat.Success)
+                {
+                    Console.WriteLine($"[ROOM] {kvp.Value.Name}: Heartbeat sent: {heartbeat.Message}");
+                }
+                
                 var leaveRoom = await sdk.LeaveRoomAsync(kvp.Value.Token);
                 Console.WriteLine($"[ROOM] {kvp.Value.Name}: {leaveRoom.Message}");
+                
+                // Logout after leaving room
+                Console.WriteLine($"[ROOM] {kvp.Value.Name}: Logging out after leaving room...");
+                var logout = await sdk.LogoutPlayerAsync(kvp.Value.Token);
+                if (logout.Success)
+                {
+                    Console.WriteLine($"[ROOM] {kvp.Value.Name}: {logout.Message}");
+                }
             }
             catch (ApiException ex)
             {
