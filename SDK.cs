@@ -252,14 +252,27 @@ namespace michitai
         }
 
         /// <summary>
-        /// Retrieves the current server time.
+        /// Retrieves current server time.
         /// </summary>
-        /// <returns>Task containing the server time in various formats.</returns>
+        /// <returns>Task containing server time in various formats.</returns>
         public Task<ServerTimeResponse> GetServerTime()
         {
             return Send<ServerTimeResponse>(
                 HttpMethod.Get,
                 Url("time.php")
+            );
+        }
+
+        /// <summary>
+        /// Retrieves server time with UTC offset adjustment.
+        /// </summary>
+        /// <param name="utcOffset">The UTC offset in hours (e.g., +1, -2).</param>
+        /// <returns>Task containing server time with offset information.</returns>
+        public Task<ServerTimeWithOffsetResponse> GetServerTimeWithOffset(int utcOffset)
+        {
+            return Send<ServerTimeWithOffsetResponse>(
+                HttpMethod.Get,
+                Url("time.php", $"&utc={utcOffset:+#;-#}")
             );
         }
 
@@ -775,6 +788,23 @@ namespace michitai
         public required string Utc { get; set; }
         public long Timestamp { get; set; }
         public required string Readable { get; set; }
+    }
+
+    public class ServerTimeWithOffsetResponse
+    {
+        public bool Success { get; set; }
+        public required string Utc { get; set; }
+        public long Timestamp { get; set; }
+        public required string Readable { get; set; }
+        public required TimeOffset Offset { get; set; }
+    }
+
+    public class TimeOffset
+    {
+        public int Offset_hours { get; set; }
+        public required string Offset_string { get; set; }
+        public required string Original_utc { get; set; }
+        public long Original_timestamp { get; set; }
     }
 
     public class RoomCreateResponse

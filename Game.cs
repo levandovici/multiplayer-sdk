@@ -104,6 +104,38 @@ public class Game
             Console.WriteLine("[SERVER] Failed to get server time\n");
         }
 
+        // 9️⃣1️⃣ Get server time with +1 hour offset
+        Console.WriteLine("[SERVER] Getting server time with +1 hour offset...");
+        var serverTimePlus1 = await sdk.GetServerTimeWithOffset(1);
+        if (serverTimePlus1.Success)
+        {
+            Console.WriteLine($"[SERVER] Server time (+1h): {serverTimePlus1.Utc}");
+            Console.WriteLine($"[SERVER] Timestamp: {serverTimePlus1.Timestamp}");
+            Console.WriteLine($"[SERVER] Readable: {serverTimePlus1.Readable}");
+            Console.WriteLine($"[SERVER] Offset: {serverTimePlus1.Offset.Offset_hours}h ({serverTimePlus1.Offset.Offset_string})");
+            Console.WriteLine($"[SERVER] Original UTC: {serverTimePlus1.Offset.Original_utc}\n");
+        }
+        else
+        {
+            Console.WriteLine("[SERVER] Failed to get server time with +1 offset\n");
+        }
+
+        // 9️⃣2️⃣ Get server time with -2 hours offset
+        Console.WriteLine("[SERVER] Getting server time with -2 hours offset...");
+        var serverTimeMinus2 = await sdk.GetServerTimeWithOffset(-2);
+        if (serverTimeMinus2.Success)
+        {
+            Console.WriteLine($"[SERVER] Server time (-2h): {serverTimeMinus2.Utc}");
+            Console.WriteLine($"[SERVER] Timestamp: {serverTimeMinus2.Timestamp}");
+            Console.WriteLine($"[SERVER] Readable: {serverTimeMinus2.Readable}");
+            Console.WriteLine($"[SERVER] Offset: {serverTimeMinus2.Offset.Offset_hours}h ({serverTimeMinus2.Offset.Offset_string})");
+            Console.WriteLine($"[SERVER] Original UTC: {serverTimeMinus2.Offset.Original_utc}\n");
+        }
+        else
+        {
+            Console.WriteLine("[SERVER] Failed to get server time with -2 offset\n");
+        }
+
         // 🔟 Create a traditional room (for comparison)
         Console.WriteLine("[ROOM] Creating a traditional game room...");
         var roomCreate = await sdk.CreateRoomAsync(
