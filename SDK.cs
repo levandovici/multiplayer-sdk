@@ -675,15 +675,30 @@ namespace michitai
         }
 
         /// <summary>
-        /// Starts a game from the matchmaking lobby (host only).
+        /// Starts a game from matchmaking lobby (host only).
         /// </summary>
         /// <param name="gamePlayerToken">The host player's authentication token.</param>
-        /// <returns>Task containing the game start response.</returns>
+        /// <returns>Task containing game start response.</returns>
         public Task<MatchmakingStartResponse> StartGameFromMatchmakingAsync(string gamePlayerToken)
         {
             return Send<MatchmakingStartResponse>(
                 HttpMethod.Post,
                 Url("matchmaking.php/start", $"&game_player_token={gamePlayerToken}")
+            );
+        }
+
+        /// <summary>
+        /// Gets leaderboard with custom sorting options.
+        /// </summary>
+        /// <param name="sortBy">Array of field names to sort by (e.g., ["level"], ["level", "score"]).</param>
+        /// <param name="limit">Maximum number of players to return (1-1000).</param>
+        /// <returns>Task containing leaderboard response with ranked players.</returns>
+        public Task<LeaderboardResponse> GetLeaderboardAsync(string[] sortBy, int limit = 10)
+        {
+            return Send<LeaderboardResponse>(
+                HttpMethod.Post,
+                Url("leaderboard.php"),
+                new { sortBy = sortBy, limit = limit }
             );
         }
     }
@@ -1142,6 +1157,23 @@ namespace michitai
         public required string Room_name { get; set; }
         public int Players_transferred { get; set; }
         public required string Message { get; set; }
+    }
+
+    public class LeaderboardResponse
+    {
+        public bool Success { get; set; }
+        public required List<LeaderboardPlayer> Leaderboard { get; set; }
+        public int Total { get; set; }
+        public required string[] Sort_by { get; set; }
+        public int Limit { get; set; }
+    }
+
+    public class LeaderboardPlayer
+    {
+        public int Rank { get; set; }
+        public int Player_id { get; set; }
+        public required string Player_name { get; set; }
+        public required Dictionary<string, object> Player_data { get; set; }
     }
 
     // Exception and Error Handling Classes

@@ -497,6 +497,98 @@ public class Game
         }
         Console.WriteLine();
 
+        // 2️⃣5️⃣ Leaderboards
+        Console.WriteLine("[LEADERBOARD] Testing leaderboard functionality...");
+        
+        try
+        {
+            // Sort by level only
+            Console.WriteLine("[LEADERBOARD] Getting leaderboard sorted by level...");
+            var leaderboardLevel = await sdk.GetLeaderboardAsync(new[] { "level" }, 10);
+            if (leaderboardLevel.Success)
+            {
+                Console.WriteLine($"[LEADERBOARD] Success! Total players: {leaderboardLevel.Total}");
+                Console.WriteLine($"[LEADERBOARD] Sorted by: {string.Join(", ", leaderboardLevel.Sort_by)}");
+                Console.WriteLine("[LEADERBOARD] Top players:");
+                foreach (var player in leaderboardLevel.Leaderboard.Take(5))
+                {
+                    Console.WriteLine($"[LEADERBOARD]   Rank {player.Rank}: {player.Player_name} (ID: {player.Player_id})");
+                    if (player.Player_data != null)
+                    {
+                        Console.WriteLine($"[LEADERBOARD]     Level: {player.Player_data.GetValueOrDefault("level", "N/A")}");
+                        Console.WriteLine($"[LEADERBOARD]     Rank: {player.Player_data.GetValueOrDefault("rank", "N/A")}");
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("[LEADERBOARD] Failed to get leaderboard by level");
+            }
+            Console.WriteLine();
+
+            // Sort by level then score
+            Console.WriteLine("[LEADERBOARD] Getting leaderboard sorted by level, then score...");
+            var leaderboardLevelScore = await sdk.GetLeaderboardAsync(new[] { "level", "score" }, 10);
+            if (leaderboardLevelScore.Success)
+            {
+                Console.WriteLine($"[LEADERBOARD] Success! Total players: {leaderboardLevelScore.Total}");
+                Console.WriteLine($"[LEADERBOARD] Sorted by: {string.Join(", ", leaderboardLevelScore.Sort_by)}");
+                Console.WriteLine("[LEADERBOARD] Top players:");
+                foreach (var player in leaderboardLevelScore.Leaderboard.Take(5))
+                {
+                    Console.WriteLine($"[LEADERBOARD]   Rank {player.Rank}: {player.Player_name} (ID: {player.Player_id})");
+                    if (player.Player_data != null)
+                    {
+                        Console.WriteLine($"[LEADERBOARD]     Level: {player.Player_data.GetValueOrDefault("level", "N/A")}");
+                        Console.WriteLine($"[LEADERBOARD]     Score: {player.Player_data.GetValueOrDefault("score", "N/A")}");
+                        var inventory = player.Player_data.GetValueOrDefault("inventory", null);
+                        if (inventory != null && inventory.ToString() != "")
+                        {
+                            Console.WriteLine($"[LEADERBOARD]     Inventory: {inventory}");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("[LEADERBOARD] Failed to get leaderboard by level and score");
+            }
+            Console.WriteLine();
+
+            // Sort by score then level
+            Console.WriteLine("[LEADERBOARD] Getting leaderboard sorted by score, then level...");
+            var leaderboardScoreLevel = await sdk.GetLeaderboardAsync(new[] { "score", "level" }, 10);
+            if (leaderboardScoreLevel.Success)
+            {
+                Console.WriteLine($"[LEADERBOARD] Success! Total players: {leaderboardScoreLevel.Total}");
+                Console.WriteLine($"[LEADERBOARD] Sorted by: {string.Join(", ", leaderboardScoreLevel.Sort_by)}");
+                Console.WriteLine("[LEADERBOARD] Top players:");
+                foreach (var player in leaderboardScoreLevel.Leaderboard.Take(5))
+                {
+                    Console.WriteLine($"[LEADERBOARD]   Rank {player.Rank}: {player.Player_name} (ID: {player.Player_id})");
+                    if (player.Player_data != null)
+                    {
+                        Console.WriteLine($"[LEADERBOARD]     Score: {player.Player_data.GetValueOrDefault("score", "N/A")}");
+                        Console.WriteLine($"[LEADERBOARD]     Level: {player.Player_data.GetValueOrDefault("level", "N/A")}");
+                        var inventory = player.Player_data.GetValueOrDefault("inventory", null);
+                        if (inventory != null && inventory.ToString() != "")
+                        {
+                            Console.WriteLine($"[LEADERBOARD]     Inventory: {inventory}");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("[LEADERBOARD] Failed to get leaderboard by score and level");
+            }
+        }
+        catch (ApiException ex)
+        {
+            Console.WriteLine($"[LEADERBOARD] Error: {ex.ApiError}");
+        }
+        Console.WriteLine();
+
         Console.WriteLine("=== Complete Matchmaking & Game Demo ===");
         Console.WriteLine("✅ Multiple players registered and authenticated");
         Console.WriteLine("✅ Matchmaking lobby created with custom settings");
@@ -506,6 +598,7 @@ public class Game
         Console.WriteLine("✅ Game started from matchmaking lobby");
         Console.WriteLine("✅ Host transitioned from matchmaking to room host");
         Console.WriteLine("✅ Full game room functionality demonstrated");
+        Console.WriteLine("✅ Leaderboard system with multiple sorting options tested");
     }
 
     private static async Task<PlayerRegisterResponse> RegisterPlayer(string name, object playerData)
