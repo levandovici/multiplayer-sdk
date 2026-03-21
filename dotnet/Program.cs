@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 
-namespace multiplayer_sdk
+namespace dotnet_sdk
 {
 
 }

@@ -50,8 +50,8 @@ namespace michitai
         /// </summary>
         /// <param name="apiToken">The public API token for authentication.</param>
         /// <param name="apiPrivateToken">The private API token for privileged operations.</param>
-        /// <param name="baseUrl">Base URL of the API (default: https://api.michitai.com/php/).</param>
-        public GameSDK(string apiToken, string apiPrivateToken, string baseUrl = "https://api.michitai.com/php/", ILogger? logger = null)
+        /// <param name="baseUrl">Base URL of the API (default: https://api.michitai.com/dotnet).</param>
+        public GameSDK(string apiToken, string apiPrivateToken, string baseUrl = "https://api.michitai.com/dotnet", ILogger? logger = null)
         {
             _apiToken = apiToken;
             _apiPrivateToken = apiPrivateToken;
@@ -109,8 +109,6 @@ namespace michitai
             }
             catch(JsonException ex)
             {
-                Console.WriteLine(str);
-
                 _logger?.Warn($"JSON Deserialization Error: {ex.Message}. Response: {str}");
                 
                 // Try to parse as error response
