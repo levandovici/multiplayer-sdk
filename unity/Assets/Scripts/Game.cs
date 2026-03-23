@@ -29,6 +29,7 @@ public class Game : MonoBehaviour
         // 1️⃣ Initialize SDK
         sdk = gameObject.AddComponent<MultiplayerSDK>();
         sdk.SetApiToken(apiToken);
+        sdk.SetApiPrivateToken(apiPrivateToken);
         sdk.SetGamePlayerToken(""); // Will be set per player
         Debug.Log("[INIT] SDK initialized\n");
 
