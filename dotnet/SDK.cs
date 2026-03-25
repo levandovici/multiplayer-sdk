@@ -323,7 +323,7 @@ namespace michitai
         public int Game_id { get; set; }
         public string Player_name { get; set; } = string.Empty;
         public Dictionary<string, object> Player_data { get; set; } = new();
-        public int Is_active { get; set; }
+        public bool Is_active { get; set; }
         public string Last_login { get; set; } = string.Empty;
         public string Created_at { get; set; } = string.Empty;
         public string Updated_at { get; set; } = string.Empty;

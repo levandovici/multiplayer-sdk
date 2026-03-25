@@ -10,200 +10,298 @@ public class Game
 
     public static async Task Main()
     {
-        Console.WriteLine("=== MICHITAI Game SDK Usage Example ===\n");
+        Console.WriteLine("=== MICHITAI Game SDK - ALL THREE DEMOS + TIME + LEADERBOARD ===\n");
 
         var logger = new ConsoleLogger();
         sdk = new GameSDK("YOUR_API_TOKEN", "YOUR_PRIVATE_TOKEN", logger: logger);
 
-        Console.WriteLine("[INIT] SDK initialized\n");
+        Console.WriteLine("[INIT] SDK initialized successfully\n");
 
         try
         {
-            await RunFullDemo();
+            // Three main demos
+            await RunDemoWithJoinByRequests();        // Demo 1: With approval
+            await CleanupEverything();
+
+            await RunDemoWithoutJoinByRequests();     // Demo 2: Direct join
+            await CleanupEverything();
+
+            await RunDemoDirectRoom();                // Demo 3: Direct room
+            await CleanupEverything();
+
+            // Common tests (run once)
+            await RunCommonTests();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[FATAL] Unexpected error: {ex.Message}");
         }
 
-        Console.WriteLine("\n=== Demo Finished ===");
+        Console.WriteLine("\n=== All Demos Finished - All Endpoints Covered ===");
     }
 
-    private static async Task RunFullDemo()
+    // ====================== COMMON TESTS (Time + Leaderboard + Game Data) ======================
+    private static async Task RunCommonTests()
     {
-        // ==================== REGISTER PLAYERS ====================
-        Console.WriteLine("[PLAYERS] Registering players...");
+        Console.WriteLine("=== COMMON TESTS: TIME, LEADERBOARD, GAME DATA ===\n");
 
-        var hostReg = await RegisterPlayer("GameHost", new { level = 10, rank = "gold", role = "host" });
-        var p1Reg = await RegisterPlayer("Player1", new { level = 8, rank = "silver", role = "player" });
-        var p2Reg = await RegisterPlayer("Player2", new { level = 12, rank = "gold", role = "player" });
-        var p3Reg = await RegisterPlayer("Player3", new { level = 6, rank = "bronze", role = "player" });
-
-        players["host"] = new PlayerInfo { Id = hostReg.Player_id, Token = hostReg.Private_key, Name = "GameHost" };
-        players["player1"] = new PlayerInfo { Id = p1Reg.Player_id, Token = p1Reg.Private_key, Name = "Player1" };
-        players["player2"] = new PlayerInfo { Id = p2Reg.Player_id, Token = p2Reg.Private_key, Name = "Player2" };
-        players["player3"] = new PlayerInfo { Id = p3Reg.Player_id, Token = p3Reg.Private_key, Name = "Player3" };
-
-        Console.WriteLine($"[PLAYERS] {players.Count} players registered successfully\n");
-
-        // ==================== AUTHENTICATE ====================
-        Console.WriteLine("[AUTH] Authenticating players...");
-        foreach (var kvp in players)
-        {
-            await SafeExecute(async () =>
-            {
-                await sdk!.AuthenticatePlayer(kvp.Value.Token);
-                Console.WriteLine($"[AUTH] {kvp.Value.Name} authenticated");
-            }, $"Authenticate {kvp.Value.Name}");
-        }
-        Console.WriteLine();
-
-        // ==================== MATCHMAKING DEMO ====================
-        Console.WriteLine("=== MATCHMAKING DEMO ===");
-
-        string matchmakingId = "";
-        string requestId = "";
-
-        // Create lobby
+        // Game Data
         await SafeExecute(async () =>
         {
-            var create = await sdk!.CreateMatchmakingLobbyAsync(
-                players["host"].Token, maxPlayers: 4, strictFull: true, joinByRequests: false,
-                extraJsonString: new { minLevel = 5, rank = "silver", gameMode = "competitive" });
+            var gd = await sdk!.GetGameData();
+            Console.WriteLine($"[GAME DATA] Retrieved global data");
+            await sdk!.UpdateGameData(new { currentEvent = "SpringFestival", version = "1.2.3" });
+            Console.WriteLine("[GAME DATA] Global data updated");
+        }, "Game Data");
 
-            matchmakingId = create.Matchmaking_id;
-            Console.WriteLine($"[MATCHMAKING] Lobby created: {matchmakingId}");
-        }, "Create matchmaking lobby");
-
-        // Player1 requests to join
+        // Time API
         await SafeExecute(async () =>
         {
-            var req = await sdk!.RequestToJoinMatchmakingAsync(players["player1"].Token, matchmakingId);
-            requestId = req.Request_id;
-            Console.WriteLine($"[MATCHMAKING] Join request sent: {requestId}");
-        }, "Player1 join request");
+            var time = await sdk!.GetServerTime();
+            Console.WriteLine($"[TIME] Server UTC: {time.Utc}");
+        }, "GetServerTime");
 
-        // Host approves (FIXED: use requestId)
         await SafeExecute(async () =>
         {
-            var approve = await sdk!.RespondToJoinRequestAsync(
-                players["host"].Token, requestId, MatchmakingRequestAction.Approve);
-
-            Console.WriteLine($"[MATCHMAKING] Host approved: {approve.Message}");
-        }, "Host approve request");
-
-        // Other players join directly
-        await SafeExecute(async () => await sdk!.JoinMatchmakingDirectlyAsync(players["player2"].Token, matchmakingId), "Player2 direct join");
-        await SafeExecute(async () => await sdk!.JoinMatchmakingDirectlyAsync(players["player3"].Token, matchmakingId), "Player3 direct join");
-
-        // Show lobby players
-        await SafeExecute(async () =>
-        {
-            var list = await sdk!.GetMatchmakingPlayersAsync(players["host"].Token);
-            Console.WriteLine($"[MATCHMAKING] {list.Players.Count} players in lobby:");
-            foreach (var p in list.Players)
-                Console.WriteLine($"   - {p.Player_name} (Host: {p.Is_host == 1})");
-        }, "List matchmaking players");
-
-        // Start game from matchmaking
-        string? roomId = null;
-        await SafeExecute(async () =>
-        {
-            var start = await sdk!.StartGameFromMatchmakingAsync(players["host"].Token);
-            roomId = start.Room_id;
-            Console.WriteLine($"[MATCHMAKING] Game started! Room: {roomId}");
-        }, "Start game from matchmaking");
-
-        // ==================== GAME ROOM AFTER MATCHMAKING ====================
-        if (roomId != null)
-        {
-            Console.WriteLine("\n=== GAME ROOM DEMO ===");
-
-            // Submit actions
-            foreach (var kvp in players)
-            {
-                await SafeExecute(async () =>
-                {
-                    var action = await sdk!.SubmitActionAsync(kvp.Value.Token, "player_ready",
-                        new { player_id = kvp.Value.Id, ready = true });
-
-                    Console.WriteLine($"[ACTION] {kvp.Value.Name} submitted action");
-                }, $"Submit action {kvp.Value.Name}");
-            }
-
-            // Host sends update
-            await SafeExecute(async () =>
-            {
-                var update = await sdk!.UpdatePlayersAsync(players["host"].Token,
-                    new UpdatePlayersRequest("all", "game_start", new { message = "Game has started!" }));
-
-                Console.WriteLine($"[UPDATE] Sent update to {update.Updates_sent} players");
-            }, "Send game start update");
-
-            // Poll updates
-            foreach (var kvp in players)
-            {
-                await SafeExecute(async () =>
-                {
-                    var updates = await sdk!.PollUpdatesAsync(kvp.Value.Token);
-                    Console.WriteLine($"[UPDATE] {kvp.Value.Name} received {updates.Updates.Count} updates");
-                }, $"Poll updates for {kvp.Value.Name}");
-            }
-
-            // Cleanup - leave room
-            foreach (var kvp in players)
-            {
-                await SafeExecute(async () => await CleanupRoom(kvp.Value.Token), $"Leave room for {kvp.Value.Name}");
-            }
-        }
+            var timeOffset = await sdk!.GetServerTimeWithOffset(3);
+            Console.WriteLine($"[TIME] With UTC+3 offset: {timeOffset.Readable}");
+        }, "GetServerTimeWithOffset");
 
         // Leaderboard
         await SafeExecute(async () =>
         {
-            Console.WriteLine("\n[LEADERBOARD] Testing...");
-            var lb = await sdk!.GetLeaderboardAsync(new[] { "level" }, 10);
-            Console.WriteLine($"[LEADERBOARD] Top player: {lb.Leaderboard[0].Player_name} (Rank {lb.Leaderboard[0].Rank})");
-        }, "Leaderboard test");
+            var lb = await sdk!.GetLeaderboardAsync(new[] { "level", "wins" }, limit: 10);
+            Console.WriteLine($"[LEADERBOARD] Top {lb.Leaderboard.Count} players loaded");
+            if (lb.Leaderboard.Count > 0)
+                Console.WriteLine($"[LEADERBOARD] #1: {lb.Leaderboard[0].Player_name}");
+        }, "GetLeaderboard");
+
+        Console.WriteLine();
     }
 
-    // ====================== HELPERS ======================
-
-    private static async Task<PlayerRegisterResponse> RegisterPlayer(string name, object playerData)
+    // ===================================================================
+    // DEMO 1: MATCHMAKING WITH JOIN REQUESTS
+    // ===================================================================
+    private static async Task RunDemoWithJoinByRequests()
     {
-        Console.WriteLine($"[PLAYER] Registering {name}...");
-        var reg = await sdk!.RegisterPlayer(name, playerData);
-        Console.WriteLine($"[PLAYER] {name} registered → ID = {reg.Player_id}");
+        Console.WriteLine("\n=== DEMO 1: MATCHMAKING WITH JOIN REQUESTS ===\n");
+        await SetupPlayers();
+
+        string matchmakingId = await CreateMatchmakingLobby(joinByRequests: true);
+
+        string req1 = await RequestToJoinMatchmaking(players["p1"].Token, matchmakingId);
+        await CheckJoinRequestStatus(players["p1"].Token, req1);
+        await ApproveJoinRequest(players["host"].Token, req1);
+
+        string req2 = await RequestToJoinMatchmaking(players["p2"].Token, matchmakingId);
+        await CheckJoinRequestStatus(players["p2"].Token, req2);
+        await ApproveJoinRequest(players["host"].Token, req2);
+
+        await GetCurrentMatchmakingStatus();
+        await GetMatchmakingPlayers();
+
+        string roomId = await StartMatchmakingAndCreateRoom();
+        await RunGameRoomFlow(roomId, isFromMatchmaking: true);
+    }
+
+    // ===================================================================
+    // DEMO 2: MATCHMAKING DIRECT JOIN
+    // ===================================================================
+    private static async Task RunDemoWithoutJoinByRequests()
+    {
+        Console.WriteLine("\n=== DEMO 2: MATCHMAKING DIRECT JOIN ===\n");
+        await SetupPlayers();
+
+        string matchmakingId = await CreateMatchmakingLobby(joinByRequests: false);
+
+        foreach (var p in players.Values)
+        {
+            if (players["host"].Token == p.Token)
+                continue;
+
+            await JoinMatchmakingDirectly(p.Token, matchmakingId);
+        }
+
+        await GetCurrentMatchmakingStatus();
+        await GetMatchmakingPlayers();
+
+        string roomId = await StartMatchmakingAndCreateRoom();
+        await RunGameRoomFlow(roomId, isFromMatchmaking: true);
+    }
+
+    // ===================================================================
+    // DEMO 3: DIRECT ROOM (No Matchmaking)
+    // ===================================================================
+    private static async Task RunDemoDirectRoom()
+    {
+        Console.WriteLine("\n=== DEMO 3: DIRECT ROOM CREATION ===\n");
+        await SetupPlayers();
+
+        var create = await sdk!.CreateRoomAsync(players["host"].Token, "Direct Battle Arena", null, 4);
+        string roomId = create.Room_id;
+
+        await JoinRoom(players["p1"].Token, roomId);
+        await JoinRoom(players["p2"].Token, roomId);
+
+        await RunGameRoomFlow(roomId, isFromMatchmaking: false);
+    }
+
+    // ====================== SETUP & CLEANUP ======================
+    private static async Task SetupPlayers()
+    {
+        Console.WriteLine("[SETUP] Registering players...");
+
+        var h = await RegisterPlayer("GameHost", new { level = 15, rank = "gold" });
+        var p1 = await RegisterPlayer("PlayerOne", new { level = 12, rank = "silver" });
+        var p2 = await RegisterPlayer("PlayerTwo", new { level = 10, rank = "bronze" });
+
+        players["host"] = new PlayerInfo { Id = h.Player_id, Token = h.Private_key, Name = "GameHost" };
+        players["p1"] = new PlayerInfo { Id = p1.Player_id, Token = p1.Private_key, Name = "PlayerOne" };
+        players["p2"] = new PlayerInfo { Id = p2.Player_id, Token = p2.Private_key, Name = "PlayerTwo" };
+
+        foreach (var p in players.Values)
+            await sdk!.AuthenticatePlayer(p.Token);
+
+        await GetAllPlayersList();
+    }
+
+    private static async Task CleanupEverything()
+    {
+        Console.WriteLine("\n[CLEANUP] Final cleanup...");
+
+        foreach (var p in players.Values)
+        {
+            await SafeExecute(async () => await sdk!.LogoutPlayerAsync(p.Token), $"Logout {p.Name}");
+        }
+
+        players.Clear();
+    }
+
+    // ====================== HELPER METHODS ======================
+    private static async Task<PlayerRegisterResponse> RegisterPlayer(string name, object? data = null)
+    {
+        var reg = await sdk!.RegisterPlayer(name, data);
+        Console.WriteLine($"[REGISTER] {name} registered");
         return reg;
     }
 
-    private static async Task CleanupRoom(string playerToken)
+    private static async Task GetAllPlayersList()
     {
-        await sdk!.SendPlayerHeartbeatAsync(playerToken);
-        var leave = await sdk.LeaveRoomAsync(playerToken);
-        Console.WriteLine($"[ROOM] Left room: {leave.Message}");
-
-        var logout = await sdk.LogoutPlayerAsync(playerToken);
-        Console.WriteLine($"[LOGOUT] {logout.Message}");
+        var list = await sdk!.GetAllPlayers();
+        Console.WriteLine($"[PLAYERS LIST] Total: {list.Count}");
     }
 
-    /// <summary>
-    /// Safe wrapper to prevent one failure from stopping the entire demo
-    /// </summary>
-    private static async Task SafeExecute(Func<Task> action, string operationName)
+    private static async Task<string> CreateMatchmakingLobby(bool joinByRequests)
+    {
+        var res = await sdk!.CreateMatchmakingLobbyAsync(players["host"].Token, 4, false, joinByRequests,
+            new { mode = "tdm", map = "arena" });
+        Console.WriteLine($"[MATCHMAKING] Lobby created (requests={joinByRequests})");
+        return res.Matchmaking_id;
+    }
+
+    private static async Task<string> RequestToJoinMatchmaking(string token, string matchmakingId)
+    {
+        var req = await sdk!.RequestToJoinMatchmakingAsync(token, matchmakingId);
+        Console.WriteLine($"[REQUEST] Sent: {req.Request_id}");
+        return req.Request_id;
+    }
+
+    private static async Task CheckJoinRequestStatus(string token, string requestId)
+    {
+        var status = await sdk!.CheckJoinRequestStatusAsync(token, requestId);
+        Console.WriteLine($"[REQUEST STATUS] {status.Request.Status}");
+    }
+
+    private static async Task ApproveJoinRequest(string hostToken, string requestId)
+    {
+        var resp = await sdk!.RespondToJoinRequestAsync(hostToken, requestId, MatchmakingRequestAction.Approve);
+        Console.WriteLine($"[APPROVE] {resp.Message}");
+    }
+
+    private static async Task JoinMatchmakingDirectly(string token, string matchmakingId)
+    {
+        await sdk!.JoinMatchmakingDirectlyAsync(token, matchmakingId);
+        Console.WriteLine("[JOIN] Player joined directly");
+    }
+
+    private static async Task GetCurrentMatchmakingStatus()
+    {
+        var s = await sdk!.GetCurrentMatchmakingStatusAsync(players["host"].Token);
+        Console.WriteLine($"[MATCHMAKING STATUS] Players: {s.Matchmaking?.Current_players ?? 0}");
+    }
+
+    private static async Task GetMatchmakingPlayers()
+    {
+        var list = await sdk!.GetMatchmakingPlayersAsync(players["host"].Token);
+        Console.WriteLine($"[MATCHMAKING PLAYERS] {list.Players.Count} players");
+    }
+
+    private static async Task<string> StartMatchmakingAndCreateRoom()
+    {
+        var start = await sdk!.StartGameFromMatchmakingAsync(players["host"].Token);
+        Console.WriteLine($"[START] Room created: {start.Room_id}");
+        return start.Room_id;
+    }
+
+    private static async Task JoinRoom(string token, string roomId)
+    {
+        await sdk!.JoinRoomAsync(token, roomId);
+        Console.WriteLine($"[ROOM] Player joined room");
+    }
+
+    private static async Task RunGameRoomFlow(string roomId, bool isFromMatchmaking)
+    {
+        Console.WriteLine("\n=== GAME ROOM FLOW ===\n");
+
+        await sdk!.GetRoomsAsync();
+        await sdk!.GetCurrentRoomAsync(players["host"].Token);
+
+        foreach (var p in players.Values)
+        {
+            await SafeExecute(async () =>
+                await sdk!.SubmitActionAsync(p.Token, "player_ready", new { ready = true }),
+                $"SubmitAction {p.Name}");
+        }
+
+        await SafeExecute(async () =>
+        {
+            var pending = await sdk!.GetPendingActionsAsync(players["host"].Token);
+            Console.WriteLine($"[PENDING ACTIONS] {pending.Actions.Count} actions");
+        }, "GetPendingActions");
+
+        await SafeExecute(async () =>
+        {
+            var req = new UpdatePlayersRequest("all", "game_start", new { round = 1, message = "Game Started!" });
+            await sdk!.UpdatePlayersAsync(players["host"].Token, req);
+        }, "Send Room Update");
+
+        foreach (var p in players.Values)
+            await SafeExecute(async () => await sdk!.PollUpdatesAsync(p.Token), $"PollUpdates {p.Name}");
+
+        await sdk!.GetRoomPlayersAsync(players["host"].Token);
+
+        foreach (var p in players.Values)
+            await SafeExecute(async () => await sdk!.SendRoomHeartbeatAsync(p.Token), $"RoomHeartbeat {p.Name}");
+
+        foreach (var p in players.Values)
+            await SafeExecute(async () => await sdk!.LeaveRoomAsync(p.Token), $"LeaveRoom {p.Name}");
+    }
+
+    private static async Task SafeExecute(Func<Task> action, string operation)
     {
         try
         {
+            Console.WriteLine($"[LOG] {operation}");
+            
             await action();
         }
         catch (ApiException ex)
         {
-            Console.WriteLine($"[ERROR] {operationName} failed: {ex.ApiError}");
-            if (!string.IsNullOrEmpty(ex.RawResponse))
-                Console.WriteLine($"       Raw response: {ex.RawResponse.Substring(0, Math.Min(300, ex.RawResponse.Length))}");
+            Console.WriteLine($"[ERROR] {operation}: {ex.ApiError ?? ex.Message}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ERROR] {operationName} unexpected error: {ex.Message}");
+            Console.WriteLine($"[CRASH] {operation}: {ex.Message}");
         }
     }
 
