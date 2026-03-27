@@ -186,6 +186,10 @@ namespace michitai
         public Task<SuccessResponse> UpdatePlayerData(string playerToken, object data, CancellationToken ct = default)
             => Send<SuccessResponse>(HttpMethod.Put, Url(Endpoints.GameDataPlayerUpdate, $"&player_token={playerToken}"), data, ct);
 
+        // ==================== LEADERBOARD ====================
+        public Task<LeaderboardResponse<T>> GetLeaderboardAsync<T>(string[] sortBy, int limit = 10, CancellationToken ct = default) where T : class, new()
+            => Send<LeaderboardResponse<T>>(HttpMethod.Post, Url(Endpoints.Leaderboard), new LeaderboardRequest { Sort_by = sortBy, Limit = limit }, ct);
+
         // ==================== TIME ====================
         public Task<ServerTimeResponse> GetServerTime(CancellationToken ct = default)
             => Send<ServerTimeResponse>(HttpMethod.Get, Url(Endpoints.Time), null, ct);
@@ -247,14 +251,14 @@ namespace michitai
         public Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync(string playerToken, int maxPlayers = 4, bool strictFull = false,
             bool joinByRequests = false, object? rules = null, CancellationToken ct = default)
             => Send<MatchmakingCreateResponse>(HttpMethod.Post, Url(Endpoints.MatchmakingCreate, $"&player_token={playerToken}"),
-                new { maxPlayers, strictFull, joinByRequests, rules }, ct);
+                new MatchmakingCreateRequest { Max_players = maxPlayers, Strict_full = strictFull, Join_by_requests = joinByRequests, Rules = rules }, ct);
 
         public Task<MatchmakingJoinRequestResponse> RequestToJoinMatchmakingAsync(string playerToken, string matchmakingId, CancellationToken ct = default)
             => Send<MatchmakingJoinRequestResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingRequest, matchmakingId), $"&player_token={playerToken}"), null, ct);
 
         public Task<MatchmakingRequestResponse> RespondToJoinRequestAsync(string playerToken, string requestId, MatchmakingRequestAction action, CancellationToken ct = default)
             => Send<MatchmakingRequestResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingResponse, requestId), $"&player_token={playerToken}"),
-                new { action = action.ToString().ToLower() }, ct);
+                new MatchmakingRequest { Action = action.ToString().ToLower() }, ct);
 
         public Task<MatchmakingRequestStatusResponse> CheckJoinRequestStatusAsync(string playerToken, string requestId, CancellationToken ct = default)
             => Send<MatchmakingRequestStatusResponse>(HttpMethod.Get, Url(string.Format(Endpoints.MatchmakingRequestStatus, requestId), $"&player_token={playerToken}"), null, ct);
@@ -279,10 +283,6 @@ namespace michitai
 
         public Task<MatchmakingStartResponse> StartGameFromMatchmakingAsync(string playerToken, CancellationToken ct = default)
             => Send<MatchmakingStartResponse>(HttpMethod.Post, Url(Endpoints.MatchmakingStart, $"&player_token={playerToken}"), null, ct);
-
-        // ==================== LEADERBOARD ====================
-        public Task<LeaderboardResponse> GetLeaderboardAsync(string[] sortBy, int limit = 10, CancellationToken ct = default)
-            => Send<LeaderboardResponse>(HttpMethod.Post, Url(Endpoints.Leaderboard), new { sortBy, limit }, ct);
     }
 
     public enum MatchmakingRequestAction { Approve, Reject }
@@ -592,6 +592,14 @@ namespace michitai
         public string Host_name { get; set; } = string.Empty;
     }
 
+    public class MatchmakingCreateRequest
+    {
+        public int Max_players { get; set; }
+        public bool Strict_full { get; set; }
+        public bool Join_by_requests { get; set; }
+        public object? Rules { get; set; }
+    }
+
     public class MatchmakingCreateResponse : ApiResponse
     {
         public string Matchmaking_id { get; set; } = string.Empty;
@@ -605,6 +613,11 @@ namespace michitai
     {
         public string Request_id { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
+    }
+
+    public class MatchmakingRequest
+    {
+        public string Action { get; set; }
     }
 
     public class MatchmakingRequestResponse : ApiResponse
@@ -700,20 +713,37 @@ namespace michitai
         public string Message { get; set; } = string.Empty;
     }
 
-    public class LeaderboardResponse : ApiResponse
+    public class LeaderboardRequest
     {
-        public List<LeaderboardPlayer> Leaderboard { get; set; } = new();
+        public string[] Sort_by { get; set; } = Array.Empty<string>();
+        public int Limit { get; set; }
+    }
+
+    public class LeaderboardResponse<T> : ApiResponse where T : class, new()
+    {
+        public List<LeaderboardPlayer<T>> Leaderboard { get; set; } = new();
         public int Total { get; set; }
         public string[] Sort_by { get; set; } = Array.Empty<string>();
         public int Limit { get; set; }
     }
 
-    public class LeaderboardPlayer
+    public class LeaderboardPlayer<T> where T : class, new()
     {
         public int Rank { get; set; }
         public int Player_id { get; set; }
         public string Player_name { get; set; } = string.Empty;
-        public Dictionary<string, object> Player_data { get; set; } = new();
+        public JsonElement Player_data { get; set; } = new();
+
+
+
+        [JsonIgnore]
+        public T GetData
+        {
+            get
+            {
+                return Player_data.Deserialize<T>(GameSDK.JsonOptions)!;
+            }
+        }
     }
 
     // ====================== EXCEPTION ======================

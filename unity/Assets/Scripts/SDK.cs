@@ -172,6 +172,10 @@ namespace michitai
         public Task<SuccessResponse> UpdatePlayerData(string playerToken, object data, CancellationToken ct = default)
             => Send<SuccessResponse>(HttpMethod.Put, Url(Endpoints.GameDataPlayerUpdate, $"&player_token={playerToken}"), data, ct);
 
+        // ==================== LEADERBOARD ====================
+        public Task<LeaderboardResponse<T>> GetLeaderboardAsync<T>(string[] sortBy, int limit = 10, CancellationToken ct = default) where T : class, new()
+            => Send<LeaderboardResponse<T>>(HttpMethod.Post, Url(Endpoints.Leaderboard), new LeaderboardRequest { sort_by = sortBy, limit = limit }, ct);
+
         // ==================== TIME ====================
         public Task<ServerTimeResponse> GetServerTime(CancellationToken ct = default)
             => Send<ServerTimeResponse>(HttpMethod.Get, Url(Endpoints.Time), null, ct);
@@ -231,16 +235,16 @@ namespace michitai
             => Send<MatchmakingListResponse>(HttpMethod.Get, Url(Endpoints.MatchmakingList), null, ct);
 
         public Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync(string playerToken, int maxPlayers = 4, bool strictFull = false,
-            bool joinByRequests = false, object rules = null, CancellationToken ct = default)
+            bool joinByRequests = false, string rules = "", CancellationToken ct = default)
             => Send<MatchmakingCreateResponse>(HttpMethod.Post, Url(Endpoints.MatchmakingCreate, $"&player_token={playerToken}"),
-                new { maxPlayers, strictFull, joinByRequests, rules }, ct);
+                new MatchmakingCreateRequest { max_players = maxPlayers, strict_full = strictFull, join_by_requests = joinByRequests, rules_json = rules }, ct);
 
         public Task<MatchmakingJoinRequestResponse> RequestToJoinMatchmakingAsync(string playerToken, string matchmakingId, CancellationToken ct = default)
             => Send<MatchmakingJoinRequestResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingRequest, matchmakingId), $"&player_token={playerToken}"), null, ct);
 
         public Task<MatchmakingRequestResponse> RespondToJoinRequestAsync(string playerToken, string requestId, MatchmakingRequestAction action, CancellationToken ct = default)
             => Send<MatchmakingRequestResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingResponse, requestId), $"&player_token={playerToken}"),
-                new { action = action.ToString().ToLower() }, ct);
+                new MatchmakingRequest { action = action.ToString().ToLower() }, ct);
 
         public Task<MatchmakingRequestStatusResponse> CheckJoinRequestStatusAsync(string playerToken, string requestId, CancellationToken ct = default)
             => Send<MatchmakingRequestStatusResponse>(HttpMethod.Get, Url(string.Format(Endpoints.MatchmakingRequestStatus, requestId), $"&player_token={playerToken}"), null, ct);
@@ -265,10 +269,6 @@ namespace michitai
 
         public Task<MatchmakingStartResponse> StartGameFromMatchmakingAsync(string playerToken, CancellationToken ct = default)
             => Send<MatchmakingStartResponse>(HttpMethod.Post, Url(Endpoints.MatchmakingStart, $"&player_token={playerToken}"), null, ct);
-
-        // ==================== LEADERBOARD ====================
-        public Task<LeaderboardResponse> GetLeaderboardAsync(string[] sortBy, int limit = 10, CancellationToken ct = default)
-            => Send<LeaderboardResponse>(HttpMethod.Post, Url(Endpoints.Leaderboard), new { sortBy, limit }, ct);
     }
 
     public enum MatchmakingRequestAction { Approve, Reject }
@@ -616,6 +616,15 @@ namespace michitai
     }
 
     [System.Serializable]
+    public class MatchmakingCreateRequest
+    {
+        public int max_players;
+        public bool strict_full;
+        public bool join_by_requests;
+        public string rules_json;           //Unity mode
+    }
+
+    [System.Serializable]
     public class MatchmakingCreateResponse : ApiResponse
     {
         public string matchmaking_id;
@@ -630,6 +639,12 @@ namespace michitai
     {
         public string request_id;
         public string message;
+    }
+
+    [System.Serializable]
+    public class MatchmakingRequest
+    {
+        public string action;
     }
 
     [System.Serializable]
@@ -740,21 +755,38 @@ namespace michitai
 
     // ====================== LEADERBOARD ======================
     [System.Serializable]
-    public class LeaderboardResponse : ApiResponse
+    public class LeaderboardRequest
     {
-        public List<LeaderboardPlayer> leaderboard = new();
+        public string[] sort_by;
+        public int limit;
+    }
+
+    [System.Serializable]
+    public class LeaderboardResponse<T> : ApiResponse where T : class, new()
+    {
+        public List<LeaderboardPlayer<T>> leaderboard = new();
         public int total;
         public string[] sort_by;
         public int limit;
     }
 
     [System.Serializable]
-    public class LeaderboardPlayer
+    public class LeaderboardPlayer<T> where T : class, new()
     {
         public int rank;
         public int player_id;
         public string player_name;
         public string player_data_json;     // Unity mode
+
+
+
+        public T GetData
+        {
+            get
+            {
+                return JsonUtility.FromJson<T>(player_data_json);
+            }
+        }
     }
 
     // ====================== EXCEPTION ======================
