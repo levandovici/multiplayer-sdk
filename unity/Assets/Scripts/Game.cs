@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using michitai;
 using UnityEngine;
+using michitai;
 
 public class Game : MonoBehaviour
 {
@@ -326,8 +326,10 @@ public class Game : MonoBehaviour
         // Players submit actions
         foreach (var p in players.Values)
         {
+            string requestDataJson = JsonUtility.ToJson(new ActionData { ready = true });
+
             await SafeExecute(async () =>
-                await sdk.SubmitActionAsync(p.Token, "player_ready", new { ready = true }),
+                await sdk.SubmitActionAsync(p.Token, "player_ready", requestDataJson),
                 $"SubmitAction {p.Name}");
         }
 
@@ -412,5 +414,13 @@ public class Game : MonoBehaviour
     {
         public string mode;
         public string map;
+    }
+
+    // ====================== ROOM DATA ========================
+
+    [System.Serializable]
+    private class ActionData
+    {
+        public bool ready;
     }
 }

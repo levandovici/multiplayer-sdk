@@ -200,14 +200,14 @@ namespace michitai
         // ==================== GAME ROOMS ====================
         public Task<RoomCreateResponse> CreateRoomAsync(string playerToken, string roomName, string? password = null, int maxPlayers = 4, CancellationToken ct = default)
             => Send<RoomCreateResponse>(HttpMethod.Post, Url(Endpoints.GameRoomCreate, $"&player_token={playerToken}"),
-                new { room_name = roomName, password, max_players = maxPlayers }, ct);
+                new RoomCreateRequest { Room_name = roomName, Password = password, Max_players = maxPlayers }, ct);
 
         public Task<RoomListResponse> GetRoomsAsync(CancellationToken ct = default)
             => Send<RoomListResponse>(HttpMethod.Get, Url(Endpoints.GameRoomList), null, ct);
 
         public Task<RoomJoinResponse> JoinRoomAsync(string playerToken, string roomId, string? password = null, CancellationToken ct = default)
             => Send<RoomJoinResponse>(HttpMethod.Post, Url(string.Format(Endpoints.GameRoomJoin, roomId), $"&player_token={playerToken}"),
-                password != null ? new { password } : null, ct);
+                password != null ? new RoomJoinRequest { Password = password } : null, ct);
 
         public Task<RoomLeaveResponse> LeaveRoomAsync(string playerToken, CancellationToken ct = default)
             => Send<RoomLeaveResponse>(HttpMethod.Post, Url(Endpoints.GameRoomLeave, $"&player_token={playerToken}"), null, ct);
@@ -218,9 +218,9 @@ namespace michitai
         public Task<HeartbeatResponse> SendRoomHeartbeatAsync(string playerToken, CancellationToken ct = default)
             => Send<HeartbeatResponse>(HttpMethod.Post, Url(Endpoints.GameRoomHeartbeat, $"&player_token={playerToken}"), null, ct);
 
-        public Task<ActionSubmitResponse> SubmitActionAsync(string playerToken, string actionType, object requestData, CancellationToken ct = default)
+        public Task<ActionSubmitResponse> SubmitActionAsync(string playerToken, string actionType, object? requestData = null, CancellationToken ct = default)
             => Send<ActionSubmitResponse>(HttpMethod.Post, Url(Endpoints.GameRoomActions, $"&player_token={playerToken}"),
-                new { action_type = actionType, request_data = requestData }, ct);
+                new ActionSubmitRequest { Action_type = actionType, Request_data = requestData }, ct);
 
         public Task<ActionPollResponse> PollActionsAsync(string playerToken, CancellationToken ct = default)
             => Send<ActionPollResponse>(HttpMethod.Get, Url(Endpoints.GameRoomActionsPoll, $"&player_token={playerToken}"), null, ct);
@@ -228,8 +228,9 @@ namespace michitai
         public Task<ActionPendingResponse> GetPendingActionsAsync(string playerToken, CancellationToken ct = default)
             => Send<ActionPendingResponse>(HttpMethod.Get, Url(Endpoints.GameRoomActionsPending, $"&player_token={playerToken}"), null, ct);
 
-        public Task<ActionCompleteResponse> CompleteActionAsync(string actionId, string playerToken, ActionCompleteRequest request, CancellationToken ct = default)
-            => Send<ActionCompleteResponse>(HttpMethod.Post, Url(string.Format(Endpoints.GameRoomActionComplete, actionId), $"&player_token={playerToken}"), request, ct);
+        public Task<ActionCompleteResponse> CompleteActionAsync(string actionId, string playerToken, ActionComplete request, CancellationToken ct = default)
+            => Send<ActionCompleteResponse>(HttpMethod.Post, Url(string.Format(Endpoints.GameRoomActionComplete, actionId), $"&player_token={playerToken}"),
+                new ActionCompleteRequest { Status = request.Status.ToString().ToLower(), Response_data = request.Response_data }, ct);
 
         public Task<UpdatePlayersResponse> UpdatePlayersAsync(string playerToken, UpdatePlayersRequest request, CancellationToken ct = default)
             => Send<UpdatePlayersResponse>(HttpMethod.Post, Url(Endpoints.GameRoomUpdates, $"&player_token={playerToken}"), request, ct);
@@ -284,6 +285,10 @@ namespace michitai
         public Task<MatchmakingStartResponse> StartGameFromMatchmakingAsync(string playerToken, CancellationToken ct = default)
             => Send<MatchmakingStartResponse>(HttpMethod.Post, Url(Endpoints.MatchmakingStart, $"&player_token={playerToken}"), null, ct);
     }
+
+    public enum RoomActionStatus { Pending, Processing, Completed, Failed, Read }
+
+    public enum RoomCompleteActionStatus { Processing, Completed, Failed }
 
     public enum MatchmakingRequestAction { Approve, Reject }
 
@@ -416,6 +421,13 @@ namespace michitai
         public long Original_timestamp { get; set; }
     }
 
+    public class RoomCreateRequest
+    {
+        public string Room_name { get; set; } = string.Empty;
+        public string? Password { get; set; }
+        public int Max_players { get; set; }
+    }
+
     public class RoomCreateResponse : ApiResponse
     {
         public string Room_id { get; set; } = string.Empty;
@@ -435,6 +447,11 @@ namespace michitai
     public class RoomListResponse : ApiResponse
     {
         public List<RoomShort> Rooms { get; set; } = new();
+    }
+
+    public class RoomJoinRequest
+    {
+        public string? Password { get; set; }
     }
 
     public class RoomJoinResponse : ApiResponse
@@ -468,6 +485,12 @@ namespace michitai
         public string Status { get; set; } = string.Empty;
     }
 
+    public class ActionSubmitRequest
+    {
+        public string Action_type { get; set; } = string.Empty;
+        public object? Request_data { get; set; }
+    }
+
     public class ActionSubmitResponse : ApiResponse
     {
         public string Action_id { get; set; } = string.Empty;
@@ -480,6 +503,30 @@ namespace michitai
         public string Action_type { get; set; } = string.Empty;
         public object? Response_data { get; set; }
         public string Status { get; set; } = string.Empty;
+
+
+
+        public RoomActionStatus GetStatus
+        {
+            get
+            {
+                switch (Status)
+                {
+                    case "pending":
+                        return RoomActionStatus.Pending;
+                    case "processing":
+                        return RoomActionStatus.Processing;
+                    case "completed":
+                        return RoomActionStatus.Completed;
+                    case "failed":
+                        return RoomActionStatus.Failed;
+                    case "read":
+                        return RoomActionStatus.Read;
+                    default:
+                        throw new ArgumentException($"Unknown action status: {Status}");
+                }
+            }
+        }
     }
 
     public class ActionPollResponse : ApiResponse
@@ -502,9 +549,24 @@ namespace michitai
         public List<PendingAction> Actions { get; set; } = new();
     }
 
+    public class ActionComplete
+    {
+        public RoomCompleteActionStatus Status { get; private set; }
+
+        public object? Response_data { get; private set; }
+
+
+
+        public ActionComplete(RoomCompleteActionStatus status, object? responseData)
+        {
+            Status = status;
+            Response_data = responseData;
+        }
+    }
+
     public class ActionCompleteRequest
     {
-        public string Status { get; set; } = "completed";
+        public string Status { get; set; } = RoomCompleteActionStatus.Completed.ToString().ToLower();
         public object? Response_data { get; set; }
     }
 
@@ -617,7 +679,7 @@ namespace michitai
 
     public class MatchmakingRequest
     {
-        public string Action { get; set; }
+        public string Action { get; set; } = MatchmakingRequestAction.Approve.ToString().ToLower();
     }
 
     public class MatchmakingRequestResponse : ApiResponse

@@ -311,7 +311,7 @@ public class Game
         foreach (var p in players.Values)
         {
             await SafeExecute(async () =>
-                await sdk!.SubmitActionAsync(p.Token, "player_ready", new { ready = true }),
+                await sdk!.SubmitActionAsync(p.Token, "player_ready", new ActionData { Ready = true }),
                 $"SubmitAction {p.Name}");
         }
 
@@ -383,5 +383,10 @@ public class Game
         public string Mode { get; set; } = string.Empty;
 
         public string Map { get; set; } = string.Empty;
+    }
+
+    private class ActionData
+    {
+        public bool Ready { get; set; }
     }
 }
