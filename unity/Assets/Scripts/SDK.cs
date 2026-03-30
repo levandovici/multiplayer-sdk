@@ -144,11 +144,11 @@ namespace michitai
         }
 
         // ==================== PLAYER ====================
-        public Task<PlayerRegisterResponse> RegisterPlayer(string name, string playerDataJson = "", CancellationToken ct = default)
-            => Send<PlayerRegisterResponse>(HttpMethod.Post, Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest { player_name = name, player_data_json = playerDataJson }, ct);
+        public Task<PlayerRegisterResponse> RegisterPlayer<T>(string name, T playerData = null, CancellationToken ct = default) where T : class, new()
+            => Send<PlayerRegisterResponse>(HttpMethod.Post, Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData)), ct);
 
-        public Task<PlayerAuthResponse> AuthenticatePlayer(string playerToken, CancellationToken ct = default)
-            => Send<PlayerAuthResponse>(HttpMethod.Put, Url(Endpoints.GamePlayersLogin, $"&player_token={playerToken}"), null, ct);
+        public Task<PlayerAuthResponse<T>> AuthenticatePlayer<T>(string playerToken, CancellationToken ct = default) where T : class, new()
+            => Send<PlayerAuthResponse<T>>(HttpMethod.Put, Url(Endpoints.GamePlayersLogin, $"&player_token={playerToken}"), null, ct);
 
         public Task<PlayerHeartbeatResponse> SendPlayerHeartbeatAsync(string playerToken, CancellationToken ct = default)
             => Send<PlayerHeartbeatResponse>(HttpMethod.Post, Url(Endpoints.GamePlayersHeartbeat, $"&player_token={playerToken}"), null, ct);
@@ -163,13 +163,13 @@ namespace michitai
         public Task<GameDataResponse<T>> GetGameData<T>(CancellationToken ct = default) where T : class, new()
             => Send<GameDataResponse<T>>(HttpMethod.Get, Url(Endpoints.GameDataGameGet), null, ct);
 
-        public Task<SuccessResponse> UpdateGameData(object data, CancellationToken ct = default)
+        public Task<SuccessResponse> UpdateGameData<T>(T data, CancellationToken ct = default) where T : class, new()
             => Send<SuccessResponse>(HttpMethod.Put, Url(Endpoints.GameDataGameUpdate, $"&private_token={_apiPrivateToken}"), data, ct);
 
         public Task<PlayerDataResponse<T>> GetPlayerData<T>(string playerToken, CancellationToken ct = default) where T : class, new()
             => Send<PlayerDataResponse<T>>(HttpMethod.Get, Url(Endpoints.GameDataPlayerGet, $"&player_token={playerToken}"), null, ct);
 
-        public Task<SuccessResponse> UpdatePlayerData(string playerToken, object data, CancellationToken ct = default)
+        public Task<SuccessResponse> UpdatePlayerData<T>(string playerToken, T data, CancellationToken ct = default) where T : class, new()
             => Send<SuccessResponse>(HttpMethod.Put, Url(Endpoints.GameDataPlayerUpdate, $"&player_token={playerToken}"), data, ct);
 
         // ==================== LEADERBOARD ====================
@@ -184,12 +184,12 @@ namespace michitai
             => Send<ServerTimeWithOffsetResponse>(HttpMethod.Get, Url(Endpoints.Time, $"&utc={utcOffset:+#;-#}"), null, ct);
 
         // ==================== GAME ROOMS ====================
-        public Task<RoomCreateResponse> CreateRoomAsync(string playerToken, string roomName, string password = null, int maxPlayers = 4, CancellationToken ct = default)
+        public Task<RoomCreateResponse> CreateRoomAsync<T>(string playerToken, string roomName, string password = null, int maxPlayers = 4, T rules = null, CancellationToken ct = default) where T : class, new()
             => Send<RoomCreateResponse>(HttpMethod.Post, Url(Endpoints.GameRoomCreate, $"&player_token={playerToken}"),
-                new RoomCreateRequest { room_name = roomName, password = password, max_players = maxPlayers }, ct);
+                new RoomCreateRequest(roomName, password, maxPlayers, JsonUtility.ToJson(rules)), ct);
 
-        public Task<RoomListResponse> GetRoomsAsync(CancellationToken ct = default)
-            => Send<RoomListResponse>(HttpMethod.Get, Url(Endpoints.GameRoomList), null, ct);
+        public Task<RoomListResponse<T>> GetRoomsAsync<T>(CancellationToken ct = default) where T : class, new()
+            => Send<RoomListResponse<T>>(HttpMethod.Get, Url(Endpoints.GameRoomList), null, ct);
 
         public Task<RoomJoinResponse> JoinRoomAsync(string playerToken, string roomId, string password = null, CancellationToken ct = default)
             => Send<RoomJoinResponse>(HttpMethod.Post, Url(string.Format(Endpoints.GameRoomJoin, roomId), $"&player_token={playerToken}"),
@@ -204,20 +204,21 @@ namespace michitai
         public Task<HeartbeatResponse> SendRoomHeartbeatAsync(string playerToken, CancellationToken ct = default)
             => Send<HeartbeatResponse>(HttpMethod.Post, Url(Endpoints.GameRoomHeartbeat, $"&player_token={playerToken}"), null, ct);
 
-        public Task<ActionSubmitResponse> SubmitActionAsync(string playerToken, string actionType, string requestDataJson = null, CancellationToken ct = default)
+        public Task<ActionSubmitResponse> SubmitActionAsync<T>(string playerToken, string actionType, T requestData = null, CancellationToken ct = default) where T : class, new()
             => Send<ActionSubmitResponse>(HttpMethod.Post, Url(Endpoints.GameRoomActions, $"&player_token={playerToken}"),
-                new ActionSubmitRequest { action_type = actionType, request_data_json = requestDataJson }, ct);
+                new ActionSubmitRequest(actionType, JsonUtility.ToJson(requestData)), ct);
 
         public Task<ActionPollResponse> PollActionsAsync(string playerToken, CancellationToken ct = default)
             => Send<ActionPollResponse>(HttpMethod.Get, Url(Endpoints.GameRoomActionsPoll, $"&player_token={playerToken}"), null, ct);
 
-        public Task<ActionPendingResponse> GetPendingActionsAsync(string playerToken, CancellationToken ct = default)
-            => Send<ActionPendingResponse>(HttpMethod.Get, Url(Endpoints.GameRoomActionsPending, $"&player_token={playerToken}"), null, ct);
+        public Task<ActionPendingResponse<T>> GetPendingActionsAsync<T>(string playerToken, CancellationToken ct = default) where T : class, new()
+            => Send<ActionPendingResponse<T>>(HttpMethod.Get, Url(Endpoints.GameRoomActionsPending, $"&player_token={playerToken}"), null, ct);
 
-        public Task<ActionCompleteResponse> CompleteActionAsync(string actionId, string playerToken, ActionComplete request, CancellationToken ct = default)
-            => Send<ActionCompleteResponse>(HttpMethod.Post, Url(string.Format(Endpoints.GameRoomActionComplete, actionId), $"&player_token={playerToken}"), new ActionCompleteRequest { status = request.Status.ToString().ToLower(), response_data = request.ResponseData }, ct);
+        public Task<ActionCompleteResponse> CompleteActionAsync<T>(string actionId, string playerToken, ActionComplete<T> request, CancellationToken ct = default) where T : class, new()
+            => Send<ActionCompleteResponse>(HttpMethod.Post, Url(string.Format(Endpoints.GameRoomActionComplete, actionId), $"&player_token={playerToken}"), 
+                new ActionCompleteRequest(request.Status.ToString().ToLower(), JsonUtility.ToJson(request.ResponseData)), ct);
 
-        public Task<UpdatePlayersResponse> UpdatePlayersAsync(string playerToken, UpdatePlayersRequest request, CancellationToken ct = default)
+        public Task<UpdatePlayersResponse> UpdatePlayersAsync<T>(string playerToken, UpdatePlayers<T> request, CancellationToken ct = default) where T : class, new()
             => Send<UpdatePlayersResponse>(HttpMethod.Post, Url(Endpoints.GameRoomUpdates, $"&player_token={playerToken}"), request, ct);
 
         public Task<PollUpdatesResponse> PollUpdatesAsync(string playerToken, string lastUpdateId = null, CancellationToken ct = default)
@@ -234,23 +235,23 @@ namespace michitai
         public Task<MatchmakingListResponse> GetMatchmakingLobbiesAsync(CancellationToken ct = default)
             => Send<MatchmakingListResponse>(HttpMethod.Get, Url(Endpoints.MatchmakingList), null, ct);
 
-        public Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync(string playerToken, int maxPlayers = 4, bool strictFull = false,
-            bool joinByRequests = false, string rules = "", CancellationToken ct = default)
+        public Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<T>(string playerToken, int maxPlayers = 4, bool strictFull = false,
+            bool joinByRequests = false, T rules = null, CancellationToken ct = default) where T : class, new()
             => Send<MatchmakingCreateResponse>(HttpMethod.Post, Url(Endpoints.MatchmakingCreate, $"&player_token={playerToken}"),
-                new MatchmakingCreateRequest { max_players = maxPlayers, strict_full = strictFull, join_by_requests = joinByRequests, rules_json = rules }, ct);
+                new MatchmakingCreateRequest(maxPlayers, strictFull, joinByRequests, JsonUtility.ToJson(rules)), ct);
 
         public Task<MatchmakingJoinRequestResponse> RequestToJoinMatchmakingAsync(string playerToken, string matchmakingId, CancellationToken ct = default)
             => Send<MatchmakingJoinRequestResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingRequest, matchmakingId), $"&player_token={playerToken}"), null, ct);
 
-        public Task<MatchmakingRequestResponse> RespondToJoinRequestAsync(string playerToken, string requestId, MatchmakingRequestAction action, CancellationToken ct = default)
-            => Send<MatchmakingRequestResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingResponse, requestId), $"&player_token={playerToken}"),
-                new MatchmakingRequest { action = action.ToString().ToLower() }, ct);
+        public Task<MatchmakingPermissionResponse> RespondToJoinRequestAsync(string playerToken, string requestId, MatchmakingRequestAction action, CancellationToken ct = default)
+            => Send<MatchmakingPermissionResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingResponse, requestId), $"&player_token={playerToken}"),
+                new MatchmakingPermissionRequest(action.ToString().ToLower()), ct);
 
         public Task<MatchmakingRequestStatusResponse> CheckJoinRequestStatusAsync(string playerToken, string requestId, CancellationToken ct = default)
             => Send<MatchmakingRequestStatusResponse>(HttpMethod.Get, Url(string.Format(Endpoints.MatchmakingRequestStatus, requestId), $"&player_token={playerToken}"), null, ct);
 
-        public Task<MatchmakingCurrentResponse> GetCurrentMatchmakingStatusAsync(string playerToken, CancellationToken ct = default)
-            => Send<MatchmakingCurrentResponse>(HttpMethod.Get, Url(Endpoints.MatchmakingCurrent, $"&player_token={playerToken}"), null, ct);
+        public Task<MatchmakingCurrentResponse<T>> GetCurrentMatchmakingStatusAsync<T>(string playerToken, CancellationToken ct = default) where T : class, new()
+            => Send<MatchmakingCurrentResponse<T>>(HttpMethod.Get, Url(Endpoints.MatchmakingCurrent, $"&player_token={playerToken}"), null, ct);
 
         public Task<MatchmakingDirectJoinResponse> JoinMatchmakingDirectlyAsync(string playerToken, string matchmakingId, CancellationToken ct = default)
             => Send<MatchmakingDirectJoinResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingJoin, matchmakingId), $"&player_token={playerToken}"), null, ct);
@@ -277,16 +278,200 @@ namespace michitai
 
     public enum MatchmakingRequestAction { Approve, Reject }
 
-    // ====================== REQUEST CLASSES (Unity + JsonUtility ready) ======================
+    // ====================== PARAMETERS CLASSES (Unity + JsonUtility ready) ===================
 
+    public class ActionComplete<T> where T : class, new()
+    {
+        private RoomCompleteActionStatus _status;
+        private T _response_data;
+
+
+
+        public RoomCompleteActionStatus Status
+        {
+            get
+            {
+                return _status;
+            }
+
+            private set
+            {
+                _status = value;
+            }
+        }
+
+        public T ResponseData
+        {
+            get
+            {
+                return _response_data;
+            }
+
+            private set
+            {
+                _response_data = value;
+            }
+        }
+
+
+
+        public ActionComplete(RoomCompleteActionStatus status, T response_data)
+        {
+            Status = status;
+            ResponseData = response_data;
+        }
+    }
+
+    public class UpdatePlayers<T> where T : class, new()
+    {
+        public object target_player_ids;   // "all" or string[]
+        public string type;
+        public T data;
+
+
+
+        public UpdatePlayers(object targetPlayerIds, string type, T data)
+        {
+            this.target_player_ids = targetPlayerIds;
+            this.type = type;
+            this.data = data;
+        }
+    }
+
+    // ====================== REQUEST CLASSES (Unity + JsonUtility ready) ======================
     [System.Serializable]
     public class PlayerRegisterRequest
     {
         public string player_name;
         public string player_data_json;
+
+
+
+        public PlayerRegisterRequest(string playerName, string playerDataJson)
+        {
+            this.player_name = playerName;
+            this.player_data_json = playerDataJson;
+        }
     }
 
-    // ====================== RESPONSE CLASSES (Unity + JsonUtility ready) ======================
+    // ====================== GAME ROOMS ======================
+
+    [System.Serializable]
+    public class RoomCreateRequest
+    {
+        public string room_name;
+        public string password;
+        public int max_players;
+        public string rules_json;   // Unity mode
+
+
+
+        public RoomCreateRequest(string roomName, string password, int maxPlayers, string rulesJson)
+        {
+            this.room_name = roomName;
+            this.password = password;
+            this.max_players = maxPlayers;
+            this.rules_json = rulesJson;
+        }
+    }
+
+    [System.Serializable]
+    public class RoomJoinRequest
+    {
+        public string password;
+    }
+
+    [System.Serializable]
+    public class ActionSubmitRequest
+    {
+        public string action_type;
+        public string request_data_json;    // Unity mode
+
+
+
+        public ActionSubmitRequest(string actionType, string requestDataJson)
+        {
+            this.action_type = actionType;
+            this.request_data_json = requestDataJson;
+        }
+    }
+
+    [System.Serializable]
+    public class ActionCompleteRequest
+    {
+        public string status = RoomCompleteActionStatus.Completed.ToString().ToLower();
+        public string response_data_json;
+
+
+
+        public ActionCompleteRequest(string status, string responseDataJson)
+        {
+            this.status = status;
+            this.response_data_json = responseDataJson;
+        }
+    }
+
+    [System.Serializable]
+    public class UpdatePlayersRequest
+    {
+        public object target_player_ids;   // "all" or string[]
+        public string type;
+        public string data_json;          // must be a JSON string for Unity
+
+
+
+        public UpdatePlayersRequest(object targetPlayerIds, string type, string dataJson)
+        {
+            this.target_player_ids = targetPlayerIds;
+            this.type = type;
+            this.data_json = dataJson;
+        }
+    }
+
+    // ====================== MATCHMAKING ======================
+
+    [System.Serializable]
+    public class MatchmakingCreateRequest
+    {
+        public int max_players;
+        public bool strict_full;
+        public bool join_by_requests;
+        public string rules_json;   //Unity mode
+
+
+
+        public MatchmakingCreateRequest(int maxPlayers, bool strictFull, bool joinByRequests, string rulesJson)
+        {
+            this.max_players = maxPlayers;
+            this.strict_full = strictFull;
+            this.join_by_requests = joinByRequests;
+            this.rules_json = rulesJson;
+        }
+    }
+
+    [System.Serializable]
+    public class MatchmakingPermissionRequest
+    {
+        public string action = MatchmakingRequestAction.Approve.ToString().ToLower();
+
+
+
+        public MatchmakingPermissionRequest(string action)
+        {
+            this.action = action;
+        }
+    }
+
+    // ====================== LEADERBOARD ======================
+
+    [System.Serializable]
+    public class LeaderboardRequest
+    {
+        public string[] sort_by;
+        public int limit;
+    }
+
+    // ====================== RESPONSE CLASSES (Unity + JsonUtility ready) =====================
 
     [System.Serializable]
     public class PlayerRegisterResponse : ApiResponse
@@ -298,23 +483,37 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class PlayerAuthResponse : ApiResponse
+    public class PlayerAuthResponse<T> : ApiResponse where T : class, new()
     {
-        public PlayerInfo player;
+        public PlayerInfo<T> player;
     }
 
     [System.Serializable]
-    public class PlayerInfo
+    public class PlayerInfo<T> where T : class, new()
     {
+        [SerializeField]
+        private string player_data_json;           // Unity mode
+
+
+
         public int id;
         public int game_id;
         public string player_name;
-        public string player_data_json;           // Unity mode
         public bool is_active;
         public string last_login;
         public string last_logout;
         public string last_heartbeat;
         public string created_at;
+
+
+
+        public T PlayerData
+        {
+            get
+            {
+                return JsonUtility.FromJson<T>(player_data_json);
+            }
+        }
     }
 
     [System.Serializable]
@@ -351,13 +550,17 @@ namespace michitai
     [System.Serializable]
     public class GameDataResponse<T> : ApiResponse where T : class, new()
     {
+        [SerializeField]
+        private string data_json;                  // Unity mode
+
+
+
         public string type;
         public int game_id;
-        public string data_json;                  // Unity mode
 
 
 
-        public T GetData
+        public T Data
         {
             get
             {
@@ -369,14 +572,18 @@ namespace michitai
     [System.Serializable]
     public class PlayerDataResponse<T> : ApiResponse where T : class, new()
     {
+        [SerializeField]
+        private string data_json;                  // Unity mode
+
+
+
         public string type;
         public int player_id;
         public string player_name;
-        public string data_json;                  // Unity mode
 
 
 
-        public T GetData
+        public T Data
         {
             get
             {
@@ -421,14 +628,6 @@ namespace michitai
     // ====================== GAME ROOMS ======================
 
     [System.Serializable]
-    public class RoomCreateRequest
-    {
-        public string room_name;
-        public string password;
-        public int max_players;
-    }
-
-    [System.Serializable]
     public class RoomCreateResponse : ApiResponse
     {
         public string room_id;
@@ -437,25 +636,34 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class RoomListResponse : ApiResponse
+    public class RoomListResponse<T> : ApiResponse where T : class, new()
     {
-        public List<RoomShort> rooms = new();
+        public List<RoomShort<T>> rooms = new();
     }
 
     [System.Serializable]
-    public class RoomShort
+    public class RoomShort<T> where T : class, new()
     {
+        [SerializeField]
+        private string rules_json;   // Unity mode
+
+
+
         public string room_id;
         public string room_name;
         public int max_players;
         public int current_players;
         public int has_password;
-    }
 
-    [System.Serializable]
-    public class RoomJoinRequest
-    {
-        public string password;
+
+
+        public T Rules
+        {
+            get
+            {
+                return JsonUtility.FromJson<T>(rules_json);
+            }
+        }
     }
 
     [System.Serializable]
@@ -495,13 +703,6 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class ActionSubmitRequest
-    {
-        public string action_type;
-        public string request_data_json;    // Unity mode
-    }
-
-    [System.Serializable]
     public class ActionSubmitResponse : ApiResponse
     {
         public string action_id;
@@ -517,14 +718,19 @@ namespace michitai
     [System.Serializable]
     public class ActionInfo
     {
+        [SerializeField]
+        private string status;
+        [SerializeField]
+        private string response_data_json;   // Unity mode
+
+
+
         public string action_id;
         public string action_type;
-        public string response_data_json;   // Unity mode
-        public string status;
 
 
 
-        public RoomActionStatus GetStatus
+        public RoomActionStatus Status
         {
             get
             {
@@ -548,91 +754,40 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class ActionPendingResponse : ApiResponse
+    public class ActionPendingResponse<T> : ApiResponse where T : class, new()
     {
-        public List<PendingAction> actions = new();
+        public List<PendingAction<T>> actions = new();
     }
 
     [System.Serializable]
-    public class PendingAction
+    public class PendingAction<T> where T : class, new()
     {
+        [SerializeField]
+        private string request_data_json;    // Unity mode
+
+
+
         public string action_id;
         public string player_id;
         public string action_type;
-        public string request_data_json;    // Unity mode
         public string created_at;
         public string player_name;
-    }
-
-    [System.Serializable]
-    public class ActionComplete
-    {
-        private RoomCompleteActionStatus _status;
-        private object _response_data;
 
 
 
-        public RoomCompleteActionStatus Status
+        public T RequestData
         {
             get
             {
-                return _status;
-            }
-
-            private set
-            {
-                _status = value;
+                return JsonUtility.FromJson<T>(request_data_json);
             }
         }
-
-        public object ResponseData
-        {
-            get
-            {
-                return _response_data;
-            }
-
-            private set
-            {
-                _response_data = value;
-            }
-        }
-
-
-
-        public ActionComplete(RoomCompleteActionStatus status, object response_data)
-        {
-            Status = status;
-            ResponseData = response_data;
-        }
-    }
-
-    [System.Serializable]
-    public class ActionCompleteRequest
-    {
-        public string status = RoomCompleteActionStatus.Completed.ToString().ToLower();
-        public object response_data;
     }
 
     [System.Serializable]
     public class ActionCompleteResponse : ApiResponse
     {
         public string message;
-    }
-
-    [System.Serializable]
-    public class UpdatePlayersRequest
-    {
-        public object targetPlayerIds;   // "all" or string[]
-        public string type;
-        public string dataJson;          // must be a JSON string for Unity
-
-        public UpdatePlayersRequest(object targetPlayerIds, string type, string dataJson)
-        {
-            this.targetPlayerIds = targetPlayerIds;
-            this.type = type;
-            this.dataJson = dataJson;
-        }
     }
 
     [System.Serializable]
@@ -680,6 +835,7 @@ namespace michitai
         public int current_players;
         public bool has_password;
         public bool is_active;
+        public string rules_json;   // Unity mode
         public string player_name;
         public string joined_at;
         public string last_heartbeat;
@@ -688,6 +844,7 @@ namespace michitai
     }
 
     // ====================== MATCHMAKING ======================
+
     [System.Serializable]
     public class MatchmakingListResponse : ApiResponse
     {
@@ -709,15 +866,6 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class MatchmakingCreateRequest
-    {
-        public int max_players;
-        public bool strict_full;
-        public bool join_by_requests;
-        public string rules_json;           //Unity mode
-    }
-
-    [System.Serializable]
     public class MatchmakingCreateResponse : ApiResponse
     {
         public string matchmaking_id;
@@ -735,13 +883,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class MatchmakingRequest
-    {
-        public string action = MatchmakingRequestAction.Approve.ToString().ToLower();
-    }
-
-    [System.Serializable]
-    public class MatchmakingRequestResponse : ApiResponse
+    public class MatchmakingPermissionResponse : ApiResponse
     {
         public string message;
         public string request_id;
@@ -755,42 +897,62 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class MatchmakingRequestInfo
+    public class MatchmakingRequestInfo : MatchmakingRequestBase
     {
-        public string request_id;
-        public string matchmaking_id;
-        public string status;
-        public string requested_at;
-        public string responded_at;
         public int responded_by;
         public string responder_name;
         public bool join_by_requests;
     }
 
     [System.Serializable]
-    public class MatchmakingCurrentResponse : ApiResponse
+    public class MatchmakingCurrentResponse<T> : ApiResponse where T : class, new()
     {
         public bool in_matchmaking;
-        public MatchmakingInfo matchmaking;
-        public List<string> pending_requests_json;
+        public MatchmakingInfo<T> matchmaking;
+        public List<MatchmakingRequestBase> pending_requests;
     }
 
     [System.Serializable]
-    public class MatchmakingInfo
+    public class MatchmakingRequestBase
     {
+        public string request_id;
+        public string matchmaking_id;
+        public string status;
+        public string requested_at;
+        public string responded_at;
+    }
+
+
+    [System.Serializable]
+    public class MatchmakingInfo<T> where T : class, new()
+    {
+        [SerializeField]
+        private string rules_json;           // Unity mode
+
+
+
         public string matchmaking_id;
         public bool is_host;
         public int max_players;
         public int current_players;
         public bool strict_full;
         public bool join_by_requests;
-        public string rules_json;           // Unity mode
         public string joined_at;
         public string player_status;
         public string last_heartbeat;
         public string lobby_heartbeat;
         public bool is_started;
         public string started_at;
+
+
+
+        public T Rules
+        {
+            get
+            {
+                return JsonUtility.FromJson<T>(rules_json);
+            }
+        }
     }
 
     [System.Serializable]
@@ -847,12 +1009,6 @@ namespace michitai
     }
 
     // ====================== LEADERBOARD ======================
-    [System.Serializable]
-    public class LeaderboardRequest
-    {
-        public string[] sort_by;
-        public int limit;
-    }
 
     [System.Serializable]
     public class LeaderboardResponse<T> : ApiResponse where T : class, new()
@@ -866,14 +1022,18 @@ namespace michitai
     [System.Serializable]
     public class LeaderboardPlayer<T> where T : class, new()
     {
+        [SerializeField]
+        private string player_data_json;     // Unity mode
+
+
+
         public int rank;
         public int player_id;
         public string player_name;
-        public string player_data_json;     // Unity mode
+        
 
 
-
-        public T GetData
+        public T PlayerData
         {
             get
             {
@@ -883,6 +1043,7 @@ namespace michitai
     }
 
     // ====================== EXCEPTION ======================
+
     public class ApiException : Exception
     {
         public string RawResponse { get; }

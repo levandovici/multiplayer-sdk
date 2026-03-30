@@ -97,6 +97,9 @@ public class Game
 
         string req2 = await RequestToJoinMatchmaking(players["p2"].Token, matchmakingId);
         await CheckJoinRequestStatus(players["p2"].Token, req2);
+
+        await GetCurrentMatchmakingStatus();
+
         await ApproveJoinRequest(players["host"].Token, req2);
 
         await GetCurrentMatchmakingStatus();

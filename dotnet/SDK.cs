@@ -198,9 +198,9 @@ namespace michitai
             => Send<ServerTimeWithOffsetResponse>(HttpMethod.Get, Url(Endpoints.Time, $"&utc={utcOffset:+#;-#}"), null, ct);
 
         // ==================== GAME ROOMS ====================
-        public Task<RoomCreateResponse> CreateRoomAsync(string playerToken, string roomName, string? password = null, int maxPlayers = 4, CancellationToken ct = default)
+        public Task<RoomCreateResponse> CreateRoomAsync(string playerToken, string roomName, string? password = null, int maxPlayers = 4, object? rules = null, CancellationToken ct = default)
             => Send<RoomCreateResponse>(HttpMethod.Post, Url(Endpoints.GameRoomCreate, $"&player_token={playerToken}"),
-                new RoomCreateRequest { Room_name = roomName, Password = password, Max_players = maxPlayers }, ct);
+                new RoomCreateRequest { Room_name = roomName, Password = password, Max_players = maxPlayers, Rules = rules }, ct);
 
         public Task<RoomListResponse> GetRoomsAsync(CancellationToken ct = default)
             => Send<RoomListResponse>(HttpMethod.Get, Url(Endpoints.GameRoomList), null, ct);
@@ -257,9 +257,9 @@ namespace michitai
         public Task<MatchmakingJoinRequestResponse> RequestToJoinMatchmakingAsync(string playerToken, string matchmakingId, CancellationToken ct = default)
             => Send<MatchmakingJoinRequestResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingRequest, matchmakingId), $"&player_token={playerToken}"), null, ct);
 
-        public Task<MatchmakingRequestResponse> RespondToJoinRequestAsync(string playerToken, string requestId, MatchmakingRequestAction action, CancellationToken ct = default)
-            => Send<MatchmakingRequestResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingResponse, requestId), $"&player_token={playerToken}"),
-                new MatchmakingRequest { Action = action.ToString().ToLower() }, ct);
+        public Task<MatchmakingPermissionResponse> RespondToJoinRequestAsync(string playerToken, string requestId, MatchmakingRequestAction action, CancellationToken ct = default)
+            => Send<MatchmakingPermissionResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingResponse, requestId), $"&player_token={playerToken}"),
+                new MatchmakingPermissionRequest { Action = action.ToString().ToLower() }, ct);
 
         public Task<MatchmakingRequestStatusResponse> CheckJoinRequestStatusAsync(string playerToken, string requestId, CancellationToken ct = default)
             => Send<MatchmakingRequestStatusResponse>(HttpMethod.Get, Url(string.Format(Endpoints.MatchmakingRequestStatus, requestId), $"&player_token={playerToken}"), null, ct);
@@ -426,6 +426,7 @@ namespace michitai
         public string Room_name { get; set; } = string.Empty;
         public string? Password { get; set; }
         public int Max_players { get; set; }
+        public object? Rules { get; set; }
     }
 
     public class RoomCreateResponse : ApiResponse
@@ -442,6 +443,7 @@ namespace michitai
         public int Max_players { get; set; }
         public int Current_players { get; set; }
         public int Has_password { get; set; }
+        public string? Rules { get; set; }
     }
 
     public class RoomListResponse : ApiResponse
@@ -577,15 +579,15 @@ namespace michitai
 
     public class UpdatePlayersRequest
     {
-        public object? TargetPlayerIds { get; set; }   // "all" or string[]
+        public object? Target_player_ids { get; set; }   // "all" or string[]
         public string Type { get; set; } = string.Empty;
-        public object DataJson { get; set; } = new();
+        public object Data { get; set; } = new();
 
-        public UpdatePlayersRequest(object targetPlayerIds, string type, object dataJson)
+        public UpdatePlayersRequest(object targetPlayerIds, string type, object data)
         {
-            TargetPlayerIds = targetPlayerIds;
+            Target_player_ids = targetPlayerIds;
             Type = type;
-            DataJson = dataJson;
+            Data = data;
         }
     }
 
@@ -601,7 +603,7 @@ namespace michitai
         public string Update_id { get; set; } = string.Empty;
         public string From_player_id { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
-        public object Data_json { get; set; } = new();
+        public object Data { get; set; } = new();
         public string Created_at { get; set; } = string.Empty;
     }
 
@@ -621,6 +623,7 @@ namespace michitai
         public int Current_players { get; set; }
         public bool Has_password { get; set; }
         public bool Is_active { get; set; }
+        public string? Rules { get; set; }
         public string Player_name { get; set; } = string.Empty;
         public string Joined_at { get; set; } = string.Empty;
         public string Last_heartbeat { get; set; } = string.Empty;
@@ -677,12 +680,12 @@ namespace michitai
         public string Message { get; set; } = string.Empty;
     }
 
-    public class MatchmakingRequest
+    public class MatchmakingPermissionRequest
     {
         public string Action { get; set; } = MatchmakingRequestAction.Approve.ToString().ToLower();
     }
 
-    public class MatchmakingRequestResponse : ApiResponse
+    public class MatchmakingPermissionResponse : ApiResponse
     {
         public string Message { get; set; } = string.Empty;
         public string Request_id { get; set; } = string.Empty;
@@ -694,13 +697,9 @@ namespace michitai
         public MatchmakingRequestInfo Request { get; set; } = new();
     }
 
-    public class MatchmakingRequestInfo
+    public class MatchmakingRequestInfo : MatchmakingRequestBase
     {
-        public string Request_id { get; set; } = string.Empty;
-        public string Matchmaking_id { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public string Requested_at { get; set; } = string.Empty;
-        public string? Responded_at { get; set; }
+
         public int? Responded_by { get; set; }
         public string? Responder_name { get; set; }
         public bool Join_by_requests { get; set; }
@@ -710,7 +709,16 @@ namespace michitai
     {
         public bool In_matchmaking { get; set; }
         public MatchmakingInfo? Matchmaking { get; set; }
-        public List<object> Pending_requests { get; set; } = new();
+        public List<MatchmakingRequestBase> Pending_requests { get; set; } = new();
+    }
+
+    public class MatchmakingRequestBase
+    {
+        public string Request_id { get; set; } = string.Empty;
+        public string Matchmaking_id { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string Requested_at { get; set; } = string.Empty;
+        public string? Responded_at { get; set; }
     }
 
     public class MatchmakingInfo

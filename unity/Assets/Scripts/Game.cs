@@ -59,7 +59,7 @@ public class Game : MonoBehaviour
         {
             var gd = await sdk.GetGameData<GameData>();
             Debug.Log($"[GAME DATA] Retrieved. Game ID: {gd.game_id}");
-            GameData gameData = gd.GetData;
+            GameData gameData = gd.Data;
             Debug.Log($"[GAME DATA] Event: {gameData.currentEvent}, Version: {gameData.version}");
             await sdk.UpdateGameData(new GameData { currentEvent = "SpringFestival", version = "1.2.3" });
             Debug.Log("[GAME DATA] Global data updated");
@@ -86,7 +86,7 @@ public class Game : MonoBehaviour
             if (lb.leaderboard.Count > 0)
             {
                 var top = lb.leaderboard[0];
-                Debug.Log($"[LEADERBOARD] #1: {top.player_name}, Level: {top.GetData.level} (Rank {top.rank})");
+                Debug.Log($"[LEADERBOARD] #1: {top.player_name}, Level: {top.PlayerData.level} (Rank {top.rank})");
             }
         }, "GetLeaderboard");
     }
@@ -107,6 +107,9 @@ public class Game : MonoBehaviour
 
         string req2 = await RequestToJoinMatchmaking(players["p2"].Token, matchmakingId);
         await CheckJoinRequestStatus(players["p2"].Token, req2);
+
+        await GetCurrentMatchmakingStatus();
+
         await ApproveJoinRequest(players["host"].Token, req2);
 
         await GetCurrentMatchmakingStatus();
@@ -147,7 +150,7 @@ public class Game : MonoBehaviour
         Debug.Log("\n=== DEMO 3: DIRECT ROOM CREATION ===\n");
         await SetupPlayers();
 
-        var create = await sdk.CreateRoomAsync(players["host"].Token, "Direct Battle Arena", null, 4);
+        var create = await sdk.CreateRoomAsync<RulesData>(players["host"].Token, "Direct Battle Arena", null, 4);
         string roomId = create.room_id;
 
         await JoinRoom(players["p1"].Token, roomId);
@@ -161,9 +164,9 @@ public class Game : MonoBehaviour
     {
         Debug.Log("[SETUP] Registering players...");
 
-        var h = await RegisterPlayer("GameHost", JsonUtility.ToJson(new PlayerData { level = 15, wins = 42, rank = "gold" }));
-        var p1 = await RegisterPlayer("PlayerOne", JsonUtility.ToJson(new PlayerData { level = 12, wins = 28, rank = "silver" }));
-        var p2 = await RegisterPlayer("PlayerTwo", JsonUtility.ToJson(new PlayerData { level = 10, wins = 15, rank = "bronze" }));
+        var h = await RegisterPlayer("GameHost", new PlayerData { level = 15, wins = 42, rank = "gold" });
+        var p1 = await RegisterPlayer("PlayerOne", new PlayerData { level = 12, wins = 28, rank = "silver" });
+        var p2 = await RegisterPlayer("PlayerTwo", new PlayerData { level = 10, wins = 15, rank = "bronze" });
 
         players["host"] = new PlayerInfo { Id = h.player_id, Token = h.private_key, Name = "GameHost" };
         players["p1"] = new PlayerInfo { Id = p1.player_id, Token = p1.private_key, Name = "PlayerOne" };
@@ -183,7 +186,7 @@ public class Game : MonoBehaviour
         {
             var data = await GetPlayerData(p.Token);
 
-            var player = data.GetData;
+            var player = data.Data;
 
             player.level++;
 
@@ -204,16 +207,16 @@ public class Game : MonoBehaviour
     }
 
     // ====================== HELPER METHODS ======================
-    private async Task<PlayerRegisterResponse> RegisterPlayer(string name, string playerData = "")
+    private async Task<PlayerRegisterResponse> RegisterPlayer(string name, PlayerData playerData = null)
     {
-        var reg = await sdk.RegisterPlayer(name, playerData);
+        var reg = await sdk.RegisterPlayer<PlayerData>(name, playerData);
         Debug.Log($"[REGISTER] {name} registered");
         return reg;
     }
 
-    private async Task<PlayerAuthResponse> AuthenticatePlayer(string token)
+    private async Task<PlayerAuthResponse<PlayerData>> AuthenticatePlayer(string token)
     {
-        var auth = await sdk.AuthenticatePlayer(token);
+        var auth = await sdk.AuthenticatePlayer<PlayerData>(token);
         Debug.Log($"[AUTH] {auth.player.player_name} authenticated");
         return auth;
     }
@@ -259,7 +262,7 @@ public class Game : MonoBehaviour
             maxPlayers: 4,
             strictFull: false,
             joinByRequests: joinByRequests,
-            rules: JsonUtility.ToJson(rules)
+            rules: rules
         );
 
         Debug.Log($"[MATCHMAKING] Lobby created (requests mode: {joinByRequests})");
@@ -293,7 +296,8 @@ public class Game : MonoBehaviour
 
     private async Task GetCurrentMatchmakingStatus()
     {
-        var s = await sdk.GetCurrentMatchmakingStatusAsync(players["host"].Token);
+        var s = await sdk.GetCurrentMatchmakingStatusAsync<RulesData>(players["host"].Token);
+
         Debug.Log($"[MATCHMAKING STATUS] Players in lobby: {s.matchmaking?.current_players ?? 0}");
     }
 
@@ -320,32 +324,30 @@ public class Game : MonoBehaviour
     {
         Debug.Log("\n=== GAME ROOM FLOW ===\n");
 
-        await sdk.GetRoomsAsync();
+        await sdk.GetRoomsAsync<RulesData>();
         await sdk.GetCurrentRoomAsync(players["host"].Token);
 
         // Players submit actions
         foreach (var p in players.Values)
         {
-            string requestDataJson = JsonUtility.ToJson(new ActionData { ready = true });
-
             await SafeExecute(async () =>
-                await sdk.SubmitActionAsync(p.Token, "player_ready", requestDataJson),
+                await sdk.SubmitActionAsync<ActionData>(p.Token, "player_ready", new ActionData { ready = true }),
                 $"SubmitAction {p.Name}");
         }
 
         // Host checks pending actions
         await SafeExecute(async () =>
         {
-            var pending = await sdk.GetPendingActionsAsync(players["host"].Token);
+            var pending = await sdk.GetPendingActionsAsync<ActionData>(players["host"].Token);
             Debug.Log($"[PENDING ACTIONS] {pending.actions.Count} actions");
         }, "GetPendingActions");
 
         // Host broadcasts update
         await SafeExecute(async () =>
         {
-            string dataJson = JsonUtility.ToJson(new { round = 1, message = "Game Started!" });
-            var updateReq = new UpdatePlayersRequest("all", "game_start", dataJson);
-            await sdk.UpdatePlayersAsync(players["host"].Token, updateReq);
+            UpdateData updateData = new UpdateData { round = 1, message = "Game Started!" };
+            var updateReq = new UpdatePlayers<UpdateData>("all", "game_start", updateData);
+            await sdk.UpdatePlayersAsync<UpdateData>(players["host"].Token, updateReq);
             Debug.Log("[UPDATE] Broadcast sent to all players");
         }, "Send Room Update");
 
@@ -422,5 +424,12 @@ public class Game : MonoBehaviour
     private class ActionData
     {
         public bool ready;
+    }
+
+    [System.Serializable]
+    private class UpdateData
+    {
+        public int round;
+        public string message;
     }
 }
