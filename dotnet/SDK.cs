@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace michitai
 {
@@ -158,11 +160,11 @@ namespace michitai
         }
 
         // ==================== PLAYER ====================
-        public Task<PlayerRegisterResponse> RegisterPlayer(string name, object? playerData = null, CancellationToken ct = default)
-            => Send<PlayerRegisterResponse>(HttpMethod.Post, Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest { Player_name = name, Player_data = playerData }, ct);
+        public Task<PlayerRegisterResponse> RegisterPlayer<T>(string name, T? playerData = null, CancellationToken ct = default) where T : class, new()
+            => Send<PlayerRegisterResponse>(HttpMethod.Post, Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest<T>(name, playerData), ct);
 
-        public Task<PlayerAuthResponse> AuthenticatePlayer(string playerToken, CancellationToken ct = default)
-            => Send<PlayerAuthResponse>(HttpMethod.Put, Url(Endpoints.GamePlayersLogin, $"&player_token={playerToken}"), null, ct);
+        public Task<PlayerAuthResponse<T>> AuthenticatePlayer<T>(string playerToken, CancellationToken ct = default) where T : class, new()
+            => Send<PlayerAuthResponse<T>>(HttpMethod.Put, Url(Endpoints.GamePlayersLogin, $"&player_token={playerToken}"), null, ct);
 
         public Task<PlayerHeartbeatResponse> SendPlayerHeartbeatAsync(string playerToken, CancellationToken ct = default)
             => Send<PlayerHeartbeatResponse>(HttpMethod.Post, Url(Endpoints.GamePlayersHeartbeat, $"&player_token={playerToken}"), null, ct);
@@ -177,18 +179,18 @@ namespace michitai
         public Task<GameDataResponse<T>> GetGameData<T>(CancellationToken ct = default) where T : class, new()
             => Send<GameDataResponse<T>>(HttpMethod.Get, Url(Endpoints.GameDataGameGet), null, ct);
 
-        public Task<SuccessResponse> UpdateGameData(object data, CancellationToken ct = default)
+        public Task<SuccessResponse> UpdateGameData<T>(T data, CancellationToken ct = default) where T : class, new()
             => Send<SuccessResponse>(HttpMethod.Put, Url(Endpoints.GameDataGameUpdate, $"&private_token={_apiPrivateToken}"), data, ct);
 
         public Task<PlayerDataResponse<T>> GetPlayerData<T>(string playerToken, CancellationToken ct = default) where T : class, new()
             => Send<PlayerDataResponse<T>>(HttpMethod.Get, Url(Endpoints.GameDataPlayerGet, $"&player_token={playerToken}"), null, ct);
 
-        public Task<SuccessResponse> UpdatePlayerData(string playerToken, object data, CancellationToken ct = default)
+        public Task<SuccessResponse> UpdatePlayerData<T>(string playerToken, T data, CancellationToken ct = default) where T : class, new()
             => Send<SuccessResponse>(HttpMethod.Put, Url(Endpoints.GameDataPlayerUpdate, $"&player_token={playerToken}"), data, ct);
 
         // ==================== LEADERBOARD ====================
         public Task<LeaderboardResponse<T>> GetLeaderboardAsync<T>(string[] sortBy, int limit = 10, CancellationToken ct = default) where T : class, new()
-            => Send<LeaderboardResponse<T>>(HttpMethod.Post, Url(Endpoints.Leaderboard), new LeaderboardRequest { Sort_by = sortBy, Limit = limit }, ct);
+            => Send<LeaderboardResponse<T>>(HttpMethod.Post, Url(Endpoints.Leaderboard), new LeaderboardRequest(sortBy, limit), ct);
 
         // ==================== TIME ====================
         public Task<ServerTimeResponse> GetServerTime(CancellationToken ct = default)
@@ -198,16 +200,17 @@ namespace michitai
             => Send<ServerTimeWithOffsetResponse>(HttpMethod.Get, Url(Endpoints.Time, $"&utc={utcOffset:+#;-#}"), null, ct);
 
         // ==================== GAME ROOMS ====================
-        public Task<RoomCreateResponse> CreateRoomAsync(string playerToken, string roomName, string? password = null, int maxPlayers = 4, object? rules = null, CancellationToken ct = default)
+        public Task<RoomCreateResponse> CreateRoomAsync<T>(string playerToken, string roomName, int maxPlayers = 4,
+            string? password = null, T? rules = null, CancellationToken ct = default) where T : class, new()
             => Send<RoomCreateResponse>(HttpMethod.Post, Url(Endpoints.GameRoomCreate, $"&player_token={playerToken}"),
-                new RoomCreateRequest { Room_name = roomName, Password = password, Max_players = maxPlayers, Rules = rules }, ct);
+                new RoomCreateRequest<T>(roomName, maxPlayers, password, rules), ct);
 
-        public Task<RoomListResponse> GetRoomsAsync(CancellationToken ct = default)
-            => Send<RoomListResponse>(HttpMethod.Get, Url(Endpoints.GameRoomList), null, ct);
+        public Task<RoomListResponse<T>> GetRoomsAsync<T>(CancellationToken ct = default) where T : class, new()
+            => Send<RoomListResponse<T>>(HttpMethod.Get, Url(Endpoints.GameRoomList), null, ct);
 
         public Task<RoomJoinResponse> JoinRoomAsync(string playerToken, string roomId, string? password = null, CancellationToken ct = default)
             => Send<RoomJoinResponse>(HttpMethod.Post, Url(string.Format(Endpoints.GameRoomJoin, roomId), $"&player_token={playerToken}"),
-                password != null ? new RoomJoinRequest { Password = password } : null, ct);
+                password != null ? new RoomJoinRequest(password) : null, ct);
 
         public Task<RoomLeaveResponse> LeaveRoomAsync(string playerToken, CancellationToken ct = default)
             => Send<RoomLeaveResponse>(HttpMethod.Post, Url(Endpoints.GameRoomLeave, $"&player_token={playerToken}"), null, ct);
@@ -218,54 +221,57 @@ namespace michitai
         public Task<HeartbeatResponse> SendRoomHeartbeatAsync(string playerToken, CancellationToken ct = default)
             => Send<HeartbeatResponse>(HttpMethod.Post, Url(Endpoints.GameRoomHeartbeat, $"&player_token={playerToken}"), null, ct);
 
-        public Task<ActionSubmitResponse> SubmitActionAsync(string playerToken, string actionType, object? requestData = null, CancellationToken ct = default)
-            => Send<ActionSubmitResponse>(HttpMethod.Post, Url(Endpoints.GameRoomActions, $"&player_token={playerToken}"),
-                new ActionSubmitRequest { Action_type = actionType, Request_data = requestData }, ct);
+        public Task<ActionSubmitResponse> SubmitActionAsync<T>(string playerToken, string actionType,
+            T? requestData = null, CancellationToken ct = default) where T : class, new()
+            => Send<ActionSubmitResponse>(HttpMethod.Post, Url(Endpoints.GameRoomActions,
+                $"&player_token={playerToken}"), new ActionSubmitRequest<T>(actionType, requestData), ct);
 
-        public Task<ActionPollResponse> PollActionsAsync(string playerToken, CancellationToken ct = default)
-            => Send<ActionPollResponse>(HttpMethod.Get, Url(Endpoints.GameRoomActionsPoll, $"&player_token={playerToken}"), null, ct);
+        public Task<ActionPollResponse<T>> PollActionsAsync<T>(string playerToken, CancellationToken ct = default) where T : class, new()
+            => Send<ActionPollResponse<T>>(HttpMethod.Get, Url(Endpoints.GameRoomActionsPoll, $"&player_token={playerToken}"), null, ct);
 
-        public Task<ActionPendingResponse> GetPendingActionsAsync(string playerToken, CancellationToken ct = default)
-            => Send<ActionPendingResponse>(HttpMethod.Get, Url(Endpoints.GameRoomActionsPending, $"&player_token={playerToken}"), null, ct);
+        public Task<ActionPendingResponse<T>> GetPendingActionsAsync<T>(string playerToken, CancellationToken ct = default) where T : class, new()
+            => Send<ActionPendingResponse<T>>(HttpMethod.Get, Url(Endpoints.GameRoomActionsPending, $"&player_token={playerToken}"), null, ct);
 
-        public Task<ActionCompleteResponse> CompleteActionAsync(string actionId, string playerToken, ActionComplete request, CancellationToken ct = default)
-            => Send<ActionCompleteResponse>(HttpMethod.Post, Url(string.Format(Endpoints.GameRoomActionComplete, actionId), $"&player_token={playerToken}"),
-                new ActionCompleteRequest { Status = request.Status.ToString().ToLower(), Response_data = request.Response_data }, ct);
+        public Task<ActionCompleteResponse> CompleteActionAsync<T>(string actionId, string playerToken, 
+            ActionComplete<T> request, CancellationToken ct = default) where T : class, new()
+            => Send<ActionCompleteResponse>(HttpMethod.Post, Url(string.Format(Endpoints.GameRoomActionComplete, actionId),
+                $"&player_token={playerToken}"),  new ActionCompleteRequest<T>(request.Status, request.Response_data), ct);
 
-        public Task<UpdatePlayersResponse> UpdatePlayersAsync(string playerToken, UpdatePlayersRequest request, CancellationToken ct = default)
+        public Task<UpdatePlayersResponse> UpdatePlayersAsync<T>(string playerToken, UpdatePlayersRequest<T> request, CancellationToken ct = default) where T : class, new()
             => Send<UpdatePlayersResponse>(HttpMethod.Post, Url(Endpoints.GameRoomUpdates, $"&player_token={playerToken}"), request, ct);
 
-        public Task<PollUpdatesResponse> PollUpdatesAsync(string playerToken, string? lastUpdateId = null, CancellationToken ct = default)
+        public Task<PollUpdatesResponse<T>> PollUpdatesAsync<T>(string playerToken, 
+            string? lastUpdateId = null, CancellationToken ct = default) where T : class, new()
         {
             string extra = $"&player_token={playerToken}";
             if (!string.IsNullOrEmpty(lastUpdateId)) extra += $"&lastUpdateId={lastUpdateId}";
-            return Send<PollUpdatesResponse>(HttpMethod.Get, Url(Endpoints.GameRoomUpdatesPoll, extra), null, ct);
+            return Send<PollUpdatesResponse<T>>(HttpMethod.Get, Url(Endpoints.GameRoomUpdatesPoll, extra), null, ct);
         }
 
-        public Task<CurrentRoomResponse> GetCurrentRoomAsync(string playerToken, CancellationToken ct = default)
-            => Send<CurrentRoomResponse>(HttpMethod.Get, Url(Endpoints.GameRoomCurrent, $"&player_token={playerToken}"), null, ct);
+        public Task<CurrentRoomResponse<T>> GetCurrentRoomAsync<T>(string playerToken, CancellationToken ct = default) where T : class, new()
+            => Send<CurrentRoomResponse<T>>(HttpMethod.Get, Url(Endpoints.GameRoomCurrent, $"&player_token={playerToken}"), null, ct);
 
         // ==================== MATCHMAKING ====================
-        public Task<MatchmakingListResponse> GetMatchmakingLobbiesAsync(CancellationToken ct = default)
-            => Send<MatchmakingListResponse>(HttpMethod.Get, Url(Endpoints.MatchmakingList), null, ct);
+        public Task<MatchmakingListResponse<T>> GetMatchmakingLobbiesAsync<T>(CancellationToken ct = default) where T : class, new()
+            => Send<MatchmakingListResponse<T>>(HttpMethod.Get, Url(Endpoints.MatchmakingList), null, ct);
 
-        public Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync(string playerToken, int maxPlayers = 4, bool strictFull = false,
-            bool joinByRequests = false, object? rules = null, CancellationToken ct = default)
+        public Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<T>(string playerToken, int maxPlayers = 4, bool strictFull = false,
+            bool joinByRequests = false, T? rules = null, CancellationToken ct = default) where T : class, new()
             => Send<MatchmakingCreateResponse>(HttpMethod.Post, Url(Endpoints.MatchmakingCreate, $"&player_token={playerToken}"),
-                new MatchmakingCreateRequest { Max_players = maxPlayers, Strict_full = strictFull, Join_by_requests = joinByRequests, Rules = rules }, ct);
+                new MatchmakingCreateRequest<T>(maxPlayers, strictFull, joinByRequests, rules), ct);
 
         public Task<MatchmakingJoinRequestResponse> RequestToJoinMatchmakingAsync(string playerToken, string matchmakingId, CancellationToken ct = default)
             => Send<MatchmakingJoinRequestResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingRequest, matchmakingId), $"&player_token={playerToken}"), null, ct);
 
         public Task<MatchmakingPermissionResponse> RespondToJoinRequestAsync(string playerToken, string requestId, MatchmakingRequestAction action, CancellationToken ct = default)
             => Send<MatchmakingPermissionResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingResponse, requestId), $"&player_token={playerToken}"),
-                new MatchmakingPermissionRequest { Action = action.ToString().ToLower() }, ct);
+                new MatchmakingPermissionRequest(action), ct);
 
         public Task<MatchmakingRequestStatusResponse> CheckJoinRequestStatusAsync(string playerToken, string requestId, CancellationToken ct = default)
             => Send<MatchmakingRequestStatusResponse>(HttpMethod.Get, Url(string.Format(Endpoints.MatchmakingRequestStatus, requestId), $"&player_token={playerToken}"), null, ct);
 
-        public Task<MatchmakingCurrentResponse> GetCurrentMatchmakingStatusAsync(string playerToken, CancellationToken ct = default)
-            => Send<MatchmakingCurrentResponse>(HttpMethod.Get, Url(Endpoints.MatchmakingCurrent, $"&player_token={playerToken}"), null, ct);
+        public Task<MatchmakingCurrentResponse<T>> GetCurrentMatchmakingStatusAsync<T>(string playerToken, CancellationToken ct = default) where T : class, new()
+            => Send<MatchmakingCurrentResponse<T>>(HttpMethod.Get, Url(Endpoints.MatchmakingCurrent, $"&player_token={playerToken}"), null, ct);
 
         public Task<MatchmakingDirectJoinResponse> JoinMatchmakingDirectlyAsync(string playerToken, string matchmakingId, CancellationToken ct = default)
             => Send<MatchmakingDirectJoinResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingJoin, matchmakingId), $"&player_token={playerToken}"), null, ct);
@@ -292,13 +298,176 @@ namespace michitai
 
     public enum MatchmakingRequestAction { Approve, Reject }
 
+    // ====================== ALL PARAMETERS CLASSES ====================
+
+    public class ActionComplete<T> where T : class, new()
+    {
+        public RoomCompleteActionStatus Status { get; private set; }
+
+        public T? Response_data { get; private set; }
+
+
+
+        public ActionComplete(RoomCompleteActionStatus status, T? responseData)
+        {
+            Status = status;
+            Response_data = responseData;
+        }
+    }
+
     // ====================== ALL REQUEST CLASSES =======================
 
-
-    public class PlayerRegisterRequest
+    internal class PlayerRegisterRequest<T> where T : class, new()
     {
-        public required string Player_name { get; set; }
-        public object? Player_data { get; set; }
+        [JsonInclude]
+        internal required string Player_name { get; set; }
+        [JsonInclude]
+        private T? Player_data { get; set; }
+
+
+
+        [SetsRequiredMembers]
+        public PlayerRegisterRequest(string playerName, T? playerData = null)
+        {
+            this.Player_name = playerName;
+            this.Player_data = playerData;
+        }
+    }
+
+    public class RoomCreateRequest<T> where T : class, new()
+    {
+        [JsonInclude]
+        private string Room_name { get; set; } = string.Empty;
+        [JsonInclude]
+        private string? Password { get; set; }
+        [JsonInclude]
+        private int Max_players { get; set; }
+        [JsonInclude]
+        private T? Rules { get; set; }
+
+
+
+        public RoomCreateRequest(string room_name, int max_players, string? password = null, T? rules = null)
+        {
+            Room_name = room_name;
+            Password = password;
+            Max_players = max_players;
+            Rules = rules;
+        }
+    }
+
+    public class RoomJoinRequest
+    {
+        [JsonInclude]
+        private string? Password { get; set; }
+
+
+
+        public RoomJoinRequest(string? password = null)
+        {
+            this.Password = password;
+        }
+    }
+
+    public class ActionSubmitRequest<T> where T : class, new()
+    {
+        [JsonInclude]
+        private string Action_type { get; set; } = string.Empty;
+        [JsonInclude]
+        private T? Request_data { get; set; }
+
+
+
+        public ActionSubmitRequest(string actionType, T? requestData = null)
+        {
+            this.Action_type = actionType;
+            this.Request_data = requestData;
+        }
+    }
+
+    public class ActionCompleteRequest<T> where T : class, new()
+    {
+        [JsonInclude]
+        private string Status { get; set; } = RoomCompleteActionStatus.Completed.ToString().ToLower();
+        [JsonInclude]
+        private T? Response_data { get; set; }
+
+
+
+        public ActionCompleteRequest(RoomCompleteActionStatus status, T? responseData)
+        {
+            this.Status = status.ToString().ToLower();
+            this.Response_data = responseData;
+        }
+    }
+
+    public class UpdatePlayersRequest<T> where T : class, new()
+    {
+        [JsonInclude]
+        private object? Target_player_ids { get; set; }   // "all" or string[]
+        [JsonInclude]
+        private string Type { get; set; } = string.Empty;
+        [JsonInclude]
+        private T Data { get; set; } = new();
+
+
+
+        public UpdatePlayersRequest(object targetPlayerIds, string type, T data)
+        {
+            Target_player_ids = targetPlayerIds;
+            Type = type;
+            Data = data;
+        }
+    }
+
+    public class MatchmakingCreateRequest<T> where T : class, new()
+    {
+        [JsonInclude]
+        private int Max_players { get; set; }
+        [JsonInclude]
+        private bool Strict_full { get; set; }
+        [JsonInclude]
+        private bool Join_by_requests { get; set; }
+        [JsonInclude]
+        private T? Rules { get; set; }
+
+
+
+        public MatchmakingCreateRequest(int maxPlayers, bool strictFull, bool joinByRequests, T? rules)
+        {
+            this.Max_players = maxPlayers;
+            this.Strict_full = strictFull;
+            this.Join_by_requests = joinByRequests;
+            this.Rules = rules;
+        }
+    }
+
+    public class MatchmakingPermissionRequest
+    {
+        [JsonInclude]
+        private string Action { get; set; } = MatchmakingRequestAction.Approve.ToString().ToLower();
+
+
+
+        public MatchmakingPermissionRequest(MatchmakingRequestAction action)
+        {
+            this.Action = action.ToString().ToLower();
+        }
+    }
+
+    public class LeaderboardRequest
+    {
+        [JsonInclude]
+        private string[] Sort_by { get; set; } = Array.Empty<string>();
+        [JsonInclude]
+        private int Limit { get; set; }
+
+
+        public LeaderboardRequest(string[] sortBy, int limit)
+        {
+            this.Sort_by = sortBy;
+            this.Limit = limit;
+        }
     }
 
     // ====================== ALL RESPONSE CLASSES ======================
@@ -311,9 +480,9 @@ namespace michitai
         public int Game_id { get; set; }
     }
 
-    public class PlayerAuthResponse : ApiResponse
+    public class PlayerAuthResponse<T> : ApiResponse where T : class, new()
     {
-        public PlayerInfo? Player { get; set; }
+        public PlayerInfo<T>? Player { get; set; }
     }
 
     public class PlayerListResponse : ApiResponse
@@ -331,16 +500,31 @@ namespace michitai
         public string Created_at { get; set; } = string.Empty;
     }
 
-    public class PlayerInfo
+    public class PlayerInfo<T> where T : class, new()
     {
+        [JsonInclude]
+        private JsonElement Player_data { get; set; }
+
+
+
         public int Id { get; set; }
         public int Game_id { get; set; }
         public string Player_name { get; set; } = string.Empty;
-        public Dictionary<string, object> Player_data { get; set; } = new();
         public bool Is_active { get; set; }
         public string Last_login { get; set; } = string.Empty;
         public string Created_at { get; set; } = string.Empty;
         public string Updated_at { get; set; } = string.Empty;
+
+
+
+        [JsonIgnore]
+        public T PlayerData
+        {
+            get
+            {
+                return Player_data.Deserialize<T>(GameSDK.JsonOptions)!;
+            }
+        }
     }
 
     public class PlayerHeartbeatResponse : ApiResponse
@@ -357,14 +541,18 @@ namespace michitai
 
     public class GameDataResponse<T> : ApiResponse where T : class, new()
     {
+        [JsonInclude]
+        private JsonElement Data { get; set; }
+
+
+
         public string Type { get; set; } = string.Empty;
         public int Game_id { get; set; }
-        public JsonElement Data { get; set; }
 
 
 
         [JsonIgnore]
-        public T GetData
+        public T GameData
         {
             get
             {
@@ -375,15 +563,19 @@ namespace michitai
 
     public class PlayerDataResponse<T> : ApiResponse where T : class, new()
     {
+        [JsonInclude]
+        private JsonElement Data { get; set; }
+
+
+
         public string Type { get; set; } = string.Empty;
         public int Player_id { get; set; }
         public string Player_name { get; set; } = string.Empty;
-        public JsonElement Data { get; set; }
 
 
 
         [JsonIgnore]
-        public T GetData
+        public T PlayerData
         {
             get
             {
@@ -421,14 +613,6 @@ namespace michitai
         public long Original_timestamp { get; set; }
     }
 
-    public class RoomCreateRequest
-    {
-        public string Room_name { get; set; } = string.Empty;
-        public string? Password { get; set; }
-        public int Max_players { get; set; }
-        public object? Rules { get; set; }
-    }
-
     public class RoomCreateResponse : ApiResponse
     {
         public string Room_id { get; set; } = string.Empty;
@@ -436,24 +620,19 @@ namespace michitai
         public bool Is_host { get; set; }
     }
 
-    public class RoomShort
+    public class RoomShort<T> where T : class, new()
     {
         public string Room_id { get; set; } = string.Empty;
         public string Room_name { get; set; } = string.Empty;
         public int Max_players { get; set; }
         public int Current_players { get; set; }
         public int Has_password { get; set; }
-        public string? Rules { get; set; }
+        public T? Rules { get; set; }
     }
 
-    public class RoomListResponse : ApiResponse
+    public class RoomListResponse<T> : ApiResponse where T : class, new()
     {
-        public List<RoomShort> Rooms { get; set; } = new();
-    }
-
-    public class RoomJoinRequest
-    {
-        public string? Password { get; set; }
+        public List<RoomShort<T>> Rooms { get; set; } = new();
     }
 
     public class RoomJoinResponse : ApiResponse
@@ -487,28 +666,26 @@ namespace michitai
         public string Status { get; set; } = string.Empty;
     }
 
-    public class ActionSubmitRequest
-    {
-        public string Action_type { get; set; } = string.Empty;
-        public object? Request_data { get; set; }
-    }
-
     public class ActionSubmitResponse : ApiResponse
     {
         public string Action_id { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
     }
 
-    public class ActionInfo
+    public class ActionInfo<T> where T : class, new()
     {
+        [JsonInclude]
+        private string Status { get; set; } = string.Empty;
+
+
+
         public string Action_id { get; set; } = string.Empty;
         public string Action_type { get; set; } = string.Empty;
-        public object? Response_data { get; set; }
-        public string Status { get; set; } = string.Empty;
+        public T? Response_data { get; set; }
 
 
 
-        public RoomActionStatus GetStatus
+        public RoomActionStatus ActionStatus
         {
             get
             {
@@ -531,64 +708,29 @@ namespace michitai
         }
     }
 
-    public class ActionPollResponse : ApiResponse
+    public class ActionPollResponse<T> : ApiResponse where T : class, new()
     {
-        public List<ActionInfo> Actions { get; set; } = new();
+        public List<ActionInfo<T>> Actions { get; set; } = new();
     }
 
-    public class PendingAction
+    public class PendingAction<T> where T : class, new()
     {
         public string Action_id { get; set; } = string.Empty;
         public string Player_id { get; set; } = string.Empty;
         public string Action_type { get; set; } = string.Empty;
-        public object? Request_data { get; set; }
         public string Created_at { get; set; } = string.Empty;
         public string Player_name { get; set; } = string.Empty;
+        public T? Request_data { get; set; }
     }
 
-    public class ActionPendingResponse : ApiResponse
+    public class ActionPendingResponse<T> : ApiResponse where T : class, new()
     {
-        public List<PendingAction> Actions { get; set; } = new();
-    }
-
-    public class ActionComplete
-    {
-        public RoomCompleteActionStatus Status { get; private set; }
-
-        public object? Response_data { get; private set; }
-
-
-
-        public ActionComplete(RoomCompleteActionStatus status, object? responseData)
-        {
-            Status = status;
-            Response_data = responseData;
-        }
-    }
-
-    public class ActionCompleteRequest
-    {
-        public string Status { get; set; } = RoomCompleteActionStatus.Completed.ToString().ToLower();
-        public object? Response_data { get; set; }
+        public List<PendingAction<T>> Actions { get; set; } = new();
     }
 
     public class ActionCompleteResponse : ApiResponse
     {
         public string Message { get; set; } = string.Empty;
-    }
-
-    public class UpdatePlayersRequest
-    {
-        public object? Target_player_ids { get; set; }   // "all" or string[]
-        public string Type { get; set; } = string.Empty;
-        public object Data { get; set; } = new();
-
-        public UpdatePlayersRequest(object targetPlayerIds, string type, object data)
-        {
-            Target_player_ids = targetPlayerIds;
-            Type = type;
-            Data = data;
-        }
     }
 
     public class UpdatePlayersResponse : ApiResponse
@@ -598,22 +740,22 @@ namespace michitai
         public List<string> Target_players { get; set; } = new();
     }
 
-    public class PlayerUpdate
+    public class PlayerUpdate<T> where T : class, new()
     {
         public string Update_id { get; set; } = string.Empty;
         public string From_player_id { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
-        public object Data { get; set; } = new();
         public string Created_at { get; set; } = string.Empty;
+        public T? Data { get; set; }
     }
 
-    public class PollUpdatesResponse : ApiResponse
+    public class PollUpdatesResponse<T> : ApiResponse where T : class, new()
     {
-        public List<PlayerUpdate> Updates { get; set; } = new();
+        public List<PlayerUpdate<T>> Updates { get; set; } = new();
         public string Last_update_id { get; set; } = string.Empty;
     }
 
-    public class CurrentRoomInfo
+    public class CurrentRoomInfo<T> where T : class, new()
     {
         public string Room_id { get; set; } = string.Empty;
         public string Room_name { get; set; } = string.Empty;
@@ -623,46 +765,38 @@ namespace michitai
         public int Current_players { get; set; }
         public bool Has_password { get; set; }
         public bool Is_active { get; set; }
-        public string? Rules { get; set; }
         public string Player_name { get; set; } = string.Empty;
         public string Joined_at { get; set; } = string.Empty;
         public string Last_heartbeat { get; set; } = string.Empty;
         public string Room_created_at { get; set; } = string.Empty;
         public string Room_last_activity { get; set; } = string.Empty;
+        public T? Rules { get; set; }
     }
 
-    public class CurrentRoomResponse : ApiResponse
+    public class CurrentRoomResponse<T> : ApiResponse where T : class, new()
     {
         public bool In_room { get; set; }
-        public CurrentRoomInfo? Room { get; set; }
+        public CurrentRoomInfo<T>? Room { get; set; }
         public List<object>? Pending_actions { get; set; }
         public List<object>? Pending_updates { get; set; }
     }
 
-    public class MatchmakingListResponse : ApiResponse
+    public class MatchmakingListResponse<T> : ApiResponse where T : class, new()
     {
-        public List<MatchmakingLobby> Lobbies { get; set; } = new();
+        public List<MatchmakingLobby<T>> Lobbies { get; set; } = new();
     }
 
-    public class MatchmakingLobby
+    public class MatchmakingLobby<T> where T : class, new()
     {
         public string Matchmaking_id { get; set; } = string.Empty;
         public int Host_player_id { get; set; }
         public int Max_players { get; set; }
         public int Strict_full { get; set; }
-        public object? Rules { get; set; }
         public string Created_at { get; set; } = string.Empty;
         public string Last_heartbeat { get; set; } = string.Empty;
         public int Current_players { get; set; }
         public string Host_name { get; set; } = string.Empty;
-    }
-
-    public class MatchmakingCreateRequest
-    {
-        public int Max_players { get; set; }
-        public bool Strict_full { get; set; }
-        public bool Join_by_requests { get; set; }
-        public object? Rules { get; set; }
+        public T? Rules { get; set; }
     }
 
     public class MatchmakingCreateResponse : ApiResponse
@@ -678,11 +812,6 @@ namespace michitai
     {
         public string Request_id { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
-    }
-
-    public class MatchmakingPermissionRequest
-    {
-        public string Action { get; set; } = MatchmakingRequestAction.Approve.ToString().ToLower();
     }
 
     public class MatchmakingPermissionResponse : ApiResponse
@@ -705,10 +834,10 @@ namespace michitai
         public bool Join_by_requests { get; set; }
     }
 
-    public class MatchmakingCurrentResponse : ApiResponse
+    public class MatchmakingCurrentResponse<T> : ApiResponse where T : class, new()
     {
         public bool In_matchmaking { get; set; }
-        public MatchmakingInfo? Matchmaking { get; set; }
+        public MatchmakingInfo<T>? Matchmaking { get; set; }
         public List<MatchmakingRequestBase> Pending_requests { get; set; } = new();
     }
 
@@ -721,7 +850,7 @@ namespace michitai
         public string? Responded_at { get; set; }
     }
 
-    public class MatchmakingInfo
+    public class MatchmakingInfo<T> where T : class, new()
     {
         public string Matchmaking_id { get; set; } = string.Empty;
         public bool Is_host { get; set; }
@@ -729,13 +858,13 @@ namespace michitai
         public int Current_players { get; set; }
         public bool Strict_full { get; set; }
         public bool Join_by_requests { get; set; }
-        public object? Rules { get; set; }
         public string Joined_at { get; set; } = string.Empty;
         public string Player_status { get; set; } = string.Empty;
         public string Last_heartbeat { get; set; } = string.Empty;
         public string Lobby_heartbeat { get; set; } = string.Empty;
         public bool Is_started { get; set; }
         public object? Started_at { get; set; }
+        public T? Rules { get; set; }
     }
 
     public class MatchmakingDirectJoinResponse : ApiResponse
@@ -783,12 +912,6 @@ namespace michitai
         public string Message { get; set; } = string.Empty;
     }
 
-    public class LeaderboardRequest
-    {
-        public string[] Sort_by { get; set; } = Array.Empty<string>();
-        public int Limit { get; set; }
-    }
-
     public class LeaderboardResponse<T> : ApiResponse where T : class, new()
     {
         public List<LeaderboardPlayer<T>> Leaderboard { get; set; } = new();
@@ -799,15 +922,19 @@ namespace michitai
 
     public class LeaderboardPlayer<T> where T : class, new()
     {
+        [JsonInclude]
+        private JsonElement Player_data { get; set; }
+
+
+
         public int Rank { get; set; }
         public int Player_id { get; set; }
         public string Player_name { get; set; } = string.Empty;
-        public JsonElement Player_data { get; set; } = new();
 
 
 
         [JsonIgnore]
-        public T GetData
+        public T PlayerData
         {
             get
             {

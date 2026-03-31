@@ -50,7 +50,7 @@ public class Game
         {
             var gd = await sdk!.GetGameData<GameData>();
             Console.WriteLine($"[GAME DATA] Retrieved global data");
-            GameData gameData = gd.GetData;
+            GameData gameData = gd.GameData;
             Console.WriteLine($"[GAME DATA] Event: {gameData.CurrentEvent}, Version: {gameData.Version}");
             await sdk!.UpdateGameData(new GameData { CurrentEvent = "SpringFestival", Version = "1.2.3" });
             Console.WriteLine("[GAME DATA] Global data updated");
@@ -75,7 +75,7 @@ public class Game
             var lb = await sdk!.GetLeaderboardAsync<PlayerData>(new[] { "level", "wins" }, limit: 10);
             Console.WriteLine($"[LEADERBOARD] Top {lb.Leaderboard.Count} players loaded");
             if (lb.Leaderboard.Count > 0)
-                Console.WriteLine($"[LEADERBOARD] #1: {lb.Leaderboard[0].Player_name}, Level: {lb.Leaderboard[0].GetData.Level}");
+                Console.WriteLine($"[LEADERBOARD] #1: {lb.Leaderboard[0].Player_name}, Level: {lb.Leaderboard[0].PlayerData.Level}");
         }, "GetLeaderboard");
 
         Console.WriteLine();
@@ -142,7 +142,7 @@ public class Game
         Console.WriteLine("\n=== DEMO 3: DIRECT ROOM CREATION ===\n");
         await SetupPlayers();
 
-        var create = await sdk!.CreateRoomAsync(players["host"].Token, "Direct Battle Arena", null, 4);
+        var create = await sdk!.CreateRoomAsync<RulesData>(players["host"].Token, "Direct Battle Arena", 4, null);
         string roomId = create.Room_id;
 
         await JoinRoom(players["p1"].Token, roomId);
@@ -176,7 +176,7 @@ public class Game
         {
             var data = await GetPlayerData(p.Token);
 
-            var player = data.GetData;
+            var player = data.PlayerData;
 
             player.Level++;
 
@@ -206,9 +206,9 @@ public class Game
         return reg;
     }
 
-    private static async Task<PlayerAuthResponse> AuthenticatePlayer(string token)
+    private static async Task<PlayerAuthResponse<PlayerData>> AuthenticatePlayer(string token)
     {
-        var auth = await sdk!.AuthenticatePlayer(token);
+        var auth = await sdk!.AuthenticatePlayer<PlayerData>(token);
         Console.WriteLine($"[AUTH] {auth!.Player!.Player_name} authenticated");
         return auth;
     }
@@ -281,7 +281,7 @@ public class Game
 
     private static async Task GetCurrentMatchmakingStatus()
     {
-        var s = await sdk!.GetCurrentMatchmakingStatusAsync(players["host"].Token);
+        var s = await sdk!.GetCurrentMatchmakingStatusAsync<RulesData>(players["host"].Token);
         Console.WriteLine($"[MATCHMAKING STATUS] Players: {s.Matchmaking?.Current_players ?? 0}");
     }
 
@@ -308,8 +308,8 @@ public class Game
     {
         Console.WriteLine("\n=== GAME ROOM FLOW ===\n");
 
-        await sdk!.GetRoomsAsync();
-        await sdk!.GetCurrentRoomAsync(players["host"].Token);
+        await sdk!.GetRoomsAsync<RulesData>();
+        await sdk!.GetCurrentRoomAsync<RulesData>(players["host"].Token);
 
         foreach (var p in players.Values)
         {
@@ -320,18 +320,18 @@ public class Game
 
         await SafeExecute(async () =>
         {
-            var pending = await sdk!.GetPendingActionsAsync(players["host"].Token);
+            var pending = await sdk!.GetPendingActionsAsync<ActionData>(players["host"].Token);
             Console.WriteLine($"[PENDING ACTIONS] {pending.Actions.Count} actions");
         }, "GetPendingActions");
 
         await SafeExecute(async () =>
         {
-            var req = new UpdatePlayersRequest("all", "game_start", new { round = 1, message = "Game Started!" });
-            await sdk!.UpdatePlayersAsync(players["host"].Token, req);
+            var req = new UpdatePlayersRequest<UpdateData>("all", "game_start", new UpdateData { Round = 1, Message = "Game Started!" });
+            await sdk!.UpdatePlayersAsync<UpdateData>(players["host"].Token, req);
         }, "Send Room Update");
 
         foreach (var p in players.Values)
-            await SafeExecute(async () => await sdk!.PollUpdatesAsync(p.Token), $"PollUpdates {p.Name}");
+            await SafeExecute(async () => await sdk!.PollUpdatesAsync<UpdateData>(p.Token), $"PollUpdates {p.Name}");
 
         await sdk!.GetRoomPlayersAsync(players["host"].Token);
 
@@ -391,5 +391,11 @@ public class Game
     private class ActionData
     {
         public bool Ready { get; set; }
+    }
+
+    private class UpdateData
+    {
+        public int Round { get; set; }
+        public string Message { get; set; } = string.Empty;
     }
 }
