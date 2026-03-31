@@ -9,14 +9,22 @@ public class Game : MonoBehaviour
     private static GameSDK sdk;
     private readonly Dictionary<string, PlayerInfo> players = new Dictionary<string, PlayerInfo>();
 
+    [SerializeField]
+    private string apiToken = "YOUR_API_TOKEN";
+
+    [SerializeField]
+    private string apiPrivateToken = "YOUR_PRIVATE_TOKEN";
+
+
+
     private async void Start()
     {
         Debug.Log("=== MICHITAI Game SDK - Unity Demo Started ===\n");
 
         var logger = new ConsoleLogger();
         sdk = new GameSDK(
-            apiToken: "YOUR_API_TOKEN",
-            apiPrivateToken: "YOUR_PRIVATE_TOKEN",
+            apiToken: apiToken,
+            apiPrivateToken: apiPrivateToken,
             logger: logger,
             useUnityFormat: true   // Important: Use Unity mode
         );

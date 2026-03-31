@@ -219,7 +219,8 @@ namespace michitai
                 new ActionCompleteRequest(request.Status.ToString().ToLower(), JsonUtility.ToJson(request.ResponseData)), ct);
 
         public Task<UpdatePlayersResponse> UpdatePlayersAsync<T>(string playerToken, UpdatePlayers<T> request, CancellationToken ct = default) where T : class, new()
-            => Send<UpdatePlayersResponse>(HttpMethod.Post, Url(Endpoints.GameRoomUpdates, $"&player_token={playerToken}"), request, ct);
+            => Send<UpdatePlayersResponse>(HttpMethod.Post, Url(Endpoints.GameRoomUpdates, $"&player_token={playerToken}"), 
+                new UpdatePlayersRequest(request.TargetPlayerIds, request.Type, JsonUtility.ToJson(request.Data)), ct);
 
         public Task<PollUpdatesResponse> PollUpdatesAsync(string playerToken, string lastUpdateId = null, CancellationToken ct = default)
         {
@@ -324,17 +325,58 @@ namespace michitai
 
     public class UpdatePlayers<T> where T : class, new()
     {
-        public object target_player_ids;   // "all" or string[]
-        public string type;
-        public T data;
+        private object _target_player_ids;   // "all" or string[]
+        private string _type;
+        private T _data;
+
+
+
+        public object TargetPlayerIds
+        {
+            get
+            {
+                return _target_player_ids;
+            }
+
+            private set
+            {
+                _target_player_ids = value;
+            }
+        }
+
+        public string Type
+        {
+            get
+            {
+                return _type;
+            }
+
+            private set
+            {
+                _type = value;
+            }
+        }
+
+        public T Data
+        {
+            get
+            {
+                return _data;
+            }
+
+            private set
+            {
+                _data = value;
+            }
+        }
 
 
 
         public UpdatePlayers(object targetPlayerIds, string type, T data)
         {
-            this.target_player_ids = targetPlayerIds;
-            this.type = type;
-            this.data = data;
+            TargetPlayerIds = targetPlayerIds;
+            Type = type;
+            Data = data;
         }
     }
 
