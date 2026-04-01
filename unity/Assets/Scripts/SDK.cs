@@ -143,6 +143,16 @@ namespace michitai
             }
         }
 
+        internal static DateTimeOffset? ParseUtc(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return null;
+
+            if (DateTimeOffset.TryParse(value, out var dto))
+                return dto;
+
+            return null;
+        }
+
         // ==================== PLAYER ====================
         public Task<PlayerRegisterResponse> RegisterPlayer<T>(string name, T playerData = null, CancellationToken ct = default) where T : class, new()
             => Send<PlayerRegisterResponse>(HttpMethod.Post, Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData)), ct);
@@ -587,25 +597,76 @@ namespace michitai
     [System.Serializable]
     public class PlayerShort
     {
+        [SerializeField]
+        private string last_login;
+        [SerializeField]
+        private string created_at;
+
+
+
         public int id;
         public string player_name;
         public bool is_active;
-        public string last_login;
-        public string created_at;
+
+        
+
+        public DateTimeOffset? LastLogin
+        {
+            get
+            {
+                return GameSDK.ParseUtc(last_login);
+            }
+        }
+
+        public DateTimeOffset? CreatedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(created_at);
+            }
+        }
     }
 
     [System.Serializable]
     public class PlayerHeartbeatResponse : ApiResponse
     {
+        [SerializeField]
+        private string last_heartbeat;
+
+
+
         public string message;
-        public string last_heartbeat;
+
+
+
+        public DateTimeOffset? LastHeartbeat
+        {
+            get
+            {
+                return GameSDK.ParseUtc(last_heartbeat);
+            }
+        }
     }
 
     [System.Serializable]
     public class PlayerLogoutResponse : ApiResponse
     {
+        [SerializeField]
+        private string last_logout;
+
+
+
         public string message;
-        public string last_logout;
+
+
+
+        public DateTimeOffset? LastLogout
+        {
+            get
+            {
+                return GameSDK.ParseUtc(last_logout);
+            }
+        }
     }
 
     [System.Serializable]
@@ -656,34 +717,73 @@ namespace michitai
     [System.Serializable]
     public class SuccessResponse : ApiResponse
     {
+        [SerializeField]
+        private string updated_at;
+
+
+
         public string message;
-        public string updated_at;
+
+
+
+        public DateTimeOffset? UpdatedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(updated_at);
+            }
+        }
     }
 
     [System.Serializable]
     public class ServerTimeResponse : ApiResponse
     {
-        public string utc;
+        [SerializeField]
+        private string utc;
+
+
+
         public long timestamp;
         public string readable;
+
+
+
+        public DateTimeOffset? Utc
+        {
+            get
+            {
+                return GameSDK.ParseUtc(utc);
+            }
+        }
     }
 
     [System.Serializable]
-    public class ServerTimeWithOffsetResponse : ApiResponse
+    public class ServerTimeWithOffsetResponse : ServerTimeResponse
     {
-        public string utc;
-        public long timestamp;
-        public string readable;
         public TimeOffset offset;
     }
 
     [System.Serializable]
     public class TimeOffset
     {
+        [SerializeField]
+        private string original_utc;
+
+
+
         public int offset_hours;
         public string offset_string;
-        public string original_utc;
         public long original_timestamp;
+
+
+
+        public DateTimeOffset? OriginalUtc
+        {
+            get
+            {
+                return GameSDK.ParseUtc(original_utc);
+            }
+        }
     }
 
     // ====================== GAME ROOMS ======================
@@ -744,11 +844,25 @@ namespace michitai
     [System.Serializable]
     public class RoomPlayer
     {
+        [SerializeField]
+        private string last_heartbeat;
+
+
+
         public int player_id;
         public string player_name;
         public bool is_host;
         public bool is_online;
-        public string last_heartbeat;
+
+
+
+        public DateTimeOffset? LastHeartbeat
+        {
+            get
+            {
+                return GameSDK.ParseUtc(last_heartbeat);
+            }
+        }
     }
 
     [System.Serializable]
@@ -825,13 +939,13 @@ namespace michitai
     {
         [SerializeField]
         private string request_data_json;    // Unity mode
-
+        [SerializeField]
+        private string created_at;
 
 
         public string action_id;
         public int player_id;
         public string action_type;
-        public string created_at;
         public string player_name;
 
 
@@ -841,6 +955,14 @@ namespace michitai
             get
             {
                 return JsonUtility.FromJson<T>(request_data_json);
+            }
+        }
+
+        public DateTimeOffset? CreatedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(created_at);
             }
         }
     }
@@ -869,11 +991,25 @@ namespace michitai
     [System.Serializable]
     public class PlayerUpdate
     {
+        [SerializeField]
+        private string created_at;
+
+
+
         public string update_id;
         public int from_player_id;
         public string type;
         public string data_json;           // Unity mode
-        public string created_at;
+
+
+
+        public DateTimeOffset? CreatedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(created_at);
+            }
+        }
     }
 
     [System.Serializable]
@@ -888,6 +1024,17 @@ namespace michitai
     [System.Serializable]
     public class CurrentRoomInfo
     {
+        [SerializeField]
+        private string joined_at;
+        [SerializeField]
+        private string last_heartbeat;
+        [SerializeField]
+        private string room_created_at;
+        [SerializeField]
+        private string room_last_activity;
+
+
+
         public string room_id;
         public string room_name;
         public bool is_host;
@@ -898,10 +1045,40 @@ namespace michitai
         public bool is_active;
         public string rules_json;   // Unity mode
         public string player_name;
-        public string joined_at;
-        public string last_heartbeat;
-        public string room_created_at;
-        public string room_last_activity;
+
+
+
+        public DateTimeOffset? JoinedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(joined_at);
+            }
+        }
+
+        public DateTimeOffset? LastHeartbeat
+        {
+            get
+            {
+                return GameSDK.ParseUtc(last_heartbeat);
+            }
+        }
+
+        public DateTimeOffset? RoomCreatedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(room_created_at);
+            }
+        }
+
+        public DateTimeOffset? RoomLastActivity
+        {
+            get
+            {
+                return GameSDK.ParseUtc(room_last_activity);
+            }
+        }
     }
 
     // ====================== MATCHMAKING ======================
@@ -915,15 +1092,38 @@ namespace michitai
     [System.Serializable]
     public class MatchmakingLobby
     {
+        [SerializeField]
+        private string created_at;
+        [SerializeField]
+        private string last_heartbeat;
+
+
+
         public string matchmaking_id;
         public int host_player_id;
         public int max_players;
         public int strict_full;
         public string rules_json;           // Unity mode
-        public string created_at;
-        public string last_heartbeat;
         public int current_players;
         public string host_name;
+
+
+
+        public DateTimeOffset? CreatedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(created_at);
+            }
+        }
+
+        public DateTimeOffset? LastHeartbeat
+        {
+            get
+            {
+                return GameSDK.ParseUtc(last_heartbeat);
+            }
+        }
     }
 
     [System.Serializable]
@@ -976,11 +1176,34 @@ namespace michitai
     [System.Serializable]
     public class MatchmakingRequestBase
     {
+        [SerializeField]
+        private string requested_at;
+        [SerializeField]
+        private string responded_at;
+
+
+
         public string request_id;
         public string matchmaking_id;
         public string status;
-        public string requested_at;
-        public string responded_at;
+
+
+
+        public DateTimeOffset? RequestedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(requested_at);
+            }
+        }
+
+        public DateTimeOffset? RespondedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(responded_at);
+            }
+        }
     }
 
 
@@ -989,6 +1212,14 @@ namespace michitai
     {
         [SerializeField]
         private string rules_json;           // Unity mode
+        [SerializeField]
+        private string joined_at;
+        [SerializeField]
+        private string last_heartbeat;
+        [SerializeField]
+        private string lobby_heartbeat;
+        [SerializeField]
+        private string started_at;
 
 
 
@@ -998,12 +1229,8 @@ namespace michitai
         public int current_players;
         public bool strict_full;
         public bool join_by_requests;
-        public string joined_at;
         public string player_status;
-        public string last_heartbeat;
-        public string lobby_heartbeat;
         public bool is_started;
-        public string started_at;
 
 
 
@@ -1012,6 +1239,38 @@ namespace michitai
             get
             {
                 return JsonUtility.FromJson<T>(rules_json);
+            }
+        }
+
+        public DateTimeOffset? JoinedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(joined_at);
+            }
+        }
+
+        public DateTimeOffset? LastHeartbeat
+        {
+            get
+            {
+                return GameSDK.ParseUtc(last_heartbeat);
+            }
+        }
+
+        public DateTimeOffset? LobbyHeartbeat
+        {
+            get
+            {
+                return GameSDK.ParseUtc(lobby_heartbeat);
+            }
+        }
+
+        public DateTimeOffset? StartedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(started_at);
             }
         }
     }
@@ -1039,13 +1298,36 @@ namespace michitai
     [System.Serializable]
     public class MatchmakingPlayer
     {
+        [SerializeField]
+        private string joined_at;
+        [SerializeField]
+        private string last_heartbeat;
+
+
+
         public int player_id;
-        public string joined_at;
-        public string last_heartbeat;
         public string status;
         public string player_name;
         public int seconds_since_heartbeat;
         public bool is_host;
+
+
+
+        public DateTimeOffset? JoinedAt
+        {
+            get
+            {
+                return GameSDK.ParseUtc(joined_at);
+            }
+        }
+
+        public DateTimeOffset? LastHeartbeat
+        {
+            get
+            {
+                return GameSDK.ParseUtc(last_heartbeat);
+            }
+        }
     }
 
     [System.Serializable]

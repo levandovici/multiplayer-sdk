@@ -524,8 +524,8 @@ namespace michitai
         public int Id { get; set; }
         public string Player_name { get; set; } = string.Empty;
         public bool Is_active { get; set; }
-        public string Last_login { get; set; } = string.Empty;
-        public string Created_at { get; set; } = string.Empty;
+        public DateTimeOffset? Last_login { get; set; }
+        public DateTimeOffset Created_at { get; set; }
     }
 
     public class PlayerInfo<T> where T : class, new()
@@ -539,9 +539,9 @@ namespace michitai
         public int Game_id { get; set; }
         public string Player_name { get; set; } = string.Empty;
         public bool Is_active { get; set; }
-        public string Last_login { get; set; } = string.Empty;
-        public string Created_at { get; set; } = string.Empty;
-        public string Updated_at { get; set; } = string.Empty;
+        public DateTimeOffset? Last_login { get; set; }
+        public DateTimeOffset Created_at { get; set; }
+        public DateTimeOffset Updated_at { get; set; }
 
 
 
@@ -558,13 +558,13 @@ namespace michitai
     public class PlayerHeartbeatResponse : ApiResponse
     {
         public string Message { get; set; } = string.Empty;
-        public string Last_heartbeat { get; set; } = string.Empty;
+        public DateTimeOffset Last_heartbeat { get; set; }
     }
 
     public class PlayerLogoutResponse : ApiResponse
     {
         public string Message { get; set; } = string.Empty;
-        public string Last_logout { get; set; } = string.Empty;
+        public DateTimeOffset? Last_logout { get; set; }
     }
 
     public class GameDataResponse<T> : ApiResponse where T : class, new()
@@ -615,21 +615,18 @@ namespace michitai
     public class SuccessResponse : ApiResponse
     {
         public string Message { get; set; } = string.Empty;
-        public string Updated_at { get; set; } = string.Empty;
+        public DateTimeOffset Updated_at { get; set; }
     }
 
     public class ServerTimeResponse : ApiResponse
     {
-        public string Utc { get; set; } = string.Empty;
+        public DateTimeOffset Utc { get; set; }
         public long Timestamp { get; set; }
         public string Readable { get; set; } = string.Empty;
     }
 
-    public class ServerTimeWithOffsetResponse : ApiResponse
+    public class ServerTimeWithOffsetResponse : ServerTimeResponse
     {
-        public string Utc { get; set; } = string.Empty;
-        public long Timestamp { get; set; }
-        public string Readable { get; set; } = string.Empty;
         public TimeOffset? Offset { get; set; }
     }
 
@@ -637,7 +634,7 @@ namespace michitai
     {
         public int Offset_hours { get; set; }
         public string Offset_string { get; set; } = string.Empty;
-        public string Original_utc { get; set; } = string.Empty;
+        public DateTimeOffset Original_utc { get; set; }
         public long Original_timestamp { get; set; }
     }
 
@@ -675,7 +672,7 @@ namespace michitai
         public string Player_name { get; set; } = string.Empty;
         public bool Is_host { get; set; }
         public bool Is_online { get; set; }
-        public string Last_heartbeat { get; set; } = string.Empty;
+        public DateTimeOffset Last_heartbeat { get; set; }
     }
 
     public class RoomPlayersResponse : ApiResponse
@@ -746,7 +743,7 @@ namespace michitai
         public string Action_id { get; set; } = string.Empty;
         public int Player_id { get; set; }
         public string Action_type { get; set; } = string.Empty;
-        public string Created_at { get; set; } = string.Empty;
+        public DateTimeOffset Created_at { get; set; }
         public string Player_name { get; set; } = string.Empty;
         public T? Request_data { get; set; }
     }
@@ -773,7 +770,7 @@ namespace michitai
         public string Update_id { get; set; } = string.Empty;
         public int From_player_id { get; set; }
         public string Type { get; set; } = string.Empty;
-        public string Created_at { get; set; } = string.Empty;
+        public DateTimeOffset Created_at { get; set; }
         public T? Data { get; set; }
     }
 
@@ -794,10 +791,10 @@ namespace michitai
         public bool Has_password { get; set; }
         public bool Is_active { get; set; }
         public string Player_name { get; set; } = string.Empty;
-        public string Joined_at { get; set; } = string.Empty;
-        public string Last_heartbeat { get; set; } = string.Empty;
-        public string Room_created_at { get; set; } = string.Empty;
-        public string Room_last_activity { get; set; } = string.Empty;
+        public DateTimeOffset Joined_at { get; set; }
+        public DateTimeOffset Last_heartbeat { get; set; }
+        public DateTimeOffset Room_created_at { get; set; }
+        public DateTimeOffset Room_last_activity { get; set; }
         public T? Rules { get; set; }
     }
 
@@ -820,8 +817,8 @@ namespace michitai
         public int Host_player_id { get; set; }
         public int Max_players { get; set; }
         public int Strict_full { get; set; }
-        public string Created_at { get; set; } = string.Empty;
-        public string Last_heartbeat { get; set; } = string.Empty;
+        public DateTimeOffset Created_at { get; set; }
+        public DateTimeOffset Last_heartbeat { get; set; }
         public int Current_players { get; set; }
         public string Host_name { get; set; } = string.Empty;
         public T? Rules { get; set; }
@@ -874,8 +871,8 @@ namespace michitai
         public string Request_id { get; set; } = string.Empty;
         public string Matchmaking_id { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
-        public string Requested_at { get; set; } = string.Empty;
-        public string? Responded_at { get; set; }
+        public DateTimeOffset Requested_at { get; set; }
+        public DateTimeOffset? Responded_at { get; set; }
     }
 
     public class MatchmakingInfo<T> where T : class, new()
@@ -886,12 +883,12 @@ namespace michitai
         public int Current_players { get; set; }
         public bool Strict_full { get; set; }
         public bool Join_by_requests { get; set; }
-        public string Joined_at { get; set; } = string.Empty;
+        public DateTimeOffset Joined_at { get; set; }
         public string Player_status { get; set; } = string.Empty;
-        public string Last_heartbeat { get; set; } = string.Empty;
-        public string Lobby_heartbeat { get; set; } = string.Empty;
+        public DateTimeOffset Last_heartbeat { get; set; }
+        public DateTimeOffset Lobby_heartbeat { get; set; }
         public bool Is_started { get; set; }
-        public object? Started_at { get; set; }
+        public DateTimeOffset? Started_at { get; set; }
         public T? Rules { get; set; }
     }
 
@@ -914,8 +911,8 @@ namespace michitai
     public class MatchmakingPlayer
     {
         public int Player_id { get; set; }
-        public string Joined_at { get; set; } = string.Empty;
-        public string Last_heartbeat { get; set; } = string.Empty;
+        public DateTimeOffset Joined_at { get; set; }
+        public DateTimeOffset Last_heartbeat { get; set; }
         public string Status { get; set; } = string.Empty;
         public string Player_name { get; set; } = string.Empty;
         public int Seconds_since_heartbeat { get; set; }

@@ -77,13 +77,13 @@ public class Game : MonoBehaviour
         await SafeExecute(async () =>
         {
             var time = await sdk.GetServerTime();
-            Debug.Log($"[TIME] Server UTC: {time.utc}");
+            Debug.Log($"[TIME] Server UTC: {time.Utc}");
         }, "GetServerTime");
 
         await SafeExecute(async () =>
         {
             var timeOffset = await sdk.GetServerTimeWithOffset(3);
-            Debug.Log($"[TIME] UTC+3: {timeOffset.readable}");
+            Debug.Log($"[TIME] Server UTC+3: {timeOffset.Utc}");
         }, "GetServerTimeWithOffset");
 
         // Leaderboard
@@ -243,7 +243,7 @@ public class Game : MonoBehaviour
 
         foreach (PlayerShort player in list.players)
         {
-            Debug.Log($"[PLAYERS LIST] Id: {player.id}, Name: {player.player_name}, Online: {player.is_active}, Login: {player.last_login}, Created: {player.created_at}");
+            Debug.Log($"[PLAYERS LIST] Id: {player.id}, Name: {player.player_name}, Online: {player.is_active}, Login: {player.LastLogin}, Created: {player.CreatedAt}");
         }
     }
 

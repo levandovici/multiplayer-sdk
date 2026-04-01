@@ -66,7 +66,7 @@ public class Game
         await SafeExecute(async () =>
         {
             var timeOffset = await sdk!.GetServerTimeWithOffset(3);
-            Console.WriteLine($"[TIME] With UTC+3 offset: {timeOffset.Readable}");
+            Console.WriteLine($"[TIME] Server UTC+3: {timeOffset.Utc}");
         }, "GetServerTimeWithOffset");
 
         // Leaderboard
