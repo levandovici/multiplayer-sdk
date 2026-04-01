@@ -326,7 +326,7 @@ public class Game
 
         await SafeExecute(async () =>
         {
-            var req = new UpdatePlayersRequest<UpdateData>("all", "game_start", new UpdateData { Round = 1, Message = "Game Started!" });
+            var req = new UpdatePlayers<UpdateData>(RoomTargetPlayers.All, "game_start", new UpdateData { Round = 1, Message = "Game Started!" });
             await sdk!.UpdatePlayersAsync<UpdateData>(players["host"].Token, req);
         }, "Send Room Update");
 
@@ -362,7 +362,7 @@ public class Game
 
     private class PlayerInfo
     {
-        public required string Id { get; set; }
+        public required int Id { get; set; }
         public required string Token { get; set; }
         public required string Name { get; set; }
     }

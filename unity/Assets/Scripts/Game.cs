@@ -354,7 +354,7 @@ public class Game : MonoBehaviour
         await SafeExecute(async () =>
         {
             UpdateData updateData = new UpdateData { round = 1, message = "Game Started!" };
-            var updateReq = new UpdatePlayers<UpdateData>("all", "game_start", updateData);
+            var updateReq = new UpdatePlayers<UpdateData>(RoomTargetPlayers.All, "game_start", updateData);
             await sdk.UpdatePlayersAsync<UpdateData>(players["host"].Token, updateReq);
             Debug.Log("[UPDATE] Broadcast sent to all players");
         }, "Send Room Update");
@@ -393,7 +393,7 @@ public class Game : MonoBehaviour
     // ====================== PLAYER INFO ======================
     private class PlayerInfo
     {
-        public string Id { get; set; }
+        public int Id { get; set; }
         public string Token { get; set; }
         public string Name { get; set; }
     }
