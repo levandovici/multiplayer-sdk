@@ -237,7 +237,7 @@ namespace michitai
         public Task<PollUpdatesResponse> PollUpdatesAsync(string playerToken, string lastUpdateId = null, CancellationToken ct = default)
         {
             string extra = $"&player_token={playerToken}";
-            if (!string.IsNullOrEmpty(lastUpdateId)) extra += $"&lastUpdateId={lastUpdateId}";
+            if (!string.IsNullOrEmpty(lastUpdateId)) extra += $"&last_update={lastUpdateId}";
             return Send<PollUpdatesResponse>(HttpMethod.Get, Url(Endpoints.GameRoomUpdatesPoll, extra), null, ct);
         }
 
@@ -249,9 +249,9 @@ namespace michitai
             => Send<MatchmakingListResponse<T>>(HttpMethod.Get, Url(Endpoints.MatchmakingList), null, ct);
 
         public Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<TPlayerData, TRules>(string playerToken, string matchmakingName, int maxPlayers = 4, bool strictFull = false,
-            bool joinByRequests = false, bool hostSwitch = false, TPlayerData playerData = null, TRules rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
+            bool joinByRequests = false, bool hostSwitch = false, bool canLeaveRoom = false, TPlayerData playerData = null, TRules rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
             => Send<MatchmakingCreateResponse>(HttpMethod.Post, Url(Endpoints.MatchmakingCreate, $"&player_token={playerToken}"),
-                new MatchmakingCreateRequest(matchmakingName, maxPlayers, strictFull, joinByRequests, hostSwitch, JsonUtility.ToJson(playerData), JsonUtility.ToJson(rules)), ct);
+                new MatchmakingCreateRequest(matchmakingName, maxPlayers, strictFull, joinByRequests, hostSwitch, canLeaveRoom, JsonUtility.ToJson(playerData), JsonUtility.ToJson(rules)), ct);
 
         public Task<MatchmakingJoinRequestResponse> RequestToJoinMatchmakingAsync<T>(string playerToken, string matchmakingId, T playerData = null, CancellationToken ct = default) where T : class, new()
             => Send<MatchmakingJoinRequestResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingRequest, matchmakingId), $"&player_token={playerToken}"), playerData, ct);
@@ -525,19 +525,21 @@ namespace michitai
         public bool strict_full;
         public bool join_by_requests;
         public bool host_switch;
+        public bool can_leave_room;
         public string player_data_json;   //Unity mode
         public string rules_json;   //Unity mode
 
 
 
         public MatchmakingCreateRequest(string matchmakingName, int maxPlayers, bool strictFull,
-            bool joinByRequests, bool hostSwitch, string playerData, string rulesJson)
+            bool joinByRequests, bool hostSwitch, bool canLeaveRoom, string playerData, string rulesJson)
         {
             this.matchmaking_name = matchmakingName;
             this.max_players = maxPlayers;
             this.strict_full = strictFull;
             this.join_by_requests = joinByRequests;
             this.host_switch = hostSwitch;
+            this.can_leave_room = canLeaveRoom;
             this.player_data_json = playerData;
             this.rules_json = rulesJson;
         }
@@ -839,6 +841,7 @@ namespace michitai
         public int current_players;
         public bool has_password;
         public bool host_switch;
+        public bool can_leave;
 
 
 
@@ -1021,7 +1024,7 @@ namespace michitai
     public class PollUpdatesResponse : ApiResponse
     {
         public List<PlayerUpdate> updates = new();
-        public string last_update_id;
+        public string last_update;
     }
 
     [System.Serializable]
@@ -1081,6 +1084,7 @@ namespace michitai
         public int current_players;
         public bool has_password;
         public bool host_switch;
+        public bool can_leave;
         public bool is_active;
         public string player_name;
 
@@ -1156,6 +1160,7 @@ namespace michitai
         public bool strict_full;
         public bool join_by_requests;
         public bool host_switch;
+        public bool can_leave_room;
         public int current_players;
         public string host_name;
 
@@ -1197,6 +1202,7 @@ namespace michitai
         public bool strict_full;
         public bool join_by_requests;
         public bool host_switch;
+        public bool can_leave_room;
         public bool is_host;
     }
 
@@ -1295,6 +1301,7 @@ namespace michitai
         public bool strict_full;
         public bool join_by_requests;
         public bool host_switch;
+        public bool can_leave_room;
         public bool is_online;
         public bool is_started;
 

@@ -274,6 +274,7 @@ public class Game : MonoBehaviour
             strictFull: false,
             joinByRequests: joinByRequests,
             hostSwitch:false,
+            canLeaveRoom:false,
             playerData: playerData,
             rules: rules
         );

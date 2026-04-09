@@ -245,7 +245,7 @@ namespace michitai
             string? lastUpdateId = null, CancellationToken ct = default) where T : class, new()
         {
             string extra = $"&player_token={playerToken}";
-            if (!string.IsNullOrEmpty(lastUpdateId)) extra += $"&lastUpdateId={lastUpdateId}";
+            if (!string.IsNullOrEmpty(lastUpdateId)) extra += $"&last_update={lastUpdateId}";
             return Send<PollUpdatesResponse<T>>(HttpMethod.Get, Url(Endpoints.GameRoomUpdatesPoll, extra), null, ct);
         }
 
@@ -257,9 +257,9 @@ namespace michitai
             => Send<MatchmakingListResponse<T>>(HttpMethod.Get, Url(Endpoints.MatchmakingList), null, ct);
 
         public Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<TPlayerData, TRules>(string playerToken, string matchmakingName, int maxPlayers = 4, bool strictFull = false,
-            bool joinByRequests = false, bool hostSwitch = false, TPlayerData? playerData = null, TRules? rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
+            bool joinByRequests = false, bool hostSwitch = false, bool canLeaveRoom = false, TPlayerData? playerData = null, TRules? rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
             => Send<MatchmakingCreateResponse>(HttpMethod.Post, Url(Endpoints.MatchmakingCreate, $"&player_token={playerToken}"),
-                new MatchmakingCreateRequest<TPlayerData, TRules>(matchmakingName, maxPlayers, strictFull, joinByRequests, hostSwitch, playerData, rules), ct);
+                new MatchmakingCreateRequest<TPlayerData, TRules>(matchmakingName, maxPlayers, strictFull, joinByRequests, hostSwitch, canLeaveRoom, playerData, rules), ct);
 
         public Task<MatchmakingJoinRequestResponse> RequestToJoinMatchmakingAsync<T>(string playerToken, string matchmakingId, T? playerData = null, CancellationToken ct = default) where T : class, new()
             => Send<MatchmakingJoinRequestResponse>(HttpMethod.Post, Url(string.Format(Endpoints.MatchmakingRequest, matchmakingId), $"&player_token={playerToken}"), playerData, ct);
@@ -473,6 +473,8 @@ namespace michitai
         [JsonInclude]
         private bool Host_switch { get; set; }
         [JsonInclude]
+        private bool Can_leave_room { get; set; }
+        [JsonInclude]
         private TPlayerData? Player_data { get; set; }
         [JsonInclude]
         private TRules? Rules { get; set; }
@@ -480,13 +482,15 @@ namespace michitai
 
 
         public MatchmakingCreateRequest(string matchmakingName, int maxPlayers, bool strictFull,
-            bool joinByRequests = false, bool hostSwitch = false, TPlayerData? playerData = null, TRules? rules = null)
+            bool joinByRequests = false, bool hostSwitch = false, bool canLeaveRoom = false,
+             TPlayerData? playerData = null, TRules? rules = null)
         {
             this.Matchmaking_name = matchmakingName;
             this.Max_players = maxPlayers;
             this.Strict_full = strictFull;
             this.Join_by_requests = joinByRequests;
             this.Host_switch = hostSwitch;
+            this.Can_leave_room = canLeaveRoom;
             this.Player_data = playerData;
             this.Rules = rules;
         }
@@ -675,6 +679,7 @@ namespace michitai
         public int Current_players { get; set; }
         public bool Has_password { get; set; }
         public bool Host_switch { get; set; }
+        public bool Can_leave { get; set; }
         public T? Rules { get; set; }
     }
 
@@ -801,7 +806,7 @@ namespace michitai
     public class PollUpdatesResponse<T> : ApiResponse where T : class, new()
     {
         public List<PlayerUpdate<T>> Updates { get; set; } = new();
-        public string Last_update_id { get; set; } = string.Empty;
+        public string Last_update { get; set; } = string.Empty;
     }
 
     public class CurrentRoomInfo<T> where T : class, new()
@@ -814,6 +819,7 @@ namespace michitai
         public int Current_players { get; set; }
         public bool Has_password { get; set; }
         public bool Host_switch { get; set; }
+        public bool Can_leave { get; set; }
         public bool Is_active { get; set; }
         public string Player_name { get; set; } = string.Empty;
         public DateTimeOffset Joined_at { get; set; }
@@ -845,6 +851,7 @@ namespace michitai
         public bool Strict_full { get; set; }
         public bool Join_by_requests { get; set; }
         public bool Host_switch { get; set; }
+        public bool Can_leave_room { get; set; }
         public DateTimeOffset Created_at { get; set; }
         public DateTimeOffset Last_heartbeat { get; set; }
         public int Current_players { get; set; }
@@ -860,6 +867,7 @@ namespace michitai
         public bool Strict_full { get; set; }
         public bool Join_by_requests { get; set; }
         public bool Host_switch { get; set; }
+        public bool Can_leave_room { get; set; }
         public bool Is_host { get; set; }
     }
 
@@ -915,6 +923,7 @@ namespace michitai
         public bool Strict_full { get; set; }
         public bool Join_by_requests { get; set; }
         public bool Host_switch { get; set; }
+        public bool Can_leave_room { get; set; }
         public DateTimeOffset Joined_at { get; set; }
         public bool Is_online { get; set; }
         public DateTimeOffset Last_heartbeat { get; set; }

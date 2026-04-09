@@ -251,7 +251,8 @@ public class Game
 
         PlayerData playerData = new PlayerData { Level = 3, Rank = "Diamond" };
 
-        var res = await sdk!.CreateMatchmakingLobbyAsync<PlayerData, RulesData>(players["host"].Token, matchmakingName, 4, false, joinByRequests, false, playerData, rules);
+        var res = await sdk!.CreateMatchmakingLobbyAsync<PlayerData, RulesData>(players["host"].Token,
+            matchmakingName, 4, false, joinByRequests, false, false, playerData, rules);
         Console.WriteLine($"[MATCHMAKING] Lobby created (requests={joinByRequests})");
         return res.Matchmaking_id;
     }
