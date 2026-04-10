@@ -697,6 +697,7 @@ namespace michitai
     public class RoomPlayer<T> where T : class, new()
     {
         public int Player_id { get; set; }
+        public bool Is_local { get; set; }
         public string Player_name { get; set; } = string.Empty;
         public bool Is_host { get; set; }
         public bool Is_online { get; set; }
@@ -952,6 +953,7 @@ namespace michitai
     public class MatchmakingPlayer<T> where T : class, new()
     {
         public int Player_id { get; set; }
+        public bool Is_local { get; set; }
         public DateTimeOffset Joined_at { get; set; }
         public DateTimeOffset Last_heartbeat { get; set; }
         public bool Is_online { get; set; }

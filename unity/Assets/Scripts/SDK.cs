@@ -879,6 +879,7 @@ namespace michitai
 
 
         public int player_id;
+        public bool is_local;
         public string player_name;
         public bool is_host;
         public bool is_online;
@@ -1381,6 +1382,7 @@ namespace michitai
 
 
         public int player_id;
+        public bool is_local;
         public bool is_online;
         public string player_name;
         public int seconds_since_heartbeat;
