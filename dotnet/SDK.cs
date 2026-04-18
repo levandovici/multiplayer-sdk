@@ -66,6 +66,7 @@ namespace michitai
             public const string GamePlayersLogin = "game_players.php/login";
             public const string GamePlayersHeartbeat = "game_players.php/heartbeat";
             public const string GamePlayersLogout = "game_players.php/logout";
+            public const string GamePlayersRename = "game_players.php/rename";
             public const string GamePlayersList = "game_players.php/list";
 
             public const string GameDataGameGet = "game_data.php/game/get";
@@ -171,6 +172,9 @@ namespace michitai
 
         public Task<PlayerLogoutResponse> LogoutPlayerAsync(string playerToken, CancellationToken ct = default)
             => Send<PlayerLogoutResponse>(HttpMethod.Post, Url(Endpoints.GamePlayersLogout, $"&player_token={playerToken}"), null, ct);
+
+        public Task<PlayerRenameResponse> RenamePlayerAsync(string playerToken, string newName, CancellationToken ct = default)
+            => Send<PlayerRenameResponse>(HttpMethod.Put, Url(Endpoints.GamePlayersRename, $"&player_token={playerToken}"), new PlayerRenameRequest(newName), ct);
 
         public Task<PlayerListResponse> GetAllPlayers(CancellationToken ct = default)
             => Send<PlayerListResponse>(HttpMethod.Get, Url(Endpoints.GamePlayersList, $"&private_token={_apiPrivateToken}"), null, ct);
@@ -356,6 +360,19 @@ namespace michitai
         {
             this.Player_name = playerName;
             this.Player_data = playerData;
+        }
+    }
+
+    internal class PlayerRenameRequest
+    {
+        [JsonInclude]
+        internal required string New_name { get; set; }
+
+
+
+        public PlayerRenameRequest(string newName)
+        {
+            this.New_name = newName;
         }
     }
 
@@ -591,6 +608,13 @@ namespace michitai
     {
         public string Message { get; set; } = string.Empty;
         public DateTimeOffset? Last_logout { get; set; }
+    }
+
+    public class PlayerRenameResponse : ApiResponse
+    {
+        public string Message { get; set; } = string.Empty;
+        public string New_name { get; set; } = string.Empty;
+        public int Player_id { get; set; }
     }
 
     public class GameDataResponse<T> : ApiResponse where T : class, new()

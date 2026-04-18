@@ -47,6 +47,7 @@ namespace michitai
             public const string GamePlayersLogin = "game_players.php/login";
             public const string GamePlayersHeartbeat = "game_players.php/heartbeat";
             public const string GamePlayersLogout = "game_players.php/logout";
+            public const string GamePlayersRename = "game_players.php/rename";
             public const string GamePlayersList = "game_players.php/list";
 
             public const string GameDataGameGet = "game_data.php/game/get";
@@ -165,6 +166,9 @@ namespace michitai
 
         public Task<PlayerLogoutResponse> LogoutPlayerAsync(string playerToken, CancellationToken ct = default)
             => Send<PlayerLogoutResponse>(HttpMethod.Post, Url(Endpoints.GamePlayersLogout, $"&player_token={playerToken}"), null, ct);
+
+        public Task<PlayerRenameResponse> RenamePlayerAsync(string playerToken, string newName, CancellationToken ct = default)
+            => Send<PlayerRenameResponse>(HttpMethod.Put, Url(Endpoints.GamePlayersRename, $"&player_token={playerToken}"), new PlayerRenameRequest(newName), ct);
 
         public Task<PlayerListResponse> GetAllPlayers(CancellationToken ct = default)
             => Send<PlayerListResponse>(HttpMethod.Get, Url(Endpoints.GamePlayersList, $"&private_token={_apiPrivateToken}"), null, ct);
@@ -422,6 +426,19 @@ namespace michitai
         {
             this.player_name = playerName;
             this.player_data_json = playerDataJson;
+        }
+    }
+
+    [System.Serializable]
+    public class PlayerRenameRequest
+    {
+        public string new_name;
+
+
+
+        public PlayerRenameRequest(string newName)
+        {
+            this.new_name = newName;
         }
     }
 
@@ -692,6 +709,14 @@ namespace michitai
                 return GameSDK.ParseUtc(last_logout);
             }
         }
+    }
+
+    [System.Serializable]
+    public class PlayerRenameResponse : ApiResponse
+    {
+        public string message;
+        public string new_name;
+        public int player_id;
     }
 
     [System.Serializable]
