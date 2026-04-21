@@ -11,10 +11,26 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace michitai
 {
-    // ====================== BASE RESPONSE ======================
+    // ====================== IMPROVED API RESPONSE ======================
+
+    public abstract class ApiResponse<TError> : ApiResponse where TError : Enum, IConvertible
+    {
+        /// <summary>
+        /// Gets the error type as an enum by converting the Error string
+        /// </summary>
+        public TError ErrorType => ErrorConverter.ConvertToEnum<TError>(Error ?? string.Empty);
+
+        /// <summary>
+        /// Gets a user-friendly error message based on the error type
+        /// </summary>
+        public string ErrorMessage => ErrorConverter.GetErrorMessage(ErrorType);
+    }
+
+    // Non-generic version for backward compatibility
     public abstract class ApiResponse
     {
         public bool Success { get; set; }
+
         public string? Error { get; set; }
     }
 
@@ -139,24 +155,20 @@ namespace michitai
                 if (!response.Success)
                 {
                     _logger?.Error($"API Error: {response.Error ?? "Unknown error"}");
-                    throw new ApiException(response.Error ?? "Unknown API error", responseText);
+                    // Don't throw exception - let caller handle the typed error
                 }
 
                 return response;
             }
             catch (JsonException ex)
             {
-                _logger?.Warn($"JSON Deserialization Error: {ex.Message}. Raw: {responseText}");
+                _logger?.Warn($"JSON Deserialization Error. Raw: {responseText}. Exception: {ex.Message}");
 
-                try
-                {
-                    var error = JsonSerializer.Deserialize<ErrorResponse>(responseText, JsonOptions);
-                    if (error != null && !error.Success)
-                        throw new ApiException(error.Error ?? "API error", responseText);
-                }
-                catch { }
-
-                throw new ApiException($"Failed to deserialize response: {ex.Message}", responseText, ex);
+                // Return a default error response instead of throwing
+                var errorResponse = new T();
+                errorResponse.Success = false;
+                errorResponse.Error = "Failed to deserialize response";
+                return errorResponse;
             }
         }
 
@@ -370,6 +382,7 @@ namespace michitai
 
 
 
+        [SetsRequiredMembers]
         public PlayerRenameRequest(string newName)
         {
             this.New_name = newName;
@@ -543,7 +556,7 @@ namespace michitai
 
     // ====================== ALL RESPONSE CLASSES ======================
 
-    public class PlayerRegisterResponse : ApiResponse
+    public class PlayerRegisterResponse : ApiResponse<EPlayerRegisterError>
     {
         public int Player_id { get; set; }
         public string Private_key { get; set; } = string.Empty;
@@ -551,12 +564,12 @@ namespace michitai
         public int Game_id { get; set; }
     }
 
-    public class PlayerAuthResponse<T> : ApiResponse where T : class, new()
+    public class PlayerAuthResponse<T> : ApiResponse<EPlayerLoginError> where T : class, new()
     {
         public PlayerInfo<T>? Player { get; set; }
     }
 
-    public class PlayerListResponse : ApiResponse
+    public class PlayerListResponse : ApiResponse<EPlayerListError>
     {
         public int Count { get; set; }
         public List<PlayerShort> Players { get; set; } = new();
@@ -598,26 +611,26 @@ namespace michitai
         }
     }
 
-    public class PlayerHeartbeatResponse : ApiResponse
+    public class PlayerHeartbeatResponse : ApiResponse<EPlayerHeartbeatError>
     {
         public string Message { get; set; } = string.Empty;
         public DateTimeOffset Last_heartbeat { get; set; }
     }
 
-    public class PlayerLogoutResponse : ApiResponse
+    public class PlayerLogoutResponse : ApiResponse<EPlayerLogoutError>
     {
         public string Message { get; set; } = string.Empty;
         public DateTimeOffset? Last_logout { get; set; }
     }
 
-    public class PlayerRenameResponse : ApiResponse
+    public class PlayerRenameResponse : ApiResponse<EPlayerRenameError>
     {
         public string Message { get; set; } = string.Empty;
         public string New_name { get; set; } = string.Empty;
         public int Player_id { get; set; }
     }
 
-    public class GameDataResponse<T> : ApiResponse where T : class, new()
+    public class GameDataResponse<T> : ApiResponse<EGameDataGameGetError> where T : class, new()
     {
         [JsonInclude]
         private JsonElement Data { get; set; }
@@ -639,7 +652,7 @@ namespace michitai
         }
     }
 
-    public class PlayerDataResponse<T> : ApiResponse where T : class, new()
+    public class PlayerDataResponse<T> : ApiResponse<EGameDataPlayerGetError> where T : class, new()
     {
         [JsonInclude]
         private JsonElement Data { get; set; }
@@ -662,13 +675,13 @@ namespace michitai
         }
     }
 
-    public class SuccessResponse : ApiResponse
+    public class SuccessResponse : ApiResponse<ECommonError>
     {
         public string Message { get; set; } = string.Empty;
         public DateTimeOffset Updated_at { get; set; }
     }
 
-    public class ServerTimeResponse : ApiResponse
+    public class ServerTimeResponse : ApiResponse<ETimeError>
     {
         public DateTimeOffset Utc { get; set; }
         public long Timestamp { get; set; }
@@ -688,7 +701,7 @@ namespace michitai
         public long Original_timestamp { get; set; }
     }
 
-    public class RoomCreateResponse : ApiResponse
+    public class RoomCreateResponse : ApiResponse<ERoomCreateError>
     {
         public string Room_id { get; set; } = string.Empty;
         public string Room_name { get; set; } = string.Empty;
@@ -707,12 +720,12 @@ namespace michitai
         public T? Rules { get; set; }
     }
 
-    public class RoomListResponse<T> : ApiResponse where T : class, new()
+    public class RoomListResponse<T> : ApiResponse<ERoomListError> where T : class, new()
     {
         public List<RoomShort<T>> Rooms { get; set; } = new();
     }
 
-    public class RoomJoinResponse : ApiResponse
+    public class RoomJoinResponse : ApiResponse<ERoomJoinError>
     {
         public string Room_id { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
@@ -729,23 +742,23 @@ namespace michitai
         public T? Player_data { get; set; }
     }
 
-    public class RoomPlayersResponse<T> : ApiResponse where T : class, new()
+    public class RoomPlayersResponse<T> : ApiResponse<ERoomPlayersError> where T : class, new()
     {
         public List<RoomPlayer<T>> Players { get; set; } = new();
         public string Last_updated { get; set; } = string.Empty;
     }
 
-    public class RoomLeaveResponse : ApiResponse
+    public class RoomLeaveResponse : ApiResponse<ERoomLeaveError>
     {
         public string Message { get; set; } = string.Empty;
     }
 
-    public class HeartbeatResponse : ApiResponse
+    public class HeartbeatResponse : ApiResponse<ERoomHeartbeatError>
     {
         public string Status { get; set; } = string.Empty;
     }
 
-    public class ActionSubmitResponse : ApiResponse
+    public class ActionSubmitResponse : ApiResponse<ERoomActionsError>
     {
         public string Action_id { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
@@ -787,7 +800,7 @@ namespace michitai
         }
     }
 
-    public class ActionPollResponse<T> : ApiResponse where T : class, new()
+    public class ActionPollResponse<T> : ApiResponse<ERoomActionsPollError> where T : class, new()
     {
         public List<ActionInfo<T>> Actions { get; set; } = new();
     }
@@ -802,17 +815,17 @@ namespace michitai
         public T? Request_data { get; set; }
     }
 
-    public class ActionPendingResponse<T> : ApiResponse where T : class, new()
+    public class ActionPendingResponse<T> : ApiResponse<ERoomActionsPendingError> where T : class, new()
     {
         public List<PendingAction<T>> Actions { get; set; } = new();
     }
 
-    public class ActionCompleteResponse : ApiResponse
+    public class ActionCompleteResponse : ApiResponse<ERoomActionsCompleteError>
     {
         public string Message { get; set; } = string.Empty;
     }
 
-    public class UpdatePlayersResponse : ApiResponse
+    public class UpdatePlayersResponse : ApiResponse<ERoomUpdatesError>
     {
         public int Updates_sent { get; set; }
         public List<string> Update_ids { get; set; } = new();
@@ -828,7 +841,7 @@ namespace michitai
         public T? Data { get; set; }
     }
 
-    public class PollUpdatesResponse<T> : ApiResponse where T : class, new()
+    public class PollUpdatesResponse<T> : ApiResponse<ERoomUpdatesPollError> where T : class, new()
     {
         public List<PlayerUpdate<T>> Updates { get; set; } = new();
         public string Last_update { get; set; } = string.Empty;
@@ -854,7 +867,7 @@ namespace michitai
         public T? Rules { get; set; }
     }
 
-    public class CurrentRoomResponse<T> : ApiResponse where T : class, new()
+    public class CurrentRoomResponse<T> : ApiResponse<ERoomCurrentError> where T : class, new()
     {
         public bool In_room { get; set; }
         public CurrentRoomInfo<T>? Room { get; set; }
@@ -862,7 +875,7 @@ namespace michitai
         public List<object>? Pending_updates { get; set; }
     }
 
-    public class MatchmakingListResponse<T> : ApiResponse where T : class, new()
+    public class MatchmakingListResponse<T> : ApiResponse<EMatchmakingListError> where T : class, new()
     {
         public List<MatchmakingLobby<T>> Lobbies { get; set; } = new();
     }
@@ -884,7 +897,7 @@ namespace michitai
         public T? Rules { get; set; }
     }
 
-    public class MatchmakingCreateResponse : ApiResponse
+    public class MatchmakingCreateResponse : ApiResponse<EMatchmakingCreateError>
     {
         public string Matchmaking_id { get; set; } = string.Empty;
         public string Matchmaking_name { get; set; } = string.Empty;
@@ -896,20 +909,20 @@ namespace michitai
         public bool Is_host { get; set; }
     }
 
-    public class MatchmakingJoinRequestResponse : ApiResponse
+    public class MatchmakingJoinRequestResponse : ApiResponse<EMatchmakingJoinError>
     {
         public string Request_id { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
     }
 
-    public class MatchmakingPermissionResponse : ApiResponse
+    public class MatchmakingPermissionResponse : ApiResponse<EMatchmakingResponseError>
     {
         public string Message { get; set; } = string.Empty;
         public string Request_id { get; set; } = string.Empty;
         public string Action { get; set; } = string.Empty;
     }
 
-    public class MatchmakingRequestStatusResponse : ApiResponse
+    public class MatchmakingRequestStatusResponse : ApiResponse<EMatchmakingStatusError>
     {
         public MatchmakingRequestInfo Request { get; set; } = new();
     }
@@ -922,7 +935,7 @@ namespace michitai
         public bool Join_by_requests { get; set; }
     }
 
-    public class MatchmakingCurrentResponse<T> : ApiResponse where T : class, new()
+    public class MatchmakingCurrentResponse<T> : ApiResponse<EMatchmakingCurrentError> where T : class, new()
     {
         public bool In_matchmaking { get; set; }
         public MatchmakingInfo<T>? Matchmaking { get; set; }
@@ -958,18 +971,18 @@ namespace michitai
         public T? Rules { get; set; }
     }
 
-    public class MatchmakingDirectJoinResponse : ApiResponse
+    public class MatchmakingDirectJoinResponse : ApiResponse<EMatchmakingJoinError>
     {
         public string Message { get; set; } = string.Empty;
         public string Matchmaking_id { get; set; } = string.Empty;
     }
 
-    public class MatchmakingLeaveResponse : ApiResponse
+    public class MatchmakingLeaveResponse : ApiResponse<EMatchmakingLeaveError>
     {
         public string Message { get; set; } = string.Empty;
     }
 
-    public class MatchmakingPlayersResponse<T> : ApiResponse where T : class, new()
+    public class MatchmakingPlayersResponse<T> : ApiResponse<EMatchmakingPlayersError> where T : class, new()
     {
         public List<MatchmakingPlayer<T>> Players { get; set; } = new();
     }
@@ -987,17 +1000,17 @@ namespace michitai
         public T? Player_data { get; set; }
     }
 
-    public class MatchmakingHeartbeatResponse : ApiResponse
+    public class MatchmakingHeartbeatResponse : ApiResponse<EMatchmakingHeartbeatError>
     {
         public string? Status { get; set; }
     }
 
-    public class MatchmakingRemoveResponse : ApiResponse
+    public class MatchmakingRemoveResponse : ApiResponse<EMatchmakingRemoveError>
     {
         public string Message { get; set; } = string.Empty;
     }
 
-    public class MatchmakingStartResponse : ApiResponse
+    public class MatchmakingStartResponse : ApiResponse<EMatchmakingStartError>
     {
         public string Room_id { get; set; } = string.Empty;
         public string Room_name { get; set; } = string.Empty;
@@ -1005,7 +1018,7 @@ namespace michitai
         public string Message { get; set; } = string.Empty;
     }
 
-    public class LeaderboardResponse<T> : ApiResponse where T : class, new()
+    public class LeaderboardResponse<T> : ApiResponse<ELeaderboardError> where T : class, new()
     {
         public List<LeaderboardPlayer<T>> Leaderboard { get; set; } = new();
         public int Total { get; set; }
@@ -1035,25 +1048,8 @@ namespace michitai
             }
         }
     }
-
-    // ====================== EXCEPTION ======================
-    public class ApiException : Exception
-    {
-        public string? RawResponse { get; }
-        public string? ApiError { get; }
-
-        public ApiException(string message, string? rawResponse = null) : base(message)
-        {
-            RawResponse = rawResponse;
-            ApiError = message;
-        }
-
-        public ApiException(string message, string? rawResponse, Exception inner) : base(message, inner)
-        {
-            RawResponse = rawResponse;
-            ApiError = message;
-        }
-    }
-
-    public class ErrorResponse : ApiResponse { }
 }
+
+// ====================== NOTE ======================
+// ApiException and ErrorResponse classes removed - SDK now returns typed responses directly
+// Error handling is done through response.ErrorType and response.ErrorMessage properties

@@ -352,10 +352,6 @@ public class Game
 
             await action();
         }
-        catch (ApiException ex)
-        {
-            Console.WriteLine($"[ERROR] {operation}: {ex.ApiError ?? ex.Message}");
-        }
         catch (Exception ex)
         {
             Console.WriteLine($"[CRASH] {operation}: {ex.Message}");

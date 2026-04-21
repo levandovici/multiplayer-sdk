@@ -8,7 +8,22 @@ using UnityEngine;
 
 namespace michitai
 {
-    // ====================== BASE RESPONSE ======================
+    // ====================== IMPROVED API RESPONSE ======================
+
+    public abstract class ApiResponse<TError> : ApiResponse where TError : Enum, IConvertible
+    {
+        /// <summary>
+        /// Gets the error type as an enum by converting the Error string
+        /// </summary>
+        public TError ErrorType => ErrorConverter.ConvertToEnum<TError>(error ?? string.Empty);
+
+        /// <summary>
+        /// Gets a user-friendly error message based on the error type
+        /// </summary>
+        public string ErrorMessage => ErrorConverter.GetErrorMessage(ErrorType);
+    }
+
+    // Non-generic version for backward compatibility
     [System.Serializable]
     public abstract class ApiResponse
     {
@@ -119,28 +134,27 @@ namespace michitai
 
             _logger.Log($"API Response: {responseText}");
 
-            if (!res.IsSuccessStatusCode)
-            {
-                _logger.Error($"HTTP {(int)res.StatusCode}: {responseText}");
-                throw new ApiException($"HTTP error {(int)res.StatusCode}", responseText);
-            }
-
             try
             {
-                T response = JsonUtility.FromJson<T>(responseText) ?? new T();
+                var response = JsonUtility.FromJson<T>(responseText) ?? new T();
 
                 if (!response.success)
                 {
                     _logger.Error($"API Error: {response.error ?? "Unknown error"}");
-                    throw new ApiException(response.error ?? "Unknown API error", responseText);
+                    // Don't throw exception - let caller handle the typed error
                 }
 
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.Warn($"JsonUtility deserialization failed: {ex.Message}. Raw: {responseText}");
-                throw new ApiException("Failed to deserialize response with JsonUtility", responseText, ex);
+                _logger.Warn($"JSON Deserialization Error. Raw: {responseText}. Exception: {ex.Message}");
+
+                // Return a default error response instead of throwing
+                var errorResponse = new T();
+                errorResponse.success = false;
+                errorResponse.error = "Failed to deserialize response";
+                return errorResponse;
             }
         }
 
@@ -587,7 +601,7 @@ namespace michitai
     // ====================== RESPONSE CLASSES (Unity + JsonUtility ready) =====================
 
     [System.Serializable]
-    public class PlayerRegisterResponse : ApiResponse
+    public class PlayerRegisterResponse : ApiResponse<EPlayerRegisterError>
     {
         public int player_id;
         public string private_key;
@@ -596,7 +610,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class PlayerAuthResponse<T> : ApiResponse where T : class, new()
+    public class PlayerAuthResponse<T> : ApiResponse<EPlayerLoginError> where T : class, new()
     {
         public PlayerInfo<T> player;
     }
@@ -630,7 +644,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class PlayerListResponse : ApiResponse
+    public class PlayerListResponse : ApiResponse<EPlayerListError>
     {
         public int count;
         public List<PlayerShort> players = new();
@@ -670,7 +684,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class PlayerHeartbeatResponse : ApiResponse
+    public class PlayerHeartbeatResponse : ApiResponse<EPlayerHeartbeatError>
     {
         [SerializeField]
         private string last_heartbeat;
@@ -691,7 +705,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class PlayerLogoutResponse : ApiResponse
+    public class PlayerLogoutResponse : ApiResponse<EPlayerLogoutError>
     {
         [SerializeField]
         private string last_logout;
@@ -712,7 +726,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class PlayerRenameResponse : ApiResponse
+    public class PlayerRenameResponse : ApiResponse<EPlayerRenameError>
     {
         public string message;
         public string new_name;
@@ -720,7 +734,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class GameDataResponse<T> : ApiResponse where T : class, new()
+    public class GameDataResponse<T> : ApiResponse<EGameDataGameGetError> where T : class, new()
     {
         [SerializeField]
         private string data_json;                  // Unity mode
@@ -742,7 +756,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class PlayerDataResponse<T> : ApiResponse where T : class, new()
+    public class PlayerDataResponse<T> : ApiResponse<EGameDataPlayerGetError> where T : class, new()
     {
         [SerializeField]
         private string data_json;                  // Unity mode
@@ -765,7 +779,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class SuccessResponse : ApiResponse
+    public class SuccessResponse : ApiResponse<ECommonError>
     {
         [SerializeField]
         private string updated_at;
@@ -786,7 +800,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class ServerTimeResponse : ApiResponse
+    public class ServerTimeResponse : ApiResponse<ETimeError>
     {
         [SerializeField]
         private string utc;
@@ -839,7 +853,7 @@ namespace michitai
     // ====================== GAME ROOMS ======================
 
     [System.Serializable]
-    public class RoomCreateResponse : ApiResponse
+    public class RoomCreateResponse : ApiResponse<ERoomCreateError>
     {
         public string room_id;
         public string room_name;
@@ -847,7 +861,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class RoomListResponse<T> : ApiResponse where T : class, new()
+    public class RoomListResponse<T> : ApiResponse<ERoomListError> where T : class, new()
     {
         public List<RoomShort<T>> rooms = new();
     }
@@ -880,14 +894,14 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class RoomJoinResponse : ApiResponse
+    public class RoomJoinResponse : ApiResponse<ERoomJoinError>
     {
         public string room_id;
         public string message;
     }
 
     [System.Serializable]
-    public class RoomPlayersResponse<T> : ApiResponse where T : class, new()
+    public class RoomPlayersResponse<T> : ApiResponse<ERoomPlayersError> where T : class, new()
     {
         public List<RoomPlayer<T>> players = new();
         public string last_updated;
@@ -931,26 +945,26 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class RoomLeaveResponse : ApiResponse
+    public class RoomLeaveResponse : ApiResponse<ERoomLeaveError>
     {
         public string message;
     }
 
     [System.Serializable]
-    public class HeartbeatResponse : ApiResponse
+    public class HeartbeatResponse : ApiResponse<ERoomHeartbeatError>
     {
         public string status;
     }
 
     [System.Serializable]
-    public class ActionSubmitResponse : ApiResponse
+    public class ActionSubmitResponse : ApiResponse<ERoomActionsError>
     {
         public string action_id;
         public string status;
     }
 
     [System.Serializable]
-    public class ActionPollResponse : ApiResponse
+    public class ActionPollResponse : ApiResponse<ERoomActionsPollError>
     {
         public List<ActionInfo> actions = new();
     }
@@ -994,7 +1008,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class ActionPendingResponse<T> : ApiResponse where T : class, new()
+    public class ActionPendingResponse<T> : ApiResponse<ERoomActionsPendingError> where T : class, new()
     {
         public List<PendingAction<T>> actions = new();
     }
@@ -1033,13 +1047,13 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class ActionCompleteResponse : ApiResponse
+    public class ActionCompleteResponse : ApiResponse<ERoomActionsCompleteError>
     {
         public string message;
     }
 
     [System.Serializable]
-    public class UpdatePlayersResponse : ApiResponse
+    public class UpdatePlayersResponse : ApiResponse<ERoomUpdatesError>
     {
         public int updates_sent;
         public List<string> update_ids = new();
@@ -1047,7 +1061,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class PollUpdatesResponse : ApiResponse
+    public class PollUpdatesResponse : ApiResponse<ERoomUpdatesPollError>
     {
         public List<PlayerUpdate> updates = new();
         public string last_update;
@@ -1078,7 +1092,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class CurrentRoomResponse<T> : ApiResponse where T : class, new()
+    public class CurrentRoomResponse<T> : ApiResponse<ERoomCurrentError> where T : class, new()
     {
         public bool in_room;
         public CurrentRoomInfo<T> room;
@@ -1162,7 +1176,7 @@ namespace michitai
     // ====================== MATCHMAKING ======================
 
     [System.Serializable]
-    public class MatchmakingListResponse<T> : ApiResponse where T : class, new()
+    public class MatchmakingListResponse<T> : ApiResponse<EMatchmakingListError> where T : class, new()
     {
         public List<MatchmakingLobby<T>> lobbies = new();
     }
@@ -1220,7 +1234,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class MatchmakingCreateResponse : ApiResponse
+    public class MatchmakingCreateResponse : ApiResponse<EMatchmakingCreateError>
     {
         public string matchmaking_id;
         public string matchmaking_name;
@@ -1233,14 +1247,14 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class MatchmakingJoinRequestResponse : ApiResponse
+    public class MatchmakingJoinRequestResponse : ApiResponse<EMatchmakingJoinError>
     {
         public string request_id;
         public string message;
     }
 
     [System.Serializable]
-    public class MatchmakingPermissionResponse : ApiResponse
+    public class MatchmakingPermissionResponse : ApiResponse<EMatchmakingResponseError>
     {
         public string message;
         public string request_id;
@@ -1248,7 +1262,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class MatchmakingRequestStatusResponse : ApiResponse
+    public class MatchmakingRequestStatusResponse : ApiResponse<EMatchmakingStatusError>
     {
         public MatchmakingRequestInfo request;
     }
@@ -1262,7 +1276,7 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class MatchmakingCurrentResponse<T> : ApiResponse where T : class, new()
+    public class MatchmakingCurrentResponse<T> : ApiResponse<EMatchmakingCurrentError> where T : class, new()
     {
         public bool in_matchmaking;
         public MatchmakingInfo<T> matchmaking;
@@ -1375,20 +1389,20 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class MatchmakingDirectJoinResponse : ApiResponse
+    public class MatchmakingDirectJoinResponse : ApiResponse<EMatchmakingJoinError>
     {
         public string message;
         public string matchmaking_id;
     }
 
     [System.Serializable]
-    public class MatchmakingLeaveResponse : ApiResponse
+    public class MatchmakingLeaveResponse : ApiResponse<EMatchmakingLeaveError>
     {
         public string message;
     }
 
     [System.Serializable]
-    public class MatchmakingPlayersResponse<T> : ApiResponse where T : class, new()
+    public class MatchmakingPlayersResponse<T> : ApiResponse<EMatchmakingPlayersError> where T : class, new()
     {
         public List<MatchmakingPlayer<T>> players = new();
         public string last_updated;
@@ -1443,19 +1457,19 @@ namespace michitai
     }
 
     [System.Serializable]
-    public class MatchmakingHeartbeatResponse : ApiResponse
+    public class MatchmakingHeartbeatResponse : ApiResponse<EMatchmakingHeartbeatError>
     {
         public string status;
     }
 
     [System.Serializable]
-    public class MatchmakingRemoveResponse : ApiResponse
+    public class MatchmakingRemoveResponse : ApiResponse<EMatchmakingRemoveError>
     {
         public string message;
     }
 
     [System.Serializable]
-    public class MatchmakingStartResponse : ApiResponse
+    public class MatchmakingStartResponse : ApiResponse<EMatchmakingStartError>
     {
         public string room_id;
         public string room_name;
@@ -1466,7 +1480,7 @@ namespace michitai
     // ====================== LEADERBOARD ======================
 
     [System.Serializable]
-    public class LeaderboardResponse<T> : ApiResponse where T : class, new()
+    public class LeaderboardResponse<T> : ApiResponse<ELeaderboardError> where T : class, new()
     {
         public List<LeaderboardPlayer<T>> leaderboard = new();
         public int total;
@@ -1494,26 +1508,6 @@ namespace michitai
             {
                 return JsonUtility.FromJson<T>(player_data_json);
             }
-        }
-    }
-
-    // ====================== EXCEPTION ======================
-
-    public class ApiException : Exception
-    {
-        public string RawResponse { get; }
-        public string ApiError { get; }
-
-        public ApiException(string message, string rawResponse = null) : base(message)
-        {
-            RawResponse = rawResponse;
-            ApiError = message;
-        }
-
-        public ApiException(string message, string rawResponse, Exception inner) : base(message, inner)
-        {
-            RawResponse = rawResponse;
-            ApiError = message;
         }
     }
 }

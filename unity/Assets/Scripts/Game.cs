@@ -385,10 +385,6 @@ public class Game : MonoBehaviour
         {
             await action();
         }
-        catch (ApiException ex)
-        {
-            Debug.LogError($"[API ERROR] {operation}: {ex.ApiError ?? ex.Message}");
-        }
         catch (Exception ex)
         {
             Debug.LogError($"[CRASH] {operation}: {ex.Message}");
