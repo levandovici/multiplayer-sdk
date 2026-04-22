@@ -1,6 +1,6 @@
 using System;
 
-namespace michitai
+namespace Michitai.Multiplayer.Errors
 {
     // ====================== BASE ERROR ENUMS ======================
 

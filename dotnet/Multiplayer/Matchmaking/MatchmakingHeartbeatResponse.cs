@@ -1,0 +1,14 @@
+﻿using Michitai.Multiplayer.Errors;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Michitai.Multiplayer.Matchmaking
+{
+    public class MatchmakingHeartbeatResponse : ApiResponse<EMatchmakingHeartbeatError>
+    {
+        public string? Status { get; set; }
+    }
+}
