@@ -237,10 +237,9 @@ namespace michitai
         public Task<HeartbeatResponse> SendRoomHeartbeatAsync(string playerToken, CancellationToken ct = default)
             => Send<HeartbeatResponse>(HttpMethod.Post, Url(Endpoints.GameRoomHeartbeat, $"&player_token={playerToken}"), null, ct);
 
-        public Task<ActionSubmitResponse> SubmitActionAsync<T>(string playerToken, string actionType,
-            T? requestData = null, CancellationToken ct = default) where T : class, new()
+        public Task<ActionSubmitResponse> SubmitActionAsync<T>(string playerToken, SubmitAction<T> request, CancellationToken ct = default) where T : class, new()
             => Send<ActionSubmitResponse>(HttpMethod.Post, Url(Endpoints.GameRoomActions,
-                $"&player_token={playerToken}"), new ActionSubmitRequest<T>(actionType, requestData), ct);
+                $"&player_token={playerToken}"), new ActionSubmitRequest<T>(request.Target_players, request.Action_type, request.Request_data, request.Target_players_ids), ct);
 
         public Task<ActionPollResponse<T>> PollActionsAsync<T>(string playerToken, CancellationToken ct = default) where T : class, new()
             => Send<ActionPollResponse<T>>(HttpMethod.Get, Url(Endpoints.GameRoomActionsPoll, $"&player_token={playerToken}"), null, ct);
@@ -313,11 +312,29 @@ namespace michitai
 
     public enum RoomCompleteActionStatus { Processing, Completed, Failed }
 
-    public enum RoomTargetPlayers { All, Others, Specific }
+    public enum RoomTargetPlayers { All, Host, Others, Specific }
 
     public enum MatchmakingRequestAction { Approve, Reject }
 
     // ====================== ALL PARAMETERS CLASSES ====================
+
+    public class SubmitAction<T> where T : class, new()
+    {
+        public RoomTargetPlayers Target_players { get; private set; } = RoomTargetPlayers.All;
+        public int[]? Target_players_ids { get; private set; }
+        public string Action_type { get; private set; } = string.Empty;
+        public T? Request_data { get; private set; }
+
+
+
+        public SubmitAction(RoomTargetPlayers targetPlayers, string type, T? data = null, int[]? targetPlayersIds = null)
+        {
+            Target_players = targetPlayers;
+            Target_players_ids = targetPlayersIds;
+            Action_type = type;
+            Request_data = data;
+        }
+    }
 
     public class ActionComplete<T> where T : class, new()
     {
@@ -336,13 +353,9 @@ namespace michitai
 
     public class UpdatePlayers<T> where T : class, new()
     {
-        [JsonInclude]
         public RoomTargetPlayers Target_players { get; private set; } = RoomTargetPlayers.All;
-        [JsonInclude]
         public int[]? Target_players_ids { get; private set; }
-        [JsonInclude]
         public string Type { get; private set; } = string.Empty;
-        [JsonInclude]
         public T? Data { get; private set; } = new();
 
 
@@ -438,16 +451,22 @@ namespace michitai
     public class ActionSubmitRequest<T> where T : class, new()
     {
         [JsonInclude]
+        private string Target_players { get; set; } = RoomTargetPlayers.Host.ToString().ToLower();
+        [JsonInclude]
+        private int[]? Target_players_ids { get; set; }
+        [JsonInclude]
         private string Action_type { get; set; } = string.Empty;
         [JsonInclude]
         private T? Request_data { get; set; }
 
 
 
-        public ActionSubmitRequest(string actionType, T? requestData = null)
+        public ActionSubmitRequest(RoomTargetPlayers targetPlayers, string type, T? data = null, int[]? targetPlayersIds = null)
         {
-            this.Action_type = actionType;
-            this.Request_data = requestData;
+            this.Target_players = targetPlayers.ToString().ToLower();
+            this.Target_players_ids = targetPlayersIds;
+            this.Action_type = type;
+            this.Request_data = data;
         }
     }
 
@@ -760,8 +779,9 @@ namespace michitai
 
     public class ActionSubmitResponse : ApiResponse<ERoomActionsError>
     {
-        public string Action_id { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
+        public int Actions_sent { get; set; }
+        public List<string> Action_ids { get; set; } = new();
+        public List<int> Target_players_ids { get; set; } = new();
     }
 
     public class ActionInfo<T> where T : class, new()
@@ -773,6 +793,7 @@ namespace michitai
 
         public string Action_id { get; set; } = string.Empty;
         public string Action_type { get; set; } = string.Empty;
+        public bool Is_host { get; set; }
         public T? Response_data { get; set; }
 
 
@@ -809,9 +830,11 @@ namespace michitai
     {
         public string Action_id { get; set; } = string.Empty;
         public int Player_id { get; set; }
+        public int Target_id { get; set; }
         public string Action_type { get; set; } = string.Empty;
         public DateTimeOffset Created_at { get; set; }
         public string Player_name { get; set; } = string.Empty;
+        public bool Is_host { get; set; }
         public T? Request_data { get; set; }
     }
 

@@ -345,8 +345,11 @@ public class Game : MonoBehaviour
         foreach (var p in players.Values)
         {
             await SafeExecute(async () =>
-                await sdk.SubmitActionAsync<ActionData>(p.Token, "player_ready", new ActionData { ready = true }),
-                $"SubmitAction {p.Name}");
+            {
+                ActionData actionData = new ActionData { ready = true };
+                var actionReq = new SubmitAction<ActionData>(RoomTargetPlayers.Host, "player_ready");
+                await sdk.SubmitActionAsync<ActionData>(p.Token, actionReq);
+            }, $"SubmitAction {p.Name}");
         }
 
         // Host checks pending actions

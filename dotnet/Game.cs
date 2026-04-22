@@ -316,9 +316,11 @@ public class Game
 
         foreach (var p in players.Values)
         {
-            await SafeExecute(async () =>
-                await sdk!.SubmitActionAsync(p.Token, "player_ready", new ActionData { Ready = true }),
-                $"SubmitAction {p.Name}");
+            await SafeExecute(async () => 
+            {
+                var req = new SubmitAction<ActionData>(RoomTargetPlayers.Host, "player_ready", new ActionData { Ready = true });
+                await sdk!.SubmitActionAsync(p.Token, req);
+            }, $"SubmitAction {p.Name}");
         }
 
         await SafeExecute(async () =>

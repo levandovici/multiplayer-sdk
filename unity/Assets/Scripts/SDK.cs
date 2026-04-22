@@ -234,9 +234,9 @@ namespace michitai
         public Task<HeartbeatResponse> SendRoomHeartbeatAsync(string playerToken, CancellationToken ct = default)
             => Send<HeartbeatResponse>(HttpMethod.Post, Url(Endpoints.GameRoomHeartbeat, $"&player_token={playerToken}"), null, ct);
 
-        public Task<ActionSubmitResponse> SubmitActionAsync<T>(string playerToken, string actionType, T requestData = null, CancellationToken ct = default) where T : class, new()
+        public Task<ActionSubmitResponse> SubmitActionAsync<T>(string playerToken, SubmitAction<T> request, CancellationToken ct = default) where T : class, new()
             => Send<ActionSubmitResponse>(HttpMethod.Post, Url(Endpoints.GameRoomActions, $"&player_token={playerToken}"),
-                new ActionSubmitRequest(actionType, JsonUtility.ToJson(requestData)), ct);
+                new ActionSubmitRequest(request.TargetPlayers, request.ActionType, JsonUtility.ToJson(request.RequestData), request.TargetPlayersIds), ct);
 
         public Task<ActionPollResponse> PollActionsAsync(string playerToken, CancellationToken ct = default)
             => Send<ActionPollResponse>(HttpMethod.Get, Url(Endpoints.GameRoomActionsPoll, $"&player_token={playerToken}"), null, ct);
@@ -307,11 +307,79 @@ namespace michitai
 
     public enum RoomCompleteActionStatus { Processing, Completed, Failed }
 
-    public enum RoomTargetPlayers { All, Others, Specific }
+    public enum RoomTargetPlayers { All, Host, Others, Specific }
 
     public enum MatchmakingRequestAction { Approve, Reject }
 
     // ====================== PARAMETERS CLASSES (Unity + JsonUtility ready) ===================
+
+    public class SubmitAction<T> where T : class, new()
+    {
+        private RoomTargetPlayers _target_players;
+        private int[] _target_players_ids;
+        private string _action_type;
+        private T _request_data;
+
+        public RoomTargetPlayers TargetPlayers
+        {
+            get
+            {
+                return _target_players;
+            }
+
+            private set
+            {
+                _target_players = value;
+            }
+        }
+
+        public int[] TargetPlayersIds
+        {
+            get
+            {
+                return _target_players_ids;
+            }
+
+            private set
+            {
+                _target_players_ids = value;
+            }
+        }
+
+        public string ActionType
+        {
+            get
+            {
+                return _action_type;
+            }
+
+            private set
+            {
+                _action_type = value;
+            }
+        }
+
+        public T RequestData
+        {
+            get
+            {
+                return _request_data;
+            }
+
+            private set
+            {
+                _request_data = value;
+            }
+        }
+
+        public SubmitAction(RoomTargetPlayers targetPlayers, string type, T data = null, int[] targetPlayersIds = null)
+        {
+            TargetPlayers = targetPlayers;
+            TargetPlayersIds = targetPlayersIds;
+            ActionType = type;
+            RequestData = data;
+        }
+    }
 
     public class ActionComplete<T> where T : class, new()
     {
@@ -500,15 +568,19 @@ namespace michitai
     [System.Serializable]
     public class ActionSubmitRequest
     {
+        public string target_players = RoomTargetPlayers.All.ToString().ToLower();
+        public int[] target_players_ids;
         public string action_type;
         public string request_data_json;    // Unity mode
 
 
 
-        public ActionSubmitRequest(string actionType, string requestDataJson)
+        public ActionSubmitRequest(RoomTargetPlayers targetPlayers, string type, string dataJson = null, int[] targetPlayerIds = null)
         {
-            this.action_type = actionType;
-            this.request_data_json = requestDataJson;
+            this.target_players = targetPlayers.ToString().ToLower();
+            this.target_players_ids = targetPlayerIds;
+            this.action_type = type;
+            this.request_data_json = dataJson;
         }
     }
 
@@ -959,8 +1031,9 @@ namespace michitai
     [System.Serializable]
     public class ActionSubmitResponse : ApiResponse<ERoomActionsError>
     {
-        public string action_id;
-        public string status;
+        public int actions_sent;
+        public List<string> action_ids = new();
+        public List<int> target_players_ids = new();
     }
 
     [System.Serializable]
@@ -981,6 +1054,7 @@ namespace michitai
 
         public string action_id;
         public string action_type;
+        public bool is_host;
 
 
 
@@ -1024,8 +1098,10 @@ namespace michitai
 
         public string action_id;
         public int player_id;
+        public int target_id;
         public string action_type;
         public string player_name;
+        public bool is_host;
 
 
 
