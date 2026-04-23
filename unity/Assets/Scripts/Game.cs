@@ -2,11 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using michitai;
+using Michitai;
+using Michitai.Multiplayer;
+using Michitai.Multiplayer.Time;
+using Michitai.Multiplayer.Games;
+using Michitai.Multiplayer.Players;
+using Michitai.Multiplayer.Matchmaking;
+using Michitai.Multiplayer.Matchmaking.Requests;
+using Michitai.Multiplayer.Rooms;
+using Michitai.Multiplayer.Rooms.Actions;
+using Michitai.Multiplayer.Rooms.Updates;
+using Michitai.Multiplayer.Leaderboard;
+using Michitai.Multiplayer.Errors;
 
 public class Game : MonoBehaviour
 {
-    private static GameSDK sdk;
+    private static Multiplayer client;
     private readonly Dictionary<string, PlayerInfo> players = new Dictionary<string, PlayerInfo>();
 
     [SerializeField]
@@ -22,7 +33,7 @@ public class Game : MonoBehaviour
         Debug.Log("=== MICHITAI Game SDK - Unity Demo Started ===\n");
 
         var logger = new ConsoleLogger();
-        sdk = new GameSDK(
+        client = new Multiplayer(
             apiToken: apiToken,
             apiPrivateToken: apiPrivateToken,
             logger: logger,
@@ -65,31 +76,31 @@ public class Game : MonoBehaviour
         // Game Data
         await SafeExecute(async () =>
         {
-            var gd = await sdk.GetGameData<GameData>();
+            var gd = await Games.GetGameData<GameData>(client);
             Debug.Log($"[GAME DATA] Retrieved. Game ID: {gd.game_id}");
             GameData gameData = gd.Data;
             Debug.Log($"[GAME DATA] Event: {gameData.currentEvent}, Version: {gameData.version}");
-            await sdk.UpdateGameData(new GameData { currentEvent = "SpringFestival", version = "1.2.3" });
+            await Games.UpdateGameData(client, new GameData { currentEvent = "SpringFestival", version = "1.2.3" });
             Debug.Log("[GAME DATA] Global data updated");
         }, "Game Data");
 
         // Server Time
         await SafeExecute(async () =>
         {
-            var time = await sdk.GetServerTime();
+            var time = await Michitai.Multiplayer.Time.Time.GetServerTime(client);
             Debug.Log($"[TIME] Server UTC: {time.Utc}");
         }, "GetServerTime");
 
         await SafeExecute(async () =>
         {
-            var timeOffset = await sdk.GetServerTimeWithOffset(3);
+            var timeOffset = await Michitai.Multiplayer.Time.Time.GetServerTimeWithOffset(client, 3);
             Debug.Log($"[TIME] Server UTC+3: {timeOffset.Utc}");
         }, "GetServerTimeWithOffset");
 
         // Leaderboard
         await SafeExecute(async () =>
         {
-            var lb = await sdk.GetLeaderboardAsync<PlayerData>(new[] { "level", "wins" }, 10);
+            var lb = await Leaderboard.GetLeaderboardAsync<PlayerData>(client, new[] { "level", "wins" }, 10);
             Debug.Log($"[LEADERBOARD] Top {lb.leaderboard.Count} players");
             if (lb.leaderboard.Count > 0)
             {
@@ -158,7 +169,7 @@ public class Game : MonoBehaviour
         Debug.Log("\n=== DEMO 3: DIRECT ROOM CREATION ===\n");
         await SetupPlayers();
 
-        var create = await sdk.CreateRoomAsync<PlayerData, RulesData>(players["host"].Token, "Direct Battle Arena", null, 4);
+        var create = await Rooms.CreateRoomAsync<PlayerData, RulesData>(client, players["host"].Token, "Direct Battle Arena", null, 4);
         string roomId = create.room_id;
 
         await JoinRoom(players["p1"].Token, roomId);
@@ -209,7 +220,7 @@ public class Game : MonoBehaviour
         Debug.Log("\n[CLEANUP] Logging out players...");
 
         foreach (var p in players.Values)
-            await SafeExecute(async () => await sdk.LogoutPlayerAsync(p.Token), $"Logout {p.Name}");
+            await SafeExecute(async () => await Players.LogoutPlayerAsync(client, p.Token), $"Logout {p.Name}");
 
         players.Clear();
     }
@@ -217,28 +228,28 @@ public class Game : MonoBehaviour
     // ====================== HELPER METHODS ======================
     private async Task<PlayerRegisterResponse> RegisterPlayer(string name, PlayerData playerData = null)
     {
-        var reg = await sdk.RegisterPlayer<PlayerData>(name, playerData);
+        var reg = await Players.RegisterPlayer<PlayerData>(client, name, playerData);
         Debug.Log($"[REGISTER] {name} registered");
         return reg;
     }
 
     private async Task<PlayerAuthResponse<PlayerData>> AuthenticatePlayer(string token)
     {
-        var auth = await sdk.AuthenticatePlayer<PlayerData>(token);
+        var auth = await Players.AuthenticatePlayer<PlayerData>(client, token);
         Debug.Log($"[AUTH] {auth.player.player_name} authenticated");
         return auth;
     }
 
     private async Task<PlayerHeartbeatResponse> SendPlayerHeartbeat(string token)
     {
-        var heartbeat = await sdk.SendPlayerHeartbeatAsync(token);
+        var heartbeat = await Players.SendPlayerHeartbeatAsync(client, token);
         Debug.Log($"[HEARTBEAT] Player heartbeat sent");
         return heartbeat;
     }
 
     private async Task GetAllPlayersList()
     {
-        var list = await sdk.GetAllPlayers();
+        var list = await Games.GetAllPlayers(client);
         Debug.Log($"[PLAYERS LIST] Total: {list.count}");
 
         foreach (PlayerShort player in list.players)
@@ -249,14 +260,14 @@ public class Game : MonoBehaviour
 
     private async Task<PlayerDataResponse<PlayerData>> GetPlayerData(string token)
     {
-        var data = await sdk.GetPlayerData<PlayerData>(token);
+        var data = await Players.GetPlayerData<PlayerData>(client, token);
         Debug.Log($"[PLAYER DATA] Player data retrieved");
         return data;
     }
 
     private async Task<SuccessResponse> UpdatePlayerData(string token, PlayerData data)
     {
-        var res = await sdk.UpdatePlayerData(token, data);
+        var res = await Players.UpdatePlayerData(client, token, data);
         Debug.Log($"[PLAYER DATA] Player data updated");
         return res;
     }
@@ -267,12 +278,12 @@ public class Game : MonoBehaviour
 
         PlayerData playerData = new PlayerData { level = 3, wins = 5, rank = "Diamond" };
 
-        var res = await sdk.CreateMatchmakingLobbyAsync<PlayerData, RulesData>(
+        var res = await Matchmaking.CreateMatchmakingLobbyAsync<PlayerData, RulesData>(
+            client,
             players["host"].Token,
             matchmakingName,
             maxPlayers: 4,
             strictFull: false,
-            joinByRequests: joinByRequests,
             hostSwitch:false,
             canLeaveRoom:false,
             playerData: playerData,
@@ -285,52 +296,52 @@ public class Game : MonoBehaviour
 
     private async Task<string> RequestToJoinMatchmaking(string token, string matchmakingId, PlayerData playerData = null)
     {
-        var req = await sdk.RequestToJoinMatchmakingAsync<PlayerData>(token, matchmakingId);
+        var req = await Requests.RequestToJoinMatchmakingAsync<PlayerData>(client, token, matchmakingId);
         Debug.Log($"[REQUEST] Sent: {req.request_id}");
         return req.request_id;
     }
 
     private async Task CheckJoinRequestStatus(string token, string requestId)
     {
-        var status = await sdk.CheckJoinRequestStatusAsync(token, requestId);
+        var status = await Requests.CheckJoinRequestStatusAsync(client, token, requestId);
         Debug.Log($"[REQUEST STATUS] {status.request.status}");
     }
 
     private async Task ApproveJoinRequest(string hostToken, string requestId)
     {
-        var resp = await sdk.RespondToJoinRequestAsync(hostToken, requestId, MatchmakingRequestAction.Approve);
+        var resp = await Requests.RespondToJoinRequestAsync(client, hostToken, requestId, EMatchmakingRequestAction.Approve);
         Debug.Log($"[APPROVE] {resp.message}");
     }
 
     private async Task JoinMatchmakingDirectly(string token, string matchmakingId, PlayerData playerData = null)
     {
-        await sdk.JoinMatchmakingDirectlyAsync<PlayerData>(token, matchmakingId, playerData);
+        await Matchmaking.JoinMatchmakingDirectlyAsync<PlayerData>(client, token, matchmakingId, playerData);
         Debug.Log("[JOIN] Player joined matchmaking directly");
     }
 
     private async Task GetCurrentMatchmakingStatus()
     {
-        var s = await sdk.GetCurrentMatchmakingStatusAsync<RulesData>(players["host"].Token);
+        var s = await Matchmaking.GetCurrentMatchmakingStatusAsync<RulesData>(client, players["host"].Token);
 
         Debug.Log($"[MATCHMAKING STATUS] Players in lobby: {s.matchmaking?.current_players ?? 0}");
     }
 
     private async Task GetMatchmakingPlayers()
     {
-        var list = await sdk.GetMatchmakingPlayersAsync<PlayerData>(players["host"].Token);
+        var list = await Matchmaking.GetMatchmakingPlayersAsync<PlayerData>(client, players["host"].Token);
         Debug.Log($"[MATCHMAKING PLAYERS] {list.players.Count} players");
     }
 
     private async Task<string> StartMatchmakingAndCreateRoom()
     {
-        var start = await sdk.StartGameFromMatchmakingAsync(players["host"].Token);
+        var start = await Matchmaking.StartGameFromMatchmakingAsync(client, players["host"].Token);
         Debug.Log($"[START] Room created: {start.room_id}");
         return start.room_id;
     }
 
     private async Task JoinRoom(string token, string roomId)
     {
-        await sdk.JoinRoomAsync<PlayerData>(token, roomId);
+        await Rooms.JoinRoomAsync<PlayerData>(client, token, roomId);
         Debug.Log($"[ROOM] Player joined room {roomId}");
     }
 
@@ -338,8 +349,8 @@ public class Game : MonoBehaviour
     {
         Debug.Log("\n=== GAME ROOM FLOW ===\n");
 
-        await sdk.GetRoomsAsync<RulesData>();
-        await sdk.GetCurrentRoomAsync<RulesData>(players["host"].Token);
+        await Rooms.GetRoomsAsync<RulesData>(client);
+        await Rooms.GetCurrentRoomAsync<RulesData>(client, players["host"].Token);
 
         // Players submit actions
         foreach (var p in players.Values)
@@ -347,15 +358,15 @@ public class Game : MonoBehaviour
             await SafeExecute(async () =>
             {
                 ActionData actionData = new ActionData { ready = true };
-                var actionReq = new SubmitAction<ActionData>(RoomTargetPlayers.Host, "player_ready");
-                await sdk.SubmitActionAsync<ActionData>(p.Token, actionReq);
+                var actionReq = new SubmitAction<ActionData>(ERoomTargetPlayers.Host, "player_ready");
+                await Actions.SubmitActionAsync<ActionData>(client, p.Token, actionReq);
             }, $"SubmitAction {p.Name}");
         }
 
         // Host checks pending actions
         await SafeExecute(async () =>
         {
-            var pending = await sdk.GetPendingActionsAsync<ActionData>(players["host"].Token);
+            var pending = await Actions.GetPendingActionsAsync<ActionData>(client, players["host"].Token);
             Debug.Log($"[PENDING ACTIONS] {pending.actions.Count} actions");
         }, "GetPendingActions");
 
@@ -363,23 +374,23 @@ public class Game : MonoBehaviour
         await SafeExecute(async () =>
         {
             UpdateData updateData = new UpdateData { round = 1, message = "Game Started!" };
-            var updateReq = new UpdatePlayers<UpdateData>(RoomTargetPlayers.All, "game_start", updateData);
-            await sdk.UpdatePlayersAsync<UpdateData>(players["host"].Token, updateReq);
+            var updateReq = new UpdatePlayers<UpdateData>(ERoomTargetPlayers.All, "game_start", updateData);
+            await Updates.UpdatePlayersAsync<UpdateData>(client, players["host"].Token, updateReq);
             Debug.Log("[UPDATE] Broadcast sent to all players");
         }, "Send Room Update");
 
         // Players poll updates
         foreach (var p in players.Values)
-            await SafeExecute(async () => await sdk.PollUpdatesAsync(p.Token), $"PollUpdates {p.Name}");
+            await SafeExecute(async () => await Updates.PollUpdatesAsync(client, p.Token), $"PollUpdates {p.Name}");
 
-        await sdk.GetRoomPlayersAsync<PlayerData>(players["host"].Token);
+        await Rooms.GetRoomPlayersAsync<PlayerData>(client, players["host"].Token);
 
         // Heartbeats
         foreach (var p in players.Values)
-            await SafeExecute(async () => await sdk.SendRoomHeartbeatAsync(p.Token), $"RoomHeartbeat {p.Name}");
+            await SafeExecute(async () => await Rooms.SendRoomHeartbeatAsync(client, p.Token), $"RoomHeartbeat {p.Name}");
 
         // Leave room
-        await SafeExecute(async () => await sdk.LeaveRoomAsync(players["host"].Token), $"LeaveRoom {players["host"].Name}");
+        await SafeExecute(async () => await Rooms.LeaveRoomAsync(client, players["host"].Token), $"LeaveRoom {players["host"].Name}");
     }
 
     private async Task SafeExecute(Func<Task> action, string operation)

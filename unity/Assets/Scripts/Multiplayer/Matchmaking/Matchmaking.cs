@@ -1,0 +1,43 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using UnityEngine;
+
+namespace Michitai.Multiplayer.Matchmaking
+{
+    public static class Matchmaking
+    {
+        public static Task<MatchmakingListResponse<T>> GetMatchmakingLobbiesAsync<T>(Multiplayer client, CancellationToken ct = default) where T : class, new()
+            => client.Send<MatchmakingListResponse<T>>(HttpMethod.Get, client.Url(Endpoints.MatchmakingList), null, ct);
+
+        public static Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<TPlayerData, TRules>(Multiplayer client, string playerToken, string matchmakingName, int maxPlayers = 4, bool strictFull = false,
+            bool hostSwitch = false, bool canLeaveRoom = false, TPlayerData playerData = null, TRules rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
+            => client.Send<MatchmakingCreateResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingCreate, $"&player_token={playerToken}"),
+                new MatchmakingCreateRequest(matchmakingName, maxPlayers, strictFull, false, hostSwitch, canLeaveRoom, JsonUtility.ToJson(playerData), JsonUtility.ToJson(rules)), ct);
+
+        public static Task<MatchmakingCurrentResponse<T>> GetCurrentMatchmakingStatusAsync<T>(Multiplayer client, string playerToken, CancellationToken ct = default) where T : class, new()
+            => client.Send<MatchmakingCurrentResponse<T>>(HttpMethod.Get, client.Url(Endpoints.MatchmakingCurrent, $"&player_token={playerToken}"), null, ct);
+
+        public static Task<MatchmakingDirectJoinResponse> JoinMatchmakingDirectlyAsync<T>(Multiplayer client, string playerToken, string matchmakingId, T playerData = null, CancellationToken ct = default) where T : class, new()
+            => client.Send<MatchmakingDirectJoinResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.MatchmakingJoin, matchmakingId), $"&player_token={playerToken}"), playerData, ct);
+
+        public static Task<MatchmakingLeaveResponse> LeaveMatchmakingAsync(Multiplayer client, string playerToken, CancellationToken ct = default)
+            => client.Send<MatchmakingLeaveResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingLeave, $"&player_token={playerToken}"), null, ct);
+
+        public static Task<MatchmakingPlayersResponse<T>> GetMatchmakingPlayersAsync<T>(Multiplayer client, string playerToken, CancellationToken ct = default) where T : class, new()
+            => client.Send<MatchmakingPlayersResponse<T>>(HttpMethod.Get, client.Url(Endpoints.MatchmakingPlayers, $"&player_token={playerToken}"), null, ct);
+
+        public static Task<MatchmakingHeartbeatResponse> SendMatchmakingHeartbeatAsync(Multiplayer client, string playerToken, CancellationToken ct = default)
+            => client.Send<MatchmakingHeartbeatResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingHeartbeat, $"&player_token={playerToken}"), null, ct);
+
+        public static Task<MatchmakingRemoveResponse> RemoveMatchmakingLobbyAsync(Multiplayer client, string playerToken, CancellationToken ct = default)
+            => client.Send<MatchmakingRemoveResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingRemove, $"&player_token={playerToken}"), null, ct);
+
+        public static Task<MatchmakingStartResponse> StartGameFromMatchmakingAsync(Multiplayer client, string playerToken, CancellationToken ct = default)
+            => client.Send<MatchmakingStartResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingStart, $"&player_token={playerToken}"), null, ct);
+    }
+}
