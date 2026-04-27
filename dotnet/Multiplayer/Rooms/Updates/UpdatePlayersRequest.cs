@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Michitai.Multiplayer.Rooms.Updates
 {
-    public class UpdatePlayersRequest<T> where T : class, new()
+    internal class UpdatePlayersRequest<T> where T : class, new()
     {
         [JsonInclude]
         private string Target_players { get; set; } = ERoomTargetPlayers.All.ToString().ToLower();

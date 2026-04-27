@@ -347,7 +347,7 @@ public class Game
         }, "Send Room Update");
 
         foreach (var p in players.Values)
-            await SafeExecute(async () => await Updates.PollUpdatesAsync<UpdateData>(client!, p.Token), $"PollUpdates {p.Name}");
+            await SafeExecute(async () => await Updates.PollUpdatesAsync<UpdateData>(client!, p.Token, new PollUpdates(ERoomTargetPlayers.Host)), $"PollUpdates {p.Name}");
 
         await Rooms.GetRoomPlayersAsync<PlayerData>(client!, players["host"].Token);
 

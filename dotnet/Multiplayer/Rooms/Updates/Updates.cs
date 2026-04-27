@@ -12,21 +12,9 @@ namespace Michitai.Multiplayer.Rooms.Updates
             => client.Send<UpdatePlayersResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomUpdates, $"&player_token={playerToken}"),
                 new UpdatePlayersRequest<T>(request.Target_players, request.Type, request.Data, request.Target_players_ids), ct);
 
-        public static Task<PollUpdatesResponse<T>> PollUpdatesAsync<T>(Multiplayer client, string playerToken,
-            string? lastUpdateId = null, CancellationToken ct = default) where T : class, new()
-        {
-            string extra;
-
-            if (string.IsNullOrEmpty(lastUpdateId))
-            {
-                extra = $"&player_token={playerToken}";
-            }
-            else
-            {
-                extra = $"&player_token={playerToken}&last_update={lastUpdateId}";
-            }
-
-            return client.Send<PollUpdatesResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameRoomUpdatesPoll, extra), null, ct);
-        }
+        public static Task<PollUpdatesResponse<T>> PollUpdatesAsync<T>(Multiplayer client, string playerToken, PollUpdates request,
+            CancellationToken ct = default) where T : class, new()
+                => client.Send<PollUpdatesResponse<T>>(HttpMethod.Post, client.Url(Endpoints.GameRoomUpdatesPoll, $"&player_token={playerToken}"),
+                    new PollUpdatesRequest(request.From_players, request.From_players_ids, request.Last_update), ct);
     }
 }
