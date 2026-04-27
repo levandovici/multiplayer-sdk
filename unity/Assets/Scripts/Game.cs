@@ -381,7 +381,7 @@ public class Game : MonoBehaviour
 
         // Players poll updates
         foreach (var p in players.Values)
-            await SafeExecute(async () => await Updates.PollUpdatesAsync(client, p.Token), $"PollUpdates {p.Name}");
+            await SafeExecute(async () => await Updates.PollUpdatesAsync(client, p.Token, new PollUpdates(ERoomTargetPlayers.Host)), $"PollUpdates {p.Name}");
 
         await Rooms.GetRoomPlayersAsync<PlayerData>(client, players["host"].Token);
 

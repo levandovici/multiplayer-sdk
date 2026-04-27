@@ -233,7 +233,6 @@ namespace Michitai.Multiplayer.Errors
         InvalidPlayerToken,
         PlayerTokenIsRequired,
         PlayerIsNotInAnyRoom,
-        OnlyHostCanSendUpdates,
         MissingRequiredFieldTargetPlayers,
         MissingRequiredFieldType,
         MissingRequiredFieldTargetPlayersIds,
@@ -250,7 +249,9 @@ namespace Michitai.Multiplayer.Errors
         InvalidApiToken = ECommonError.InvalidApiToken,
         InvalidPlayerToken,
         PlayerTokenIsRequired,
-        PlayerIsNotInAnyRoom
+        PlayerIsNotInAnyRoom,
+        NoValidSourcePlayersFound,
+        InvalidFromPlayers
     }
 
     public enum ERoomCurrentError 

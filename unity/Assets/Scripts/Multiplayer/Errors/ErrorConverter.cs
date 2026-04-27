@@ -65,7 +65,6 @@ namespace Michitai.Multiplayer.Errors
             { "response_data_json must be a string", nameof(ERoomActionsCompleteError.ResponseDataJsonMustBeAString) },
             { "response_data is not valid JSON", nameof(ERoomActionsCompleteError.ResponseDataIsNotValidJson) },
             { "Action not found or already processed", nameof(ERoomActionsCompleteError.ActionNotFoundOrAlreadyProcessed) },
-            { "Only host can send updates", nameof(ERoomUpdatesError.OnlyHostCanSendUpdates) },
             { "Missing required field: target_players", nameof(ERoomUpdatesError.MissingRequiredFieldTargetPlayers) },
             { "Missing required field: type", nameof(ERoomUpdatesError.MissingRequiredFieldType) },
             { "Missing required field: target_players_ids", nameof(ERoomUpdatesError.MissingRequiredFieldTargetPlayersIds) },
@@ -73,6 +72,8 @@ namespace Michitai.Multiplayer.Errors
             { "No valid target players found", nameof(ERoomUpdatesError.NoValidTargetPlayersFound) },
             { "Invalid target players", nameof(ERoomUpdatesError.InvalidTargetPlayers) },
             { "Failed to send updates", nameof(ERoomUpdatesError.FailedToSendUpdates) },
+            { "No valid source players found", nameof(ERoomUpdatesPollError.NoValidSourcePlayersFound) },
+            { "Invalid from players", nameof(ERoomUpdatesPollError.InvalidFromPlayers) },
             
             // Leaderboard errors
             { "Method not allowed. Use POST.", nameof(ELeaderboardError.MethodNotAllowedUsePost) },
