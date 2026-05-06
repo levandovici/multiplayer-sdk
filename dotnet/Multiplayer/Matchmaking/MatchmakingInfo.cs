@@ -17,6 +17,7 @@ namespace Michitai.Multiplayer.Matchmaking
         public bool Join_by_requests { get; set; }
         public bool Host_switch { get; set; }
         public bool Can_leave_room { get; set; }
+        public bool Realtime_room { get; set; }
         public DateTimeOffset Joined_at { get; set; }
         public bool Is_online { get; set; }
         public DateTimeOffset Last_heartbeat { get; set; }

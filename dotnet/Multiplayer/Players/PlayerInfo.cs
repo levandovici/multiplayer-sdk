@@ -30,7 +30,7 @@ namespace Michitai.Multiplayer.Players
         {
             get
             {
-                return Player_data.Deserialize<T>(Multiplayer.JsonOptions)!;
+                return Player_data.Deserialize<T>(Client.JsonOptions)!;
             }
         }
     }

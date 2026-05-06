@@ -15,6 +15,7 @@ namespace Michitai.Multiplayer.Rooms
         public bool Has_password { get; set; }
         public bool Host_switch { get; set; }
         public bool Can_leave { get; set; }
+        public bool Realtime { get; set; }
         public T? Rules { get; set; }
     }
 }
