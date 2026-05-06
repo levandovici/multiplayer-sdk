@@ -435,4 +435,17 @@ namespace Michitai.Multiplayer.Errors
         InvalidApiKey,
         InternalServerError = ECommonError.InternalServerError
     }
+
+    // ====================== REALTIME.PHP ERRORS ======================
+    
+    public enum ERealtimeTokenError 
+    {
+        Unknown = ECommonError.Unknown,
+        ApiTokenIsRequired = ECommonError.ApiTokenIsRequired,
+        InvalidApiToken = ECommonError.InvalidApiToken,
+        InvalidPlayerToken,
+        PlayerTokenIsRequired,
+        PlayerIsNotInARealtimeEnabledRoom,
+        FailedToGenerateRealtimeToken
+    }
 }

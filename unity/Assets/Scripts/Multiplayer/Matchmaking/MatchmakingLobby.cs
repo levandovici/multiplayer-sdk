@@ -28,6 +28,7 @@ namespace Michitai.Multiplayer.Matchmaking
         public bool join_by_requests;
         public bool host_switch;
         public bool can_leave_room;
+        public bool realtime_room;
         public int current_players;
         public string host_name;
 

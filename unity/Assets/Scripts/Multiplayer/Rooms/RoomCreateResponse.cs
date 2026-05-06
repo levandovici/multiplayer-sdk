@@ -12,6 +12,7 @@ namespace Michitai.Multiplayer.Rooms
     {
         public string room_id;
         public string room_name;
+        public bool realtime;
         public bool is_host;
     }
 }

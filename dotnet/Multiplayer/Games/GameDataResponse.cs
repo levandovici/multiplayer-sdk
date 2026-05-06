@@ -26,7 +26,7 @@ namespace Michitai.Multiplayer.Games
         {
             get
             {
-                return Data.Deserialize<T>(Multiplayer.JsonOptions)!;
+                return Data.Deserialize<T>(Client.JsonOptions)!;
             }
         }
     }

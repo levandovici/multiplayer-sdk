@@ -1,23 +1,25 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using UnityEngine;
 using Michitai;
 using Michitai.Multiplayer;
-using Michitai.Multiplayer.Time;
+using Michitai.Multiplayer.Errors;
 using Michitai.Multiplayer.Games;
-using Michitai.Multiplayer.Players;
+using Michitai.Multiplayer.Leaderboard;
 using Michitai.Multiplayer.Matchmaking;
 using Michitai.Multiplayer.Matchmaking.Requests;
+using Michitai.Multiplayer.Players;
 using Michitai.Multiplayer.Rooms;
 using Michitai.Multiplayer.Rooms.Actions;
+using Michitai.Multiplayer.Rooms.Realtime;
 using Michitai.Multiplayer.Rooms.Updates;
-using Michitai.Multiplayer.Leaderboard;
-using Michitai.Multiplayer.Errors;
+using Michitai.Multiplayer.Time;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using UnityEngine;
 
 public class Game : MonoBehaviour
 {
-    private static Multiplayer client;
+    private static Client client;
     private readonly Dictionary<string, PlayerInfo> players = new Dictionary<string, PlayerInfo>();
 
     [SerializeField]
@@ -33,7 +35,7 @@ public class Game : MonoBehaviour
         Debug.Log("=== MICHITAI Game SDK - Unity Demo Started ===\n");
 
         var logger = new ConsoleLogger();
-        client = new Multiplayer(
+        client = new Client(
             apiToken: apiToken,
             apiPrivateToken: apiPrivateToken,
             logger: logger,
@@ -286,6 +288,7 @@ public class Game : MonoBehaviour
             strictFull: false,
             hostSwitch:false,
             canLeaveRoom:false,
+            realtimeRoom:false,
             playerData: playerData,
             rules: rules
         );

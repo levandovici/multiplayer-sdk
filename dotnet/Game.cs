@@ -16,7 +16,7 @@ using Michitai.Multiplayer.Errors;
 
 public class Game
 {
-    private static Multiplayer? client;
+    private static Client? client;
     private static readonly Dictionary<string, PlayerInfo> players = new();
 
     public static async Task Main()
@@ -24,7 +24,7 @@ public class Game
         Console.WriteLine("=== MICHITAI Game SDK - ALL THREE DEMOS + TIME + LEADERBOARD ===\n");
 
         var logger = new ConsoleLogger();
-        client = new Multiplayer("YOUR_API_TOKEN", "YOUR_PRIVATE_TOKEN", logger: logger);
+        client = new Client("YOUR_API_TOKEN", "YOUR_PRIVATE_TOKEN", logger: logger);
 
         Console.WriteLine("[INIT] SDK initialized successfully\n");
 
@@ -263,7 +263,7 @@ public class Game
         PlayerData playerData = new PlayerData { Level = 3, Rank = "Diamond" };
 
         var res = await Requests.CreateMatchmakingLobbyAsync<PlayerData, RulesData>(client!, players["host"].Token,
-            matchmakingName, 4, false, joinByRequests, false, false, playerData, rules);
+            matchmakingName, 4, false, joinByRequests, false, false, false, playerData, rules);
         Console.WriteLine($"[MATCHMAKING] Lobby created (requests={joinByRequests})");
         return res.Matchmaking_id;
     }

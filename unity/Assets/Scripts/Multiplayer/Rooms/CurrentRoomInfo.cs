@@ -33,6 +33,7 @@ namespace Michitai.Multiplayer.Rooms
         public bool has_password;
         public bool host_switch;
         public bool can_leave;
+        public bool realtime;
         public bool is_active;
         public string player_name;
 

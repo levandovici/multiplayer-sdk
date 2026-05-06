@@ -26,7 +26,7 @@ namespace Michitai.Multiplayer.Leaderboard
         {
             get
             {
-                return Player_data.Deserialize<T>(Multiplayer.JsonOptions)!;
+                return Player_data.Deserialize<T>(Client.JsonOptions)!;
             }
         }
     }

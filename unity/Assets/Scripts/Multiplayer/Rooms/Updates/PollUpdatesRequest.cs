@@ -13,7 +13,7 @@ namespace Michitai.Multiplayer.Rooms.Updates
         public int[] from_players_ids;
         public string last_update;
 
-        public PollUpdatesRequest(ERoomTargetPlayers fromPlayers = ERoomTargetPlayers.Host, int[]? fromPlayersIds = null, string lastUpdate = null)
+        public PollUpdatesRequest(ERoomTargetPlayers fromPlayers = ERoomTargetPlayers.Host, int[] fromPlayersIds = null, string lastUpdate = null)
         {
             this.from_players = fromPlayers.ToString().ToLower();
             this.from_players_ids = fromPlayersIds;

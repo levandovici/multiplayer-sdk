@@ -115,7 +115,13 @@ public static class ErrorConverter
         
         // Time errors
         { "API key is required", nameof(ETimeError.ApiKeyIsRequired) },
-        { "Invalid API key", nameof(ETimeError.InvalidApiKey) }
+        { "Invalid API key", nameof(ETimeError.InvalidApiKey) },
+        
+        // Realtime errors
+        { "Invalid player token", nameof(ERealtimeTokenError.InvalidPlayerToken) },
+        { "Player token is required", nameof(ERealtimeTokenError.PlayerTokenIsRequired) },
+        { "Player is not in a realtime-enabled room", nameof(ERealtimeTokenError.PlayerIsNotInARealtimeEnabledRoom) },
+        { "Failed to generate realtime token", nameof(ERealtimeTokenError.FailedToGenerateRealtimeToken) }
     };
 
     public static T ConvertToEnum<T>(string errorMessage) where T : Enum, IConvertible

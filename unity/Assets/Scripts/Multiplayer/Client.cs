@@ -9,7 +9,7 @@ using Michitai.Multiplayer.Errors;
 
 namespace Michitai.Multiplayer
 {
-    public class Multiplayer
+    public class Client
     {
         private readonly string _apiToken;
         private readonly string _apiPrivateToken;
@@ -20,7 +20,7 @@ namespace Michitai.Multiplayer
 
 
 
-        public Multiplayer(string apiToken, string apiPrivateToken, string baseUrl = "https://api.michitai.com/api",
+        public Client(string apiToken, string apiPrivateToken, string baseUrl = "https://api.michitai.com/api",
                        Errors.ILogger logger = null, HttpClient httpClient = null, bool useUnityFormat = true)
         {
             _apiToken = apiToken ?? throw new ArgumentNullException(nameof(apiToken));

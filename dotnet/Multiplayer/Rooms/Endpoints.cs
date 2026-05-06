@@ -14,12 +14,6 @@ namespace Michitai.Multiplayer.Rooms
         public const string GameRoomLeave = "game_room.php/leave";
         public const string GameRoomPlayers = "game_room.php/players";
         public const string GameRoomHeartbeat = "game_room.php/heartbeat";
-        public const string GameRoomActions = "game_room.php/actions";
-        public const string GameRoomActionsPoll = "game_room.php/actions/poll";
-        public const string GameRoomActionsPending = "game_room.php/actions/pending";
-        public const string GameRoomActionComplete = "game_room.php/actions/{0}/complete";
-        public const string GameRoomUpdates = "game_room.php/updates";
-        public const string GameRoomUpdatesPoll = "game_room.php/updates/poll";
         public const string GameRoomCurrent = "game_room.php/current";
     }
 }

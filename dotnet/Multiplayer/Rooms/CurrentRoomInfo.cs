@@ -17,6 +17,7 @@ namespace Michitai.Multiplayer.Rooms
         public bool Has_password { get; set; }
         public bool Host_switch { get; set; }
         public bool Can_leave { get; set; }
+        public bool Realtime { get; set; }
         public bool Is_active { get; set; }
         public string Player_name { get; set; } = string.Empty;
         public DateTimeOffset Joined_at { get; set; }

@@ -13,18 +13,20 @@ namespace Michitai.Multiplayer.Rooms
         public string password;
         public int max_players;
         public bool host_switch;
+        public bool realtime;
         public string player_data_json;     // Unity mode
         public string rules_json;           // Unity mode
 
 
 
         public RoomCreateRequest(string roomName, string password, int maxPlayers,
-            bool hostSwitch, string playerData, string rulesJson)
+            bool hostSwitch, bool realtime, string playerData, string rulesJson)
         {
             this.room_name = roomName;
             this.password = password;
             this.max_players = maxPlayers;
             this.host_switch = hostSwitch;
+            this.realtime = realtime;
             this.player_data_json = playerData;
             this.rules_json = rulesJson;
         }
