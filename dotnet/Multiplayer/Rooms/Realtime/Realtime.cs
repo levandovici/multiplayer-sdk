@@ -21,7 +21,7 @@ namespace Michitai.Multiplayer.Rooms.Realtime
         public event Action<string, object, SenderInfo>? OnReceive;
         public event Action? OnConnected;
 
-        public Realtime(string realtimeWebSocketUrl = "ws://realtime.michitai.com")
+        public Realtime(string realtimeWebSocketUrl = "wss://realtime.michitai.com")
         {
             _realtimeWebSocketUrl = realtimeWebSocketUrl;
         }
@@ -43,7 +43,7 @@ namespace Michitai.Multiplayer.Rooms.Realtime
                 // Wake up the server before connecting
                 using (var httpClient = new HttpClient())
                 {
-                    await httpClient.GetAsync("http://realtime.michitai.com/");
+                    await httpClient.GetAsync("https://realtime.michitai.com/");
                 }
 
                 var uri = new Uri($"{_realtimeWebSocketUrl}?token={_token}&client=json");
