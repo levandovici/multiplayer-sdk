@@ -353,7 +353,8 @@ public class Game : MonoBehaviour
         Debug.Log("\n=== GAME ROOM FLOW ===\n");
 
         await Rooms.GetRoomsAsync<RulesData>(client);
-        await Rooms.GetCurrentRoomAsync<RulesData>(client, players["host"].Token);
+
+        CurrentRoomResponse<RulesData> room = await Rooms.GetCurrentRoomAsync<RulesData>(client, players["host"].Token);
 
         // Players submit actions
         foreach (var p in players.Values)
@@ -392,8 +393,8 @@ public class Game : MonoBehaviour
         foreach (var p in players.Values)
             await SafeExecute(async () => await Rooms.SendRoomHeartbeatAsync(client, p.Token), $"RoomHeartbeat {p.Name}");
 
-        // Leave room
-        await SafeExecute(async () => await Rooms.LeaveRoomAsync(client, players["host"].Token), $"LeaveRoom {players["host"].Name}");
+        // Stop room
+        await SafeExecute(async () => await Rooms.StopRoomAsync(client, players["host"].Token), $"StopRoom {room.room.room_name}");
     }
 
     private async Task SafeExecute(Func<Task> action, string operation)

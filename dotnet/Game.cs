@@ -323,7 +323,8 @@ public class Game
         Console.WriteLine("\n=== GAME ROOM FLOW ===\n");
 
         await Rooms.GetRoomsAsync<RulesData>(client!);
-        await Rooms.GetCurrentRoomAsync<RulesData>(client!, players["host"].Token);
+
+        CurrentRoomResponse<RulesData> room = await Rooms.GetCurrentRoomAsync<RulesData>(client!, players["host"].Token);
 
         foreach (var p in players.Values)
         {
@@ -354,7 +355,7 @@ public class Game
         foreach (var p in players.Values)
             await SafeExecute(async () => await Rooms.SendRoomHeartbeatAsync(client!, p.Token), $"RoomHeartbeat {p.Name}");
 
-        await SafeExecute(async () => await Rooms.LeaveRoomAsync(client!, players["host"].Token), $"LeaveRoom {players["host"].Name}");
+        await SafeExecute(async () => await Rooms.StopRoomAsync(client!, players["host"].Token), $"StopRoom {room.Room!.Room_name}");
     }
 
     private static async Task SafeExecute(Func<Task> action, string operation)

@@ -14,5 +14,6 @@ namespace Michitai.Multiplayer.Rooms
         public const string GameRoomPlayers = "game_room.php/players";
         public const string GameRoomHeartbeat = "game_room.php/heartbeat";
         public const string GameRoomCurrent = "game_room.php/current";
+        public const string GameRoomStop = "game_room.php/stop";
     }
 }

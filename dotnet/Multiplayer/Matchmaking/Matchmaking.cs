@@ -36,5 +36,8 @@ namespace Michitai.Multiplayer.Matchmaking
 
         public static Task<MatchmakingStartResponse> StartGameFromMatchmakingAsync(Client client, string playerToken, CancellationToken ct = default)
             => client.Send<MatchmakingStartResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingStart, $"&player_token={playerToken}"), null, ct);
+
+        public static Task<SuccessResponse> StopMatchmakingAsync(Client client, string playerToken, CancellationToken ct = default)
+            => client.Send<SuccessResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingStop, $"&player_token={playerToken}"), null, ct);
     }
 }
