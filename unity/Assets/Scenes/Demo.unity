@@ -165,7 +165,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game
   apiToken: YOUR_API_TOKEN
   apiPrivateToken: YOUR_API_PRIVATE_TOKEN
-  autoStartDemo: 1
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0

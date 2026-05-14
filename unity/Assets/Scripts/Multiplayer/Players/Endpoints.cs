@@ -13,6 +13,8 @@ namespace Michitai.Multiplayer.Players
         public const string GamePlayersLogout = "game_players.php/logout";
         public const string GamePlayersRename = "game_players.php/rename";
         public const string GamePlayersList = "game_players.php/list";
+        public const string GamePlayersBan = "game_players.php/ban";
+        public const string GamePlayersUnban = "game_players.php/unban";
 
         public const string GameDataPlayerGet = "game_data.php/player/get";
         public const string GameDataPlayerUpdate = "game_data.php/player/update";
