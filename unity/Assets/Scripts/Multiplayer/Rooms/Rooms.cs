@@ -38,5 +38,8 @@ namespace Michitai.Multiplayer.Rooms
 
         public static Task<SuccessResponse> StopRoomAsync(Client client, string playerToken, CancellationToken ct = default)
             => client.Send<SuccessResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomStop, $"&player_token={playerToken}"), null, ct);
+
+        public static Task<RoomKickResponse> KickPlayerAsync(Client client, string playerToken, int playerId, CancellationToken ct = default)
+            => client.Send<RoomKickResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomKick, $"&player_token={playerToken}"), new RoomKickRequest { player_id = playerId }, ct);
     }
 }

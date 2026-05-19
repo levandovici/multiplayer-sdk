@@ -19,6 +19,7 @@ public static class ErrorConverter
         { "Invalid endpoint", nameof(ECommonError.InvalidEndpoint) },
         { "Database error", nameof(ECommonError.DatabaseError) },
         { "An unexpected error occurred", nameof(ECommonError.AnUnexpectedErrorOccurred) },
+        { "You are banned", nameof(ECommonError.YouAreBanned) },
         
         // Game data errors
         { "Game player token is required", nameof(EGameDataPlayerGetError.GamePlayerTokenIsRequired) },
@@ -40,6 +41,10 @@ public static class ErrorConverter
         { "Failed to update player name", nameof(EPlayerRenameError.FailedToUpdatePlayerName) },
         { "API token and private token are required", nameof(EPlayerListError.ApiTokenAndPrivateTokenAreRequired) },
         { "Invalid API credentials", nameof(EPlayerListError.InvalidApiCredentials) },
+        { "player_id is required", nameof(EPlayerBanError.PlayerIdIsRequired) },
+        { "ban_duration is required (hour, day, week, month, quarter, year, forever)", nameof(EPlayerBanError.BanDurationIsRequired) },
+        { "Invalid ban_duration. Must be one of: hour, day, week, month, quarter, year, forever", nameof(EPlayerBanError.InvalidBanDuration) },
+        { "Player not found or does not belong to this game", nameof(EPlayerBanError.PlayerNotFoundOrDoesNotBelongToThisGame) },
         
         // Room errors
         { "Invalid player token", nameof(ERoomCreateError.InvalidPlayerToken) },
@@ -74,6 +79,13 @@ public static class ErrorConverter
         { "Failed to send updates", nameof(ERoomUpdatesError.FailedToSendUpdates) },
         { "No valid source players found", nameof(ERoomUpdatesPollError.NoValidSourcePlayersFound) },
         { "Invalid from players", nameof(ERoomUpdatesPollError.InvalidFromPlayers) },
+        { "Only host can kick players", nameof(ERoomKickError.OnlyHostCanKickPlayers) },
+        { "You cannot kick yourself", nameof(ERoomKickError.YouCannotKickYourself) },
+        { "Missing required field: player_id", nameof(ERoomKickError.MissingRequiredFieldPlayerId) },
+        { "Player not found in this room", nameof(ERoomKickError.PlayerNotFoundInThisRoom) },
+        { "Failed to kick player", nameof(ERoomKickError.FailedToKickPlayer) },
+        { "Only host can stop game room", nameof(ERoomStopError.OnlyHostCanStopGameRoom) },
+        { "Failed to stop game room", nameof(ERoomStopError.FailedToStopGameRoom) },
         
         // Leaderboard errors
         { "Method not allowed. Use POST.", nameof(ELeaderboardError.MethodNotAllowedUsePost) },
@@ -112,6 +124,16 @@ public static class ErrorConverter
         { "You are not in a matchmaking lobby", nameof(EMatchmakingStartError.YouAreNotInAMatchmakingLobby) },
         { "Only host can start matchmaking", nameof(EMatchmakingStartError.OnlyHostCanStartMatchmaking) },
         { "Lobby must be full to start (strict_full enabled)", nameof(EMatchmakingStartError.LobbyMustBeFullToStartStrictFullEnabled) },
+        { "Only host can kick players", nameof(EMatchmakingKickError.OnlyHostCanKickPlayers) },
+        { "You cannot kick yourself", nameof(EMatchmakingKickError.YouCannotKickYourself) },
+        { "Cannot kick players from matchmaking after it has been started", nameof(EMatchmakingKickError.CannotKickFromStartedMatchmaking) },
+        { "Missing required field: player_id", nameof(EMatchmakingKickError.MissingRequiredFieldPlayerId) },
+        { "Player not found in this matchmaking lobby", nameof(EMatchmakingKickError.PlayerNotFoundInThisMatchmakingLobby) },
+        { "Failed to kick player", nameof(EMatchmakingKickError.FailedToKickPlayer) },
+        { "You are not in a matchmaking lobby", nameof(EMatchmakingStopError.YouAreNotInAMatchmakingLobby) },
+        { "Only host can stop matchmaking lobby", nameof(EMatchmakingStopError.OnlyHostCanStopMatchmakingLobby) },
+        { "Cannot stop matchmaking lobby after it has been started", nameof(EMatchmakingStopError.CannotStopMatchmakingLobbyAfterItHasBeenStarted) },
+        { "Failed to stop matchmaking lobby", nameof(EMatchmakingStopError.FailedToStopMatchmakingLobby) },
         
         // Time errors
         { "API key is required", nameof(ETimeError.ApiKeyIsRequired) },

@@ -15,7 +15,28 @@ namespace Michitai.Multiplayer.Errors
         FailedToDeserializeResponse,
         InvalidEndpoint,
         DatabaseError,
-        AnUnexpectedErrorOccurred
+        AnUnexpectedErrorOccurred,
+        YouAreBanned
+    }
+
+    public enum EPlayerBanError
+    {
+        Unknown = ECommonError.Unknown,
+        ApiTokenAndPrivateTokenAreRequired,
+        InvalidApiCredentials,
+        PlayerIdIsRequired,
+        BanDurationIsRequired,
+        InvalidBanDuration,
+        PlayerNotFoundOrDoesNotBelongToThisGame
+    }
+
+    public enum EPlayerUnbanError
+    {
+        Unknown = ECommonError.Unknown,
+        ApiTokenAndPrivateTokenAreRequired,
+        InvalidApiCredentials,
+        PlayerIdIsRequired,
+        PlayerNotFoundOrDoesNotBelongToThisGame
     }
 
     // ====================== GAME_DATA.PHP ERRORS ======================
@@ -263,6 +284,33 @@ namespace Michitai.Multiplayer.Errors
         PlayerTokenIsRequired
     }
 
+    public enum ERoomKickError 
+    {
+        Unknown = ECommonError.Unknown,
+        ApiTokenIsRequired = ECommonError.ApiTokenIsRequired,
+        InvalidApiToken = ECommonError.InvalidApiToken,
+        InvalidPlayerToken,
+        PlayerTokenIsRequired,
+        YouAreNotInAnyGameRoom,
+        OnlyHostCanKickPlayers,
+        YouCannotKickYourself,
+        MissingRequiredFieldPlayerId,
+        PlayerNotFoundInThisRoom,
+        FailedToKickPlayer
+    }
+
+    public enum ERoomStopError
+    {
+        Unknown = ECommonError.Unknown,
+        ApiTokenIsRequired = ECommonError.ApiTokenIsRequired,
+        InvalidApiToken = ECommonError.InvalidApiToken,
+        InvalidPlayerToken,
+        PlayerTokenIsRequired,
+        YouAreNotInAnyGameRoom,
+        OnlyHostCanStopGameRoom,
+        FailedToStopGameRoom
+    }
+
     // ====================== LEADERBOARD.PHP ERRORS ======================
     
     public enum ELeaderboardError 
@@ -423,6 +471,35 @@ namespace Michitai.Multiplayer.Errors
         OnlyHostCanStartMatchmaking,
         MatchmakingLobbyNotFoundOrAlreadyStarted,
         LobbyMustBeFullToStartStrictFullEnabled
+    }
+
+    public enum EMatchmakingKickError 
+    {
+        Unknown = ECommonError.Unknown,
+        ApiTokenIsRequired = ECommonError.ApiTokenIsRequired,
+        InvalidApiToken = ECommonError.InvalidApiToken,
+        InvalidPlayerToken,
+        PlayerTokenIsRequired,
+        YouAreNotInAMatchmakingLobby,
+        OnlyHostCanKickPlayers,
+        YouCannotKickYourself,
+        CannotKickFromStartedMatchmaking,
+        MissingRequiredFieldPlayerId,
+        PlayerNotFoundInThisMatchmakingLobby,
+        FailedToKickPlayer
+    }
+
+    public enum EMatchmakingStopError
+    {
+        Unknown = ECommonError.Unknown,
+        ApiTokenIsRequired = ECommonError.ApiTokenIsRequired,
+        InvalidApiToken = ECommonError.InvalidApiToken,
+        InvalidPlayerToken,
+        PlayerTokenIsRequired,
+        YouAreNotInAMatchmakingLobby,
+        OnlyHostCanStopMatchmakingLobby,
+        CannotStopMatchmakingLobbyAfterItHasBeenStarted,
+        FailedToStopMatchmakingLobby
     }
 
     // ====================== TIME.PHP ERRORS ======================
