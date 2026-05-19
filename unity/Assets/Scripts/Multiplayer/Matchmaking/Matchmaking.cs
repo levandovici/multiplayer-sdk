@@ -11,8 +11,8 @@ namespace Michitai.Multiplayer.Matchmaking
 {
     public static class Matchmaking
     {
-        public static Task<MatchmakingListResponse<T>> GetMatchmakingLobbiesAsync<T>(Client client, CancellationToken ct = default) where T : class, new()
-            => client.Send<MatchmakingListResponse<T>>(HttpMethod.Get, client.Url(Endpoints.MatchmakingList), null, ct);
+        public static Task<MatchmakingListResponse<T>> GetMatchmakingLobbiesAsync<T>(Client client, string search = "", int limit = 20, CancellationToken ct = default) where T : class, new()
+            => client.Send<MatchmakingListResponse<T>>(HttpMethod.Post, client.Url(Endpoints.MatchmakingList), new MatchmakingListRequest { search = search, limit = limit }, ct);
 
         public static Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<TPlayerData, TRules>(Client client, string playerToken, string matchmakingName, int maxPlayers = 4, bool strictFull = false,
             bool hostSwitch = false, bool canLeaveRoom = false, bool realtimeRoom = false, string password = null, TPlayerData playerData = null, TRules rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()

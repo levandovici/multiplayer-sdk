@@ -17,8 +17,8 @@ namespace Michitai.Multiplayer.Rooms
                 => client.Send<RoomCreateResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomCreate, $"&player_token={playerToken}"),
                     new RoomCreateRequest(roomName, password, maxPlayers, hostSwitch, realtime, JsonUtility.ToJson(playerData), JsonUtility.ToJson(rules)), ct);
 
-        public static Task<RoomListResponse<T>> GetRoomsAsync<T>(Client client, CancellationToken ct = default) where T : class, new()
-            => client.Send<RoomListResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameRoomList), null, ct);
+        public static Task<RoomListResponse<T>> GetRoomsAsync<T>(Client client, string search = "", int limit = 20, CancellationToken ct = default) where T : class, new()
+            => client.Send<RoomListResponse<T>>(HttpMethod.Post, client.Url(Endpoints.GameRoomList), new RoomListRequest { search = search, limit = limit }, ct);
 
         public static Task<RoomJoinResponse> JoinRoomAsync<T>(Client client, string playerToken, string roomId, string password = null, T playerData = null, CancellationToken ct = default) where T : class, new()
             => client.Send<RoomJoinResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.GameRoomJoin, roomId), $"&player_token={playerToken}"),
