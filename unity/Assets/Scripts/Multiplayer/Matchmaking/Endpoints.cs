@@ -18,5 +18,6 @@ namespace Michitai.Multiplayer.Matchmaking
         public const string MatchmakingStart = "matchmaking.php/start";
         public const string MatchmakingStop = "matchmaking.php/stop";
         public const string MatchmakingKick = "matchmaking.php/kick";
+        public const string MatchmakingPassword = "matchmaking.php/password";
     }
 }

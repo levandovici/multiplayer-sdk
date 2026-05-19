@@ -9,9 +9,9 @@ namespace Michitai.Multiplayer.Matchmaking.Requests
     public class Requests
     {
         public static Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<TPlayerData, TRules>(Client client, string playerToken, string matchmakingName, int maxPlayers = 4, bool strictFull = false,
-            bool joinByRequests = false, bool hostSwitch = false, bool canLeaveRoom = false, bool realtimeRoom = false, TPlayerData? playerData = null, TRules? rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
+            bool joinByRequests = false, bool hostSwitch = false, bool canLeaveRoom = false, bool realtimeRoom = false, string? password = null, TPlayerData? playerData = null, TRules? rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
             => client.Send<MatchmakingCreateResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingCreate, $"&player_token={playerToken}"),
-                new MatchmakingCreateRequest<TPlayerData, TRules>(matchmakingName, maxPlayers, strictFull, joinByRequests, hostSwitch, canLeaveRoom, realtimeRoom, playerData, rules), ct);
+                new MatchmakingCreateRequest<TPlayerData, TRules>(matchmakingName, maxPlayers, strictFull, joinByRequests, hostSwitch, canLeaveRoom, realtimeRoom, password, playerData, rules), ct);
 
         public static Task<MatchmakingJoinRequestResponse> RequestToJoinMatchmakingAsync<T>(Client client, string playerToken, string matchmakingId, T? playerData = null, CancellationToken ct = default) where T : class, new()
             => client.Send<MatchmakingJoinRequestResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.MatchmakingRequest, matchmakingId), $"&player_token={playerToken}"), playerData, ct);

@@ -25,6 +25,8 @@ namespace Michitai.Multiplayer.Matchmaking
         [JsonInclude]
         private bool Realtime_room { get; set; }
         [JsonInclude]
+        private string? Password { get; set; }
+        [JsonInclude]
         private TPlayerData? Player_data { get; set; }
         [JsonInclude]
         private TRules? Rules { get; set; }
@@ -33,7 +35,7 @@ namespace Michitai.Multiplayer.Matchmaking
 
         public MatchmakingCreateRequest(string matchmakingName, int maxPlayers, bool strictFull,
             bool joinByRequests = false, bool hostSwitch = false, bool canLeaveRoom = false, bool realtimeRoom = false,
-             TPlayerData? playerData = null, TRules? rules = null)
+            string? password = null, TPlayerData? playerData = null, TRules? rules = null)
         {
             this.Matchmaking_name = matchmakingName;
             this.Max_players = maxPlayers;
@@ -42,6 +44,7 @@ namespace Michitai.Multiplayer.Matchmaking
             this.Host_switch = hostSwitch;
             this.Can_leave_room = canLeaveRoom;
             this.Realtime_room = realtimeRoom;
+            this.Password = password;
             this.Player_data = playerData;
             this.Rules = rules;
         }

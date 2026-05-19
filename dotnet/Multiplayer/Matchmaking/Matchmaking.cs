@@ -12,9 +12,9 @@ namespace Michitai.Multiplayer.Matchmaking
             => client.Send<MatchmakingListResponse<T>>(HttpMethod.Get, client.Url(Endpoints.MatchmakingList), null, ct);
 
         public static Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<TPlayerData, TRules>(Client client, string playerToken, string matchmakingName, int maxPlayers = 4, bool strictFull = false,
-            bool hostSwitch = false, bool canLeaveRoom = false, bool realtimeRoom = false, TPlayerData? playerData = null, TRules? rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
+            bool hostSwitch = false, bool canLeaveRoom = false, bool realtimeRoom = false, string? password = null, TPlayerData? playerData = null, TRules? rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
             => client.Send<MatchmakingCreateResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingCreate, $"&player_token={playerToken}"),
-                new MatchmakingCreateRequest<TPlayerData, TRules>(matchmakingName, maxPlayers, strictFull, false, hostSwitch, canLeaveRoom, realtimeRoom, playerData, rules), ct);
+                new MatchmakingCreateRequest<TPlayerData, TRules>(matchmakingName, maxPlayers, strictFull, false, hostSwitch, canLeaveRoom, realtimeRoom, password, playerData, rules), ct);
 
         public static Task<MatchmakingCurrentResponse<T>> GetCurrentMatchmakingStatusAsync<T>(Client client, string playerToken, CancellationToken ct = default) where T : class, new()
             => client.Send<MatchmakingCurrentResponse<T>>(HttpMethod.Get, client.Url(Endpoints.MatchmakingCurrent, $"&player_token={playerToken}"), null, ct);
@@ -42,5 +42,8 @@ namespace Michitai.Multiplayer.Matchmaking
 
         public static Task<MatchmakingKickResponse> KickPlayerAsync(Client client, string playerToken, int playerId, CancellationToken ct = default)
             => client.Send<MatchmakingKickResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingKick, $"&player_token={playerToken}"), new MatchmakingKickRequest { Player_id = playerId }, ct);
+
+        public static Task<SuccessResponse> UpdateMatchmakingPasswordAsync(Client client, string playerToken, string? password = null, CancellationToken ct = default)
+            => client.Send<SuccessResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingPassword, $"&player_token={playerToken}"), new MatchmakingPasswordUpdateRequest(password), ct);
     }
 }

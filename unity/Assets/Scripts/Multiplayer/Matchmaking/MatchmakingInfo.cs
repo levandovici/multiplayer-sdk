@@ -34,6 +34,7 @@ namespace Michitai.Multiplayer.Matchmaking
         public bool host_switch;
         public bool can_leave_room;
         public bool realtime_room;
+        public bool has_password;
         public bool is_online;
         public bool is_started;
 
