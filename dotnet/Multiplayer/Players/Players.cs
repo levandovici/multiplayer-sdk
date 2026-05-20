@@ -37,19 +37,5 @@ namespace Michitai.Multiplayer.Players
 
         public static Task<SuccessResponse> UpdatePlayerData<T>(Client client, string playerToken, T data, CancellationToken ct = default) where T : class, new()
             => client.Send<SuccessResponse>(HttpMethod.Put, client.Url(Endpoints.GameDataPlayerUpdate, $"&player_token={playerToken}"), data, ct);
-
-        /// <summary>
-        /// Check if an API response indicates the player is banned
-        /// </summary>
-        /// <param name="response">The API response</param>
-        /// <returns>True if the error indicates the player is banned</returns>
-        public static bool IsBanned(ApiResponse response)
-        {
-            if (!response.Success && response.Error != null)
-            {
-                return response.Error.Contains("You are banned");
-            }
-            return false;
-        }
     }
 }

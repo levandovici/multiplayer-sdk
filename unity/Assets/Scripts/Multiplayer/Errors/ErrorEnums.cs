@@ -307,8 +307,22 @@ namespace Michitai.Multiplayer.Errors
         InvalidPlayerToken,
         PlayerTokenIsRequired,
         YouAreNotInAnyGameRoom,
-        OnlyHostCanStopGameRoom,
-        FailedToStopGameRoom
+        OnlyHostCanStopTheGameRoom,
+        FailedToStopGameRoom,
+        YouAreBanned = ECommonError.YouAreBanned
+    }
+
+    public enum ERoomPasswordError
+    {
+        Unknown = ECommonError.Unknown,
+        ApiTokenIsRequired = ECommonError.ApiTokenIsRequired,
+        InvalidApiToken = ECommonError.InvalidApiToken,
+        InvalidPlayerToken,
+        PlayerTokenIsRequired,
+        YouAreNotInAnyRoom,
+        OnlyHostCanUpdateRoomPassword,
+        FailedToUpdatePassword,
+        YouAreBanned = ECommonError.YouAreBanned
     }
 
     // ====================== LEADERBOARD.PHP ERRORS ======================
@@ -334,8 +348,8 @@ namespace Michitai.Multiplayer.Errors
         Unknown = ECommonError.Unknown,
         ApiTokenIsRequired = ECommonError.ApiTokenIsRequired,
         InvalidApiToken = ECommonError.InvalidApiToken,
-        InvalidPlayerToken,
-        PlayerTokenIsRequired
+        YouAreBanned = ECommonError.YouAreBanned,
+        FailedToListMatchmakingLobbies
     }
 
     public enum EMatchmakingCreateError 
@@ -500,6 +514,20 @@ namespace Michitai.Multiplayer.Errors
         OnlyHostCanStopMatchmakingLobby,
         CannotStopMatchmakingLobbyAfterItHasBeenStarted,
         FailedToStopMatchmakingLobby
+    }
+
+    public enum EMatchmakingPasswordError
+    {
+        Unknown = ECommonError.Unknown,
+        ApiTokenIsRequired = ECommonError.ApiTokenIsRequired,
+        InvalidApiToken = ECommonError.InvalidApiToken,
+        InvalidPlayerToken,
+        PlayerTokenIsRequired,
+        YouAreNotInAMatchmakingLobby,
+        OnlyHostCanUpdateMatchmakingPassword,
+        CannotChangePasswordAfterMatchmakingHasStarted,
+        FailedToUpdatePassword,
+        YouAreBanned = ECommonError.YouAreBanned
     }
 
     // ====================== TIME.PHP ERRORS ======================

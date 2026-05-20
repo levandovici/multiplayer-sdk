@@ -53,6 +53,8 @@ namespace Michitai.Multiplayer.Errors
             { "You cannot create a game room while in a matchmaking lobby.", nameof(ERoomCreateError.YouCannotCreateAGameRoomWhileInAMatchmakingLobby) },
             { "Failed to create room", nameof(ERoomCreateError.FailedToCreateRoom) },
             { "Failed to list rooms", nameof(ERoomListError.FailedToListRooms) },
+            { "Only host can update room password", nameof(ERoomPasswordError.OnlyHostCanUpdateRoomPassword) },
+            { "Failed to update password", nameof(ERoomPasswordError.FailedToUpdatePassword) },
             { "You are already in another room", nameof(ERoomJoinError.YouAreAlreadyInAnotherRoom) },
             { "Room not found", nameof(ERoomJoinError.RoomNotFound) },
             { "Room inactive", nameof(ERoomJoinError.RoomInactive) },
@@ -84,7 +86,7 @@ namespace Michitai.Multiplayer.Errors
             { "Missing required field: player_id", nameof(ERoomKickError.MissingRequiredFieldPlayerId) },
             { "Player not found in this room", nameof(ERoomKickError.PlayerNotFoundInThisRoom) },
             { "Failed to kick player", nameof(ERoomKickError.FailedToKickPlayer) },
-            { "Only host can stop game room", nameof(ERoomStopError.OnlyHostCanStopGameRoom) },
+            { "Only host can stop game room", nameof(ERoomStopError.OnlyHostCanStopTheGameRoom) },
             { "Failed to stop game room", nameof(ERoomStopError.FailedToStopGameRoom) },
             
             // Leaderboard errors
@@ -99,6 +101,7 @@ namespace Michitai.Multiplayer.Errors
             { "Server error", nameof(ELeaderboardError.ServerError) },
             
             // Matchmaking errors
+            { "Failed to list matchmaking lobbies", nameof(EMatchmakingListError.FailedToListMatchmakingLobbies) },
             { "You are already in a matchmaking lobby", nameof(EMatchmakingCreateError.YouAreAlreadyInAMatchmakingLobby) },
             { "You cannot create matchmaking while in a game room. Leave room first.", nameof(EMatchmakingCreateError.YouCannotCreateMatchmakingWhileInAGameRoomLeaveRoomFirst) },
             { "Missing required field: max_players", nameof(EMatchmakingCreateError.MissingRequiredFieldMaxPlayers) },
@@ -134,6 +137,9 @@ namespace Michitai.Multiplayer.Errors
             { "Only host can stop matchmaking lobby", nameof(EMatchmakingStopError.OnlyHostCanStopMatchmakingLobby) },
             { "Cannot stop matchmaking lobby after it has been started", nameof(EMatchmakingStopError.CannotStopMatchmakingLobbyAfterItHasBeenStarted) },
             { "Failed to stop matchmaking lobby", nameof(EMatchmakingStopError.FailedToStopMatchmakingLobby) },
+            { "Only host can update matchmaking password", nameof(EMatchmakingPasswordError.OnlyHostCanUpdateMatchmakingPassword) },
+            { "Cannot change password after matchmaking has started", nameof(EMatchmakingPasswordError.CannotChangePasswordAfterMatchmakingHasStarted) },
+            { "Failed to update password", nameof(EMatchmakingPasswordError.FailedToUpdatePassword) },
             
             // Time errors
             { "API key is required", nameof(ETimeError.ApiKeyIsRequired) },
