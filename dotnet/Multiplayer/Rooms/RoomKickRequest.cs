@@ -6,8 +6,14 @@ using System.Threading.Tasks;
 
 namespace Michitai.Multiplayer.Rooms
 {
+    /// <summary>
+    /// Request data for kicking a player from a game room.
+    /// </summary>
     public class RoomKickRequest
     {
+        /// <summary>
+        /// The ID of the player to kick.
+        /// </summary>
         public int Player_id { get; set; }
     }
 }

@@ -8,6 +8,9 @@ using System.Threading.Tasks;
 
 namespace Michitai.Multiplayer.Players
 {
+    /// <summary>
+    /// Internal request data for banning a player from the game.
+    /// </summary>
     internal class PlayerBanRequest
     {
         [JsonInclude]
@@ -17,6 +20,12 @@ namespace Michitai.Multiplayer.Players
         [JsonInclude]
         internal string? Ban_reason { get; set; }
 
+        /// <summary>
+        /// Initializes a new PlayerBanRequest.
+        /// </summary>
+        /// <param name="playerId">The ID of the player to ban.</param>
+        /// <param name="banDuration">The duration of the ban.</param>
+        /// <param name="banReason">Optional reason for the ban.</param>
         [SetsRequiredMembers]
         public PlayerBanRequest(int playerId, EBanTime banDuration, string? banReason = null)
         {

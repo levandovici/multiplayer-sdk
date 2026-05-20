@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 
 namespace Michitai.Multiplayer.Rooms.Updates
 {
+    /// <summary>
+    /// Request data for polling updates in a room.
+    /// Serializes filter parameters for API transmission.
+    /// </summary>
     internal class PollUpdatesRequest
     {
         [JsonInclude]
@@ -16,7 +20,12 @@ namespace Michitai.Multiplayer.Rooms.Updates
         [JsonInclude]
         private string? Last_update { get; set; }
 
-
+        /// <summary>
+        /// Initializes a new PollUpdatesRequest.
+        /// </summary>
+        /// <param name="fromPlayers">Which players to receive updates from.</param>
+        /// <param name="fromPlayersIds">Specific player IDs to receive updates from.</param>
+        /// <param name="lastUpdate">Only receive updates after this update ID.</param>
         public PollUpdatesRequest(ERoomTargetPlayers fromPlayers = ERoomTargetPlayers.Host, int[]? fromPlayersIds = null, string? lastUpdate = null)
         {
             From_players = fromPlayers.ToString().ToLower();

@@ -7,6 +7,12 @@ using System.Threading.Tasks;
 
 namespace Michitai.Multiplayer.Rooms
 {
+    /// <summary>
+    /// Request data for creating a new game room.
+    /// Contains room configuration and optional player data and rules.
+    /// </summary>
+    /// <typeparam name="TPlayerData">The type of player data to include.</typeparam>
+    /// <typeparam name="TRules">The type of room rules to include.</typeparam>
     public class RoomCreateRequest<TPlayerData, TRules>
     where TPlayerData : class, new() where TRules : class, new()
     {
@@ -25,8 +31,16 @@ namespace Michitai.Multiplayer.Rooms
         [JsonInclude]
         private TRules? Rules { get; set; }
 
-
-
+        /// <summary>
+        /// Initializes a new RoomCreateRequest.
+        /// </summary>
+        /// <param name="room_name">The name for the room.</param>
+        /// <param name="max_players">Maximum number of players allowed.</param>
+        /// <param name="password">Optional password for the room.</param>
+        /// <param name="hostSwitch">Whether host switching is allowed.</param>
+        /// <param name="realtime">Whether the room supports realtime communication.</param>
+        /// <param name="playerData">Optional player data to include.</param>
+        /// <param name="rules">Optional room rules to include.</param>
         public RoomCreateRequest(string room_name, int max_players, string? password = null,
             bool hostSwitch = false, bool realtime = false, TPlayerData? playerData = null, TRules? rules = null)
         {

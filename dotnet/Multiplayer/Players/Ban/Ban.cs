@@ -3,15 +3,15 @@ using Michitai.Multiplayer;
 namespace Michitai.Multiplayer.Players.Ban
 {
     /// <summary>
-    /// Static class for ban-related operations
+    /// Static class providing utility methods for ban-related operations.
     /// </summary>
     public static class Ban
     {
         /// <summary>
-        /// Check if an API response indicates the player is banned
+        /// Checks if an API response indicates the player is banned.
         /// </summary>
-        /// <param name="response">The API response</param>
-        /// <returns>True if the error indicates the player is banned</returns>
+        /// <param name="response">The API response to check.</param>
+        /// <returns>True if the error message indicates the player is banned, false otherwise.</returns>
         public static bool IsBanned(ApiResponse response)
         {
             if (!response.Success && response.Error != null)

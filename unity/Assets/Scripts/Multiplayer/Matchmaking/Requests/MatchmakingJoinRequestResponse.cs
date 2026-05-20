@@ -7,10 +7,21 @@ using System.Threading.Tasks;
 
 namespace Michitai.Multiplayer.Matchmaking.Requests
 {
+    /// <summary>
+    /// Response returned when a player requests to join a matchmaking lobby.
+    /// Contains the request ID for tracking.
+    /// </summary>
     [System.Serializable]
     public class MatchmakingJoinRequestResponse : ApiResponse<EMatchmakingJoinError>
     {
+        /// <summary>
+        /// The unique ID of the join request.
+        /// </summary>
         public string request_id;
+
+        /// <summary>
+        /// Confirmation message for the join request.
+        /// </summary>
         public string message;
     }
 }

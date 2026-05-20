@@ -6,6 +6,11 @@ using System.Threading.Tasks;
 
 namespace Michitai.Multiplayer.Rooms.Actions
 {
+    /// <summary>
+    /// Request parameters for submitting an action to players in a room.
+    /// Allows targeting specific players with typed action data.
+    /// </summary>
+    /// <typeparam name="T">The type of request data.</typeparam>
     public class SubmitAction<T> where T : class, new()
     {
         private ERoomTargetPlayers _target_players;
@@ -13,8 +18,9 @@ namespace Michitai.Multiplayer.Rooms.Actions
         private string _action_type;
         private T _request_data;
 
-
-
+        /// <summary>
+        /// Which players to target with the action.
+        /// </summary>
         public ERoomTargetPlayers TargetPlayers
         {
             get
@@ -28,6 +34,9 @@ namespace Michitai.Multiplayer.Rooms.Actions
             }
         }
 
+        /// <summary>
+        /// Specific player IDs to target with the action.
+        /// </summary>
         public int[] TargetPlayersIds
         {
             get
@@ -41,6 +50,9 @@ namespace Michitai.Multiplayer.Rooms.Actions
             }
         }
 
+        /// <summary>
+        /// The type of action being submitted.
+        /// </summary>
         public string ActionType
         {
             get
@@ -54,6 +66,9 @@ namespace Michitai.Multiplayer.Rooms.Actions
             }
         }
 
+        /// <summary>
+        /// The request data for the action.
+        /// </summary>
         public T RequestData
         {
             get
@@ -67,8 +82,13 @@ namespace Michitai.Multiplayer.Rooms.Actions
             }
         }
 
-
-
+        /// <summary>
+        /// Initializes a new SubmitAction request.
+        /// </summary>
+        /// <param name="targetPlayers">Which players to target with the action.</param>
+        /// <param name="type">The type of action being submitted.</param>
+        /// <param name="data">The request data for the action.</param>
+        /// <param name="targetPlayersIds">Specific player IDs to target with the action.</param>
         public SubmitAction(ERoomTargetPlayers targetPlayers, string type, T data = null, int[] targetPlayersIds = null)
         {
             TargetPlayers = targetPlayers;

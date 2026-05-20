@@ -10,6 +10,10 @@ using Michitai.Multiplayer;
 
 namespace Michitai.Multiplayer.Rooms.Realtime
 {
+    /// <summary>
+    /// Manages WebSocket connections for realtime communication in game rooms.
+    /// Handles connection, message sending/receiving, and automatic heartbeat.
+    /// </summary>
     public class Realtime
     {
         private ClientWebSocket? _websocket;
@@ -18,21 +22,42 @@ namespace Michitai.Multiplayer.Rooms.Realtime
         private CancellationTokenSource? _heartbeatCancellationTokenSource;
         private readonly string _realtimeWebSocketUrl;
 
+        /// <summary>
+        /// Event raised when a message is received from the WebSocket.
+        /// </summary>
         public event Action<string, object, SenderInfo>? OnReceive;
+
+        /// <summary>
+        /// Event raised when the WebSocket connection is established.
+        /// </summary>
         public event Action? OnConnected;
 
+        /// <summary>
+        /// Initializes a new Realtime instance.
+        /// </summary>
+        /// <param name="realtimeWebSocketUrl">The WebSocket server URL (default: wss://realtime.michitai.com).</param>
         public Realtime(string realtimeWebSocketUrl = "wss://realtime.michitai.com")
         {
             _realtimeWebSocketUrl = realtimeWebSocketUrl;
         }
 
+        /// <summary>
+        /// Retrieves a realtime authentication token for WebSocket connections.
+        /// </summary>
+        /// <param name="client">The API client instance.</param>
+        /// <param name="playerToken">The player's private authentication token.</param>
+        /// <returns>Response containing the realtime token.</returns>
         public static async Task<TokenResponse> GetTokenAsync(Client client, string playerToken)
         {
             var url = client.Url(Endpoints.RealtimeToken, $"&player_token={playerToken}");
             return await client.Send<TokenResponse>(HttpMethod.Post, url, null);
         }
 
-
+        /// <summary>
+        /// Connects to the realtime WebSocket server using the provided token.
+        /// </summary>
+        /// <param name="realtimeToken">The realtime authentication token.</param>
+        /// <returns>True if connection succeeded, false otherwise.</returns>
         public async Task<bool> ConnectAsync(string realtimeToken)
         {
             try
@@ -66,6 +91,13 @@ namespace Michitai.Multiplayer.Rooms.Realtime
             }
         }
 
+        /// <summary>
+        /// Sends a message to the specified players via WebSocket.
+        /// </summary>
+        /// <param name="target">The target players (All, Host, Others, Specific).</param>
+        /// <param name="command">The command/type of the message.</param>
+        /// <param name="data">Optional data payload to send.</param>
+        /// <param name="targetIds">Specific player IDs if target is Specific.</param>
         public async Task SendAsync(ERoomTargetPlayer target, string command, object? data = null, int[]? targetIds = null)
         {
             if (_websocket?.State != WebSocketState.Open) return;
@@ -89,6 +121,9 @@ namespace Michitai.Multiplayer.Rooms.Realtime
                 _cancellationTokenSource?.Token ?? CancellationToken.None);
         }
 
+        /// <summary>
+        /// Disconnects from the WebSocket server and cleans up resources.
+        /// </summary>
         public async Task DisconnectAsync()
         {
             try

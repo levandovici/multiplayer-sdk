@@ -289,6 +289,7 @@ public class Game : MonoBehaviour
             hostSwitch:false,
             canLeaveRoom:false,
             realtimeRoom:false,
+            password:null,
             playerData: playerData,
             rules: rules
         );

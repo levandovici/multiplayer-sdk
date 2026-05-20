@@ -7,8 +7,14 @@ using System.Threading.Tasks;
 
 namespace Michitai.Multiplayer.Rooms
 {
+    /// <summary>
+    /// Response returned when a player successfully leaves a game room.
+    /// </summary>
     public class RoomLeaveResponse : ApiResponse<ERoomLeaveError>
     {
+        /// <summary>
+        /// Confirmation message for leaving the room.
+        /// </summary>
         public string Message { get; set; } = string.Empty;
     }
 }

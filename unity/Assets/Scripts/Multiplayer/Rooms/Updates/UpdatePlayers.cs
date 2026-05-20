@@ -6,6 +6,11 @@ using System.Threading.Tasks;
 
 namespace Michitai.Multiplayer.Rooms.Updates
 {
+    /// <summary>
+    /// Request parameters for sending updates to players in a room.
+    /// Allows targeting specific players with typed data.
+    /// </summary>
+    /// <typeparam name="T">The type of update data.</typeparam>
     public class UpdatePlayers<T> where T : class, new()
     {
         private ERoomTargetPlayers _target_players;
@@ -13,8 +18,9 @@ namespace Michitai.Multiplayer.Rooms.Updates
         private string _type;
         private T _data;
 
-
-
+        /// <summary>
+        /// Which players to send the update to.
+        /// </summary>
         public ERoomTargetPlayers TargetPlayers
         {
             get
@@ -28,6 +34,9 @@ namespace Michitai.Multiplayer.Rooms.Updates
             }
         }
 
+        /// <summary>
+        /// Specific player IDs to send the update to.
+        /// </summary>
         public int[] TargetPlayersIds
         {
             get
@@ -41,6 +50,9 @@ namespace Michitai.Multiplayer.Rooms.Updates
             }
         }
 
+        /// <summary>
+        /// The type of update.
+        /// </summary>
         public string Type
         {
             get
@@ -54,6 +66,9 @@ namespace Michitai.Multiplayer.Rooms.Updates
             }
         }
 
+        /// <summary>
+        /// The update data.
+        /// </summary>
         public T Data
         {
             get
@@ -67,8 +82,13 @@ namespace Michitai.Multiplayer.Rooms.Updates
             }
         }
 
-
-
+        /// <summary>
+        /// Initializes a new UpdatePlayers request.
+        /// </summary>
+        /// <param name="targetPlayers">Which players to send the update to.</param>
+        /// <param name="type">The type of update.</param>
+        /// <param name="data">The update data.</param>
+        /// <param name="targetPlayersIds">Specific player IDs to send the update to.</param>
         public UpdatePlayers(ERoomTargetPlayers targetPlayers, string type, T data = null, int[] targetPlayersIds = null)
         {
             TargetPlayers = targetPlayers;

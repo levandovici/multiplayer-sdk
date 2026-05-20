@@ -4,8 +4,10 @@ using System.Linq;
 
 namespace Michitai.Multiplayer.Errors
 {
-    // ====================== ERROR CONVERTER ======================
-    
+    /// <summary>
+    /// Static utility class for converting between API error messages and typed error enums in Unity.
+    /// Provides bidirectional conversion for error handling and user-friendly error messages.
+    /// </summary>
     public static class ErrorConverter
     {
         private static readonly Dictionary<string, string> ErrorMappings = new()
@@ -152,6 +154,12 @@ namespace Michitai.Multiplayer.Errors
             { "Failed to generate realtime token", nameof(ERealtimeTokenError.FailedToGenerateRealtimeToken) }
         };
 
+        /// <summary>
+        /// Converts an API error message string to the corresponding enum value.
+        /// </summary>
+        /// <typeparam name="T">The error enum type to convert to, must be an Enum and IConvertible.</typeparam>
+        /// <param name="errorMessage">The error message from the API.</param>
+        /// <returns>The corresponding enum value, or Unknown if no match is found.</returns>
         public static T ConvertToEnum<T>(string errorMessage) where T : Enum, IConvertible
         {
             if (string.IsNullOrEmpty(errorMessage))
@@ -175,6 +183,12 @@ namespace Michitai.Multiplayer.Errors
             return (T)Enum.ToObject(typeof(T), 0);
         }
 
+        /// <summary>
+        /// Converts an error enum value to its user-friendly error message.
+        /// </summary>
+        /// <typeparam name="T">The error enum type, must be an Enum and IConvertible.</typeparam>
+        /// <param name="errorType">The error enum value to convert.</param>
+        /// <returns>The user-friendly error message, or "Unknown error" if no match is found.</returns>
         public static string GetErrorMessage<T>(T errorType) where T : Enum, IConvertible
         {
             var mapping = ErrorMappings.FirstOrDefault(kvp => kvp.Value == errorType.ToString());

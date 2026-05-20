@@ -6,5 +6,8 @@ using System.Threading.Tasks;
 
 namespace Michitai.Multiplayer.Matchmaking.Requests
 {
+    /// <summary>
+    /// Actions for responding to matchmaking join requests.
+    /// </summary>
     public enum EMatchmakingRequestAction { Approve, Reject }
 }
