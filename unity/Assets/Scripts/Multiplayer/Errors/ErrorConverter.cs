@@ -97,7 +97,7 @@ namespace Michitai.Multiplayer.Errors
             { "Invalid or expired api_token", nameof(ELeaderboardError.InvalidOrExpiredApiToken) },
             { "Invalid JSON body", nameof(ELeaderboardError.InvalidJsonBody) },
             { "sort_by must be a non-empty array of field names", nameof(ELeaderboardError.SortByMustBeANonEmptyArrayOfFieldNames) },
-            { "limit must be between 1 and 1000", nameof(ELeaderboardError.LimitMustBeBetween1And1000) },
+            { "limit must be between 1 and 100", nameof(ELeaderboardError.LimitMustBeBetween1And100) },
             { "No valid sort fields provided after sanitization", nameof(ELeaderboardError.NoValidSortFieldsProvidedAfterSanitization) },
             { "Database error", nameof(ELeaderboardError.DatabaseError) },
             { "Server error", nameof(ELeaderboardError.ServerError) },

@@ -335,7 +335,7 @@ namespace Michitai.Multiplayer.Errors
         InvalidOrExpiredApiToken,
         InvalidJsonBody,
         SortByMustBeANonEmptyArrayOfFieldNames,
-        LimitMustBeBetween1And1000,
+        LimitMustBeBetween1And100,
         NoValidSortFieldsProvidedAfterSanitization,
         DatabaseError,
         ServerError
