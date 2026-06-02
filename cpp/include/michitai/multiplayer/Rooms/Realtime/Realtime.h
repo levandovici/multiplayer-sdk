@@ -138,7 +138,7 @@ struct TokenResponse : public ApiResponse {
 
 /// Manages WebSocket connections for realtime communication in game rooms
 /// Note: Full WebSocket implementation requires additional dependencies (e.g., websocketpp, uWebSockets)
-/// This class provides token retrieval and basic structure for WebSocket functionality
+/// This class provides token retrieval and structure for WebSocket functionality
 class Realtime {
 public:
     /// Callback type for receive events
@@ -146,6 +146,11 @@ public:
     
     /// Callback type for connected events
     using ConnectedCallback = std::function<void()>;
+    
+    /// Constructor
+    /// @param realtimeWebSocketUrl The WebSocket server URL (default: "wss://realtime.michitai.com")
+    Realtime(const std::string& realtimeWebSocketUrl = "wss://realtime.michitai.com")
+        : realtimeWebSocketUrl(realtimeWebSocketUrl), connected(false) {}
     
     /// Retrieves a realtime authentication token for WebSocket connections
     /// @param client The API client instance
@@ -167,6 +172,107 @@ public:
                                          const std::string& clientType = "json") {
         return serverInfo.protocol + "://" + serverInfo.host + ":" + 
                std::to_string(serverInfo.port) + "?token=" + token + "&client=" + clientType;
+    }
+    
+    /// Connects to the realtime WebSocket server using the provided token
+    /// @param realtimeToken The realtime authentication token
+    /// @return True if connection succeeded, false otherwise
+    /// Note: Requires WebSocket library implementation (e.g., websocketpp, uWebSockets)
+    bool connect(const std::string& realtimeToken) {
+        // TODO: Implement WebSocket connection using external library
+        // This is a placeholder for the actual implementation
+        token = realtimeToken;
+        
+        // In a real implementation, you would:
+        // 1. Initialize WebSocket client
+        // 2. Connect to realtimeWebSocketUrl with token
+        // 3. Start message listener thread
+        // 4. Start heartbeat thread
+        // 5. Invoke onConnected callback
+        
+        connected = true;
+        if (onConnected) {
+            onConnected();
+        }
+        
+        return true;
+    }
+    
+    /// Sends a message to the specified players via WebSocket
+    /// @param target The target players (All, Host, Others, Specific)
+    /// @param command The command/type of the message
+    /// @param data Optional data payload to send
+    /// @param targetIds Specific player IDs if target is Specific
+    /// Note: Requires WebSocket library implementation
+    void send(RoomTargetPlayer target, const std::string& command, 
+              const nlohmann::json& data = nlohmann::json::object(),
+              const std::vector<int>& targetIds = {}) {
+        if (!connected) return;
+        
+        // TODO: Implement WebSocket send using external library
+        // This is a placeholder for the actual implementation
+        
+        nlohmann::json message;
+        message["type"] = "send";
+        message["command"] = command;
+        message["data"] = data;
+        message["target_ids"] = targetIds;
+        message["target"] = roomTargetPlayerToString(target);
+        
+        // In a real implementation, serialize and send via WebSocket
+    }
+    
+    /// Disconnects from the WebSocket server and cleans up resources
+    /// Note: Requires WebSocket library implementation
+    void disconnect() {
+        // TODO: Implement WebSocket disconnect using external library
+        // This is a placeholder for the actual implementation
+        
+        // In a real implementation, you would:
+        // 1. Stop heartbeat thread
+        // 2. Stop message listener thread
+        // 3. Close WebSocket connection
+        // 4. Clean up resources
+        
+        connected = false;
+    }
+    
+    /// Sets the callback for receive events
+    /// @param callback The function to call when a message is received
+    void setReceiveCallback(ReceiveCallback callback) {
+        onReceive = callback;
+    }
+    
+    /// Sets the callback for connected events
+    /// @param callback The function to call when connection is established
+    void setConnectedCallback(ConnectedCallback callback) {
+        onConnected = callback;
+    }
+    
+private:
+    std::string realtimeWebSocketUrl;
+    std::string token;
+    bool connected;
+    ReceiveCallback onReceive;
+    ConnectedCallback onConnected;
+    
+    /// Sends a heartbeat message to keep the connection alive
+    /// Note: Requires WebSocket library implementation
+    void sendHeartbeat() {
+        if (!connected) return;
+        
+        // TODO: Implement heartbeat send using external library
+        nlohmann::json message;
+        message["type"] = "heartbeat";
+        
+        // In a real implementation, send via WebSocket
+    }
+    
+    /// Listens for incoming messages from the WebSocket
+    /// Note: Requires WebSocket library implementation
+    void listenForMessages() {
+        // TODO: Implement message listener using external library
+        // This would run in a separate thread and invoke onReceive callback
     }
 };
 
