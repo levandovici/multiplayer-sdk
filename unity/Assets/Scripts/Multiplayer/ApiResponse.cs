@@ -13,6 +13,7 @@ namespace Michitai.Multiplayer
     /// Uses snake_case property naming for Unity serialization compatibility.
     /// </summary>
     /// <typeparam name="TError">The error enum type, must be an Enum and IConvertible.</typeparam>
+    [Serializable]
     public abstract class ApiResponse<TError> : ApiResponse where TError : Enum, IConvertible
     {
         /// <summary>
