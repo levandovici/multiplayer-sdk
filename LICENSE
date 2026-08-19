@@ -1,34 +1,18 @@
-Multiplayer SDK License (Commercial Use, No Attribution)
+MIT No Attribution
 
-Copyright (c) 2026 Nichita Levandovici
+Copyright 2026 Nichita Levandovici
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to use,
-copy, modify, merge, publish, distribute, and sublicense the Software for both
-personal and commercial purposes, subject to the following conditions:
-
-1. The Software may be used in commercial products without attribution.
-
-2. You may not sell, resell, license, or distribute the Software itself as a
-   standalone product or as part of a competing SDK, framework, or service where
-   the primary value is the Software.
-
-3. You may distribute applications, games, or services built using the Software
-   without restriction.
-
-4. The Licensor reserves the right to offer additional paid plans, premium
-   features, hosted services, or subscription-based access related to the Software
-   in the future. This license does not grant rights to any hosted services,
-   APIs, or features that may be subject to separate terms.
-
-5. This license applies only to the SDK code provided. Use of any official
-   backend, hosted infrastructure, or online services may require compliance
-   with separate terms or pricing.
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
