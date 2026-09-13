@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "michitai-multiplayer"
+version = "1.0.0"
+description = "Official Python SDK for the Michitai Multiplayer API (api.michitai.com)"
+readme = "README.md"
+license = { text = "MIT-0" }
+authors = [{ name = "Nichita Levandovici (Michitai)", email = "support@michitai.com" }]
+requires-python = ">=3.9"
+dependencies = [
+    "requests>=2.28",
+]
+
+[project.optional-dependencies]
+realtime = ["websockets>=11.0"]
+
+[project.urls]
+Homepage = "https://api.michitai.com"
+Documentation = "https://api.michitai.com/api/index.php"
+
+[tool.setuptools.packages.find]
+include = ["multiplayer*"]

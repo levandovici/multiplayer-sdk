@@ -1,0 +1,12 @@
+# Workspace file
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vs/
+.vscode/
+.idea/
