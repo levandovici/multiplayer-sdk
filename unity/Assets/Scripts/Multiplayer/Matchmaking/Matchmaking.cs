@@ -47,8 +47,8 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <returns>Response containing the matchmaking lobby ID.</returns>
         public static Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<TPlayerData, TRules>(Client client, string playerToken, string matchmakingName, int maxPlayers, bool strictFull,
             bool hostSwitch, bool canLeaveRoom, bool realtimeRoom, string password, TPlayerData playerData, TRules rules, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
-            => client.Send<MatchmakingCreateResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingCreate, $"&player_token={playerToken}"),
-                new MatchmakingCreateRequest(matchmakingName, maxPlayers, strictFull, false, hostSwitch, canLeaveRoom, realtimeRoom, password, JsonUtility.ToJson(playerData), JsonUtility.ToJson(rules)), ct);
+            => client.Send<MatchmakingCreateResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingCreate),
+                new MatchmakingCreateRequest(matchmakingName, maxPlayers, strictFull, false, hostSwitch, canLeaveRoom, realtimeRoom, password, JsonUtility.ToJson(playerData), JsonUtility.ToJson(rules)), ct, playerToken: playerToken);
 
         /// <summary>
         /// Gets the current status of the player's matchmaking lobby.
@@ -59,7 +59,7 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the current lobby status and information.</returns>
         public static Task<MatchmakingCurrentResponse<T>> GetCurrentMatchmakingStatusAsync<T>(Client client, string playerToken, CancellationToken ct = default) where T : class, new()
-            => client.Send<MatchmakingCurrentResponse<T>>(HttpMethod.Get, client.Url(Endpoints.MatchmakingCurrent, $"&player_token={playerToken}"), null, ct);
+            => client.Send<MatchmakingCurrentResponse<T>>(HttpMethod.Get, client.Url(Endpoints.MatchmakingCurrent), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Joins a matchmaking lobby directly (without approval).
@@ -70,10 +70,12 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="playerToken">The player's authentication token.</param>
         /// <param name="matchmakingId">The ID of the matchmaking lobby to join.</param>
         /// <param name="playerData">Optional player data to include when joining.</param>
+        /// <param name="password">Optional password if the lobby is password-protected.</param>
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the player joined the lobby.</returns>
-        public static Task<MatchmakingDirectJoinResponse> JoinMatchmakingDirectlyAsync<T>(Client client, string playerToken, string matchmakingId, T playerData, CancellationToken ct = default) where T : class, new()
-            => client.Send<MatchmakingDirectJoinResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.MatchmakingJoin, matchmakingId), $"&player_token={playerToken}"), playerData, ct);
+        public static Task<MatchmakingDirectJoinResponse> JoinMatchmakingDirectlyAsync<T>(Client client, string playerToken, string matchmakingId, T playerData = null, string password = null, CancellationToken ct = default) where T : class, new()
+            => client.Send<MatchmakingDirectJoinResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.MatchmakingJoin, matchmakingId)),
+                (password != null || playerData != null) ? new MatchmakingJoinRequest(password, playerData != null ? JsonUtility.ToJson(playerData) : null) : null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Leaves the current matchmaking lobby.
@@ -83,7 +85,7 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the player left the lobby.</returns>
         public static Task<MatchmakingLeaveResponse> LeaveMatchmakingAsync(Client client, string playerToken, CancellationToken ct = default)
-            => client.Send<MatchmakingLeaveResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingLeave, $"&player_token={playerToken}"), null, ct);
+            => client.Send<MatchmakingLeaveResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingLeave), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Gets the list of players in the current matchmaking lobby.
@@ -94,7 +96,7 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the list of players in the lobby.</returns>
         public static Task<MatchmakingPlayersResponse<T>> GetMatchmakingPlayersAsync<T>(Client client, string playerToken, CancellationToken ct = default) where T : class, new()
-            => client.Send<MatchmakingPlayersResponse<T>>(HttpMethod.Get, client.Url(Endpoints.MatchmakingPlayers, $"&player_token={playerToken}"), null, ct);
+            => client.Send<MatchmakingPlayersResponse<T>>(HttpMethod.Get, client.Url(Endpoints.MatchmakingPlayers), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Sends a heartbeat to maintain the player's presence in the matchmaking lobby.
@@ -104,7 +106,7 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the heartbeat was received.</returns>
         public static Task<MatchmakingHeartbeatResponse> SendMatchmakingHeartbeatAsync(Client client, string playerToken, CancellationToken ct = default)
-            => client.Send<MatchmakingHeartbeatResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingHeartbeat, $"&player_token={playerToken}"), null, ct);
+            => client.Send<MatchmakingHeartbeatResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingHeartbeat), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Removes the current matchmaking lobby (host only).
@@ -114,7 +116,7 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the lobby was removed.</returns>
         public static Task<MatchmakingRemoveResponse> RemoveMatchmakingLobbyAsync(Client client, string playerToken, CancellationToken ct = default)
-            => client.Send<MatchmakingRemoveResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingRemove, $"&player_token={playerToken}"), null, ct);
+            => client.Send<MatchmakingRemoveResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingRemove), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Starts the game from the current matchmaking lobby and creates a game room.
@@ -124,7 +126,7 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the created room ID.</returns>
         public static Task<MatchmakingStartResponse> StartGameFromMatchmakingAsync(Client client, string playerToken, CancellationToken ct = default)
-            => client.Send<MatchmakingStartResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingStart, $"&player_token={playerToken}"), null, ct);
+            => client.Send<MatchmakingStartResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingStart), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Stops the current matchmaking lobby (host only).
@@ -135,7 +137,7 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Success response confirming the lobby was stopped.</returns>
         public static Task<SuccessResponse> StopMatchmakingAsync(Client client, string playerToken, CancellationToken ct = default)
-            => client.Send<SuccessResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingStop, $"&player_token={playerToken}"), null, ct);
+            => client.Send<SuccessResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingStop), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Kicks a player from the matchmaking lobby (host only).
@@ -147,7 +149,7 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the player was kicked.</returns>
         public static Task<MatchmakingKickResponse> KickPlayerAsync(Client client, string playerToken, int playerId, CancellationToken ct = default)
-            => client.Send<MatchmakingKickResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingKick, $"&player_token={playerToken}"), new MatchmakingKickRequest { player_id = playerId }, ct);
+            => client.Send<MatchmakingKickResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingKick), new MatchmakingKickRequest { player_id = playerId }, ct, playerToken: playerToken);
 
         /// <summary>
         /// Updates the password for the matchmaking lobby (host only).
@@ -159,6 +161,6 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Success response confirming the password was updated.</returns>
         public static Task<SuccessResponse> UpdateMatchmakingPasswordAsync(Client client, string playerToken, string password, CancellationToken ct = default)
-            => client.Send<SuccessResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingPassword, $"&player_token={playerToken}"), new MatchmakingPasswordUpdateRequest(password), ct);
+            => client.Send<SuccessResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingPassword), new MatchmakingPasswordUpdateRequest(password), ct, playerToken: playerToken);
     }
 }

@@ -36,17 +36,15 @@ Client::Client(const std::string& apiToken,
 }
 
 std::string Client::url(const std::string& endpoint, const std::string& extra) const {
-    std::string result = baseUrl_ + "/" + endpoint + "?api_token=" + apiToken_;
-    if (!extra.empty()) {
-        result += extra;
+    // Credentials are never placed in the URL — they are sent as headers
+    // by the request methods. extra may start with '?' or '&'.
+    std::string normalized = extra;
+    if (!normalized.empty() && (normalized.front() == '?' || normalized.front() == '&')) {
+        normalized.erase(0, 1);
     }
-    return result;
-}
-
-std::string Client::privateUrl(const std::string& endpoint, const std::string& extra) const {
-    std::string result = baseUrl_ + "/" + endpoint + "?api_token=" + apiToken_ + "&private_token=" + apiPrivateToken_;
-    if (!extra.empty()) {
-        result += extra;
+    std::string result = baseUrl_ + "/" + endpoint;
+    if (!normalized.empty()) {
+        result += "?" + normalized;
     }
     return result;
 }

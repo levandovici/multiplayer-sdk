@@ -83,6 +83,20 @@ class PlayerRenameResponse(ApiResponse):
 
 
 @dataclass
+class PlayerRotateResponse(ApiResponse):
+    """Response containing the new private key after rotation.
+
+    The previous token is invalidated; persist the returned key client-side.
+    Rotation emits the same error strings as login, so it reuses that enum.
+    """
+
+    error_enum: ClassVar[Type[enum.Enum]] = PlayerLoginError
+
+    private_key: str = ""
+    player_id: int = 0
+
+
+@dataclass
 class PlayerBanResponse(ApiResponse):
     """Response containing the ban details."""
 

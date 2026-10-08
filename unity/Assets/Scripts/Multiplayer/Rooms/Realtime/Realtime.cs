@@ -50,8 +50,8 @@ namespace Michitai.Multiplayer.Rooms.Realtime
         /// <returns>Response containing the realtime token.</returns>
         public static async Task<TokenResponse> GetTokenAsync(Client client, string playerToken)
         {
-            var url = client.Url(Endpoints.RealtimeToken, $"&player_token={playerToken}");
-            return await client.Send<TokenResponse>(HttpMethod.Post, url, null);
+            var url = client.Url(Endpoints.RealtimeToken);
+            return await client.Send<TokenResponse>(HttpMethod.Post, url, null, playerToken: playerToken);
         }
 
         /// <summary>
@@ -76,9 +76,19 @@ namespace Michitai.Multiplayer.Rooms.Realtime
                     await httpClient.GetAsync("https://realtime.michitai.com/");
                 }
 
-                var uri = new Uri($"{_realtimeWebSocketUrl}?token={_token}&client=unity");
+                var uri = new Uri($"{_realtimeWebSocketUrl}?client=unity");
 
                 _websocket = new ClientWebSocket();
+                try
+                {
+                    // Prefer the header so the token stays out of URLs/logs.
+                    _websocket.Options.SetRequestHeader("X-Realtime-Token", _token);
+                }
+                catch (Exception)
+                {
+                    // Platforms without header support (e.g. WebGL) fall back to the query token.
+                    uri = new Uri($"{_realtimeWebSocketUrl}?client=unity&token={_token}");
+                }
 
                 await _websocket.ConnectAsync(uri, _cancellationTokenSource.Token);
 

@@ -171,8 +171,8 @@ public:
         UpdatePlayersRequest<T> request(update.targetPlayers, update.type, 
                                        update.data, update.targetPlayerIds);
         return client.post<UpdatePlayersResponse>(
-            client.url(Endpoints::GameRoomUpdates, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(Endpoints::GameRoomUpdates),
+            request.toJson(), playerToken
         );
     }
     
@@ -183,8 +183,8 @@ public:
                                               const PollUpdates& poll) {
         PollUpdatesRequest request(poll.fromPlayers, poll.fromPlayerIds, poll.lastUpdate);
         return client.post<PollUpdatesResponse<T>>(
-            client.url(Endpoints::GameRoomUpdatesPoll, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(Endpoints::GameRoomUpdatesPoll),
+            request.toJson(), playerToken
         );
     }
 };

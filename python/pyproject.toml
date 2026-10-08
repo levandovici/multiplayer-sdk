@@ -7,7 +7,7 @@ name = "michitai-multiplayer"
 version = "1.0.0"
 description = "Official Python SDK for the Michitai Multiplayer API (api.michitai.com)"
 readme = "README.md"
-license = { text = "MIT-0" }
+license = { text = "Proprietary. Copyright (c) 2026 Nichita Levandovici. All rights reserved. See ../LICENSE." }
 authors = [{ name = "Nichita Levandovici (Michitai)", email = "support@michitai.com" }]
 requires-python = ">=3.9"
 dependencies = [

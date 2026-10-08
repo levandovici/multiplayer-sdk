@@ -20,6 +20,7 @@ namespace Endpoints {
     constexpr const char* GamePlayersRename = "game_players.php/rename";
     constexpr const char* GamePlayersBan = "game_players.php/ban";
     constexpr const char* GamePlayersUnban = "game_players.php/unban";
+    constexpr const char* GamePlayersRotate = "game_players.php/rotate";
     constexpr const char* GameDataPlayerGet = "game_data.php/player/get";
     constexpr const char* GameDataPlayerUpdate = "game_data.php/player/update";
 }
@@ -39,7 +40,7 @@ struct PlayerInfo {
     std::string lastLogout;
     std::string createdAt;
     std::string updatedAt;
-    
+
     static PlayerInfo fromJson(const nlohmann::json& j) {
         PlayerInfo info;
         info.id = j.value("id", 0);
@@ -48,7 +49,7 @@ struct PlayerInfo {
         info.gameId = j.value("game_id", 0);
         info.playerData = j.value("player_data", nlohmann::json::object());
         info.isOnline = j.value("is_online", false);
-        
+
         // Handle null values for timestamp fields
         if (j.contains("last_login") && !j["last_login"].is_null()) {
             info.lastLogin = j["last_login"].get<std::string>();
@@ -65,7 +66,7 @@ struct PlayerInfo {
         if (j.contains("updated_at") && !j["updated_at"].is_null()) {
             info.updatedAt = j["updated_at"].get<std::string>();
         }
-        
+
         return info;
     }
 };
@@ -76,7 +77,7 @@ struct PlayerRegisterResponse : public ApiResponse {
     std::string privateKey;
     std::string playerName;
     int gameId = 0;
-    
+
     static PlayerRegisterResponse fromJson(const nlohmann::json& j) {
         PlayerRegisterResponse response;
         response.success = j.value("success", false);
@@ -93,7 +94,7 @@ struct PlayerRegisterResponse : public ApiResponse {
 template<typename T = nlohmann::json>
 struct PlayerAuthResponse : public ApiResponse {
     std::optional<PlayerInfo> player;
-    
+
     static PlayerAuthResponse fromJson(const nlohmann::json& j) {
         PlayerAuthResponse response;
         response.success = j.value("success", false);
@@ -135,6 +136,22 @@ struct PlayerRenameResponse : public ApiResponse {
     }
 };
 
+/// Response for player key rotation. The previous token is invalidated;
+/// store the returned new key.
+struct PlayerRotateResponse : public ApiResponse {
+    int playerId = 0;
+    std::string privateKey;
+
+    static PlayerRotateResponse fromJson(const nlohmann::json& j) {
+        PlayerRotateResponse response;
+        response.success = j.value("success", false);
+        response.error = j.value("error", "");
+        response.playerId = j.value("player_id", 0);
+        response.privateKey = j.value("private_key", "");
+        return response;
+    }
+};
+
 /// Response for player ban
 struct PlayerBanResponse : public ApiResponse {
     int playerId = 0;
@@ -142,7 +159,7 @@ struct PlayerBanResponse : public ApiResponse {
     std::string banReason;
     std::string bannedAt;
     std::string bannedUntil;
-    
+
     static PlayerBanResponse fromJson(const nlohmann::json& j) {
         PlayerBanResponse response;
         response.success = j.value("success", false);
@@ -170,7 +187,7 @@ struct PlayerUnbanResponse : public ApiResponse {
 template<typename T = nlohmann::json>
 struct PlayerDataResponse : public ApiResponse {
     T playerData;
-    
+
     static PlayerDataResponse fromJson(const nlohmann::json& j) {
         PlayerDataResponse response;
         response.success = j.value("success", false);
@@ -195,10 +212,10 @@ template<typename T = nlohmann::json>
 struct PlayerRegisterRequest {
     std::string name;
     std::optional<T> playerData;
-    
+
     PlayerRegisterRequest(const std::string& name, const std::optional<T>& data = std::nullopt)
         : name(name), playerData(data) {}
-    
+
     nlohmann::json toJson() const {
         nlohmann::json j;
         j["player_name"] = name;
@@ -216,9 +233,9 @@ struct PlayerRegisterRequest {
 /// Request for player rename
 struct PlayerRenameRequest {
     std::string newName;
-    
+
     explicit PlayerRenameRequest(const std::string& name) : newName(name) {}
-    
+
     nlohmann::json toJson() const {
         return {{"new_name", newName}};
     }
@@ -229,10 +246,10 @@ struct PlayerBanRequest {
     int playerId;
     BanTime banDuration;
     std::optional<std::string> banReason;
-    
+
     PlayerBanRequest(int id, BanTime duration, const std::optional<std::string>& reason = std::nullopt)
         : playerId(id), banDuration(duration), banReason(reason) {}
-    
+
     nlohmann::json toJson() const {
         nlohmann::json j;
         j["player_id"] = playerId;
@@ -247,9 +264,9 @@ struct PlayerBanRequest {
 /// Request for player unban
 struct PlayerUnbanRequest {
     int playerId;
-    
+
     explicit PlayerUnbanRequest(int id) : playerId(id) {}
-    
+
     nlohmann::json toJson() const {
         return {{"player_id", playerId}};
     }
@@ -276,7 +293,7 @@ public:
             request.toJson()
         );
     }
-    
+
     /// Authenticates a player using their private token and retrieves their data.
     /// @param client The API client instance
     /// @param playerToken The player's private authentication token
@@ -285,11 +302,11 @@ public:
     static PlayerAuthResponse<T> authenticatePlayer(Client& client,
                                                       const std::string& playerToken) {
         return client.put<PlayerAuthResponse<T>>(
-            client.url(Endpoints::GamePlayersLogin, "&player_token=" + playerToken),
-            nlohmann::json{}
+            client.url(Endpoints::GamePlayersLogin),
+            nlohmann::json{}, playerToken
         );
     }
-    
+
     /// Sends a heartbeat to maintain the player's online status.
     /// @param client The API client instance
     /// @param playerToken The player's private authentication token
@@ -297,11 +314,11 @@ public:
     static PlayerHeartbeatResponse sendPlayerHeartbeat(Client& client,
                                                          const std::string& playerToken) {
         return client.post<PlayerHeartbeatResponse>(
-            client.url(Endpoints::GamePlayersHeartbeat, "&player_token=" + playerToken),
-            nlohmann::json{}
+            client.url(Endpoints::GamePlayersHeartbeat),
+            nlohmann::json{}, playerToken
         );
     }
-    
+
     /// Logs out a player from the game.
     /// @param client The API client instance
     /// @param playerToken The player's private authentication token
@@ -309,11 +326,11 @@ public:
     static PlayerLogoutResponse logoutPlayer(Client& client,
                                                const std::string& playerToken) {
         return client.post<PlayerLogoutResponse>(
-            client.url(Endpoints::GamePlayersLogout, "&player_token=" + playerToken),
-            nlohmann::json{}
+            client.url(Endpoints::GamePlayersLogout),
+            nlohmann::json{}, playerToken
         );
     }
-    
+
     /// Renames a player to a new name (2-50 characters).
     /// @param client The API client instance
     /// @param playerToken The player's private authentication token
@@ -324,11 +341,24 @@ public:
                                               const std::string& newName) {
         PlayerRenameRequest request(newName);
         return client.put<PlayerRenameResponse>(
-            client.url(Endpoints::GamePlayersRename, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(Endpoints::GamePlayersRename),
+            request.toJson(), playerToken
         );
     }
-    
+
+    /// Rotates the player's private key. The current token authenticates the
+    /// request and is invalidated; persist the returned new key.
+    /// @param client The API client instance
+    /// @param playerToken The player's current private authentication token
+    /// @return Response containing the new private key token
+    static PlayerRotateResponse rotatePlayerKey(Client& client,
+                                                const std::string& playerToken) {
+        return client.post<PlayerRotateResponse>(
+            client.url(Endpoints::GamePlayersRotate),
+            nlohmann::json{}, playerToken
+        );
+    }
+
     /// Bans a player from the game with a specified duration.
     /// @param client The API client instance
     /// @param playerId The ID of the player to ban
@@ -341,11 +371,11 @@ public:
                                         const std::optional<std::string>& banReason = std::nullopt) {
         PlayerBanRequest request(playerId, banDuration, banReason);
         return client.post<PlayerBanResponse>(
-            client.privateUrl(Endpoints::GamePlayersBan),
-            request.toJson()
+            client.url(Endpoints::GamePlayersBan),
+            request.toJson(), "", true
         );
     }
-    
+
     /// Unbans a previously banned player.
     /// @param client The API client instance
     /// @param playerId The ID of the player to unban
@@ -354,11 +384,11 @@ public:
                                             int playerId) {
         PlayerUnbanRequest request(playerId);
         return client.post<PlayerUnbanResponse>(
-            client.privateUrl(Endpoints::GamePlayersUnban),
-            request.toJson()
+            client.url(Endpoints::GamePlayersUnban),
+            request.toJson(), "", true
         );
     }
-    
+
     /// Retrieves a player's data.
     /// @param client The API client instance
     /// @param playerToken The player's private authentication token
@@ -367,10 +397,10 @@ public:
     static PlayerDataResponse<T> getPlayerData(Client& client,
                                                 const std::string& playerToken) {
         return client.get<PlayerDataResponse<T>>(
-            client.url(Endpoints::GameDataPlayerGet, "&player_token=" + playerToken)
+            client.url(Endpoints::GameDataPlayerGet), playerToken
         );
     }
-    
+
     /// Updates a player's data.
     /// @param client The API client instance
     /// @param playerToken The player's private authentication token
@@ -387,8 +417,8 @@ public:
             jsonData = nlohmann::json(data);
         }
         return client.put<SuccessResponse>(
-            client.url(Endpoints::GameDataPlayerUpdate, "&player_token=" + playerToken),
-            jsonData
+            client.url(Endpoints::GameDataPlayerUpdate),
+            jsonData, playerToken
         );
     }
 };

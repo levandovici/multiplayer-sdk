@@ -72,6 +72,7 @@ public class SdkTests {
         String path;
         String query;
         String body;
+        Map<String, String> headers;
     }
 
     private static class MockApi {
@@ -109,6 +110,9 @@ public class SdkTests {
             rec.path = path;
             rec.query = ex.getRequestURI().getRawQuery();
             rec.body = new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            rec.headers = new HashMap<>();
+            ex.getRequestHeaders().forEach((k, v) ->
+                rec.headers.put(k.toLowerCase(), String.join(",", v)));
             requests.put(path, rec);
 
             String json = responses.getOrDefault(path, "{\"success\":false,\"error\":\"Invalid endpoint\"}");
@@ -143,12 +147,12 @@ public class SdkTests {
         System.out.println("[TEST] URL construction");
 
         Client client = new Client("PUB", "PRIV", "http://localhost:9999/api", null);
-        eq("http://localhost:9999/api/game_data.php/game/get?api_token=PUB",
-            client.url("game_data.php/game/get"), "url() appends api_token");
-        eq("http://localhost:9999/api/time.php?api_token=PUB&private_token=PRIV",
-            client.privateUrl("time.php"), "privateUrl() appends both tokens");
-        eq("http://localhost:9999/api/x?api_token=PUB&player_token=PT",
-            client.url("x", "&player_token=PT"), "url() appends extra params");
+        eq("http://localhost:9999/api/game_data.php/game/get",
+            client.url("game_data.php/game/get"), "url() produces credential-free URL");
+        eq("http://localhost:9999/api/x?format=json",
+            client.url("x", "&format=json"), "url() normalizes '&' extras to '?'");
+        eq("http://localhost:9999/api/x?format=json",
+            client.url("x", "?format=json"), "url() keeps '?' extras as-is");
 
         Client noSlash = new Client("PUB", "PRIV", "http://localhost:9999/api", null);
         eq(noSlash.url("e"), client.url("e"), "missing trailing slash normalized");
@@ -197,7 +201,9 @@ public class SdkTests {
 
         RecordedRequest rec = api.lastRequest("game_players.php/register");
         eq("POST", rec.method, "registerPlayer uses POST");
-        check(rec.query != null && rec.query.contains("api_token=PUB"), "registerPlayer sends api_token");
+        eq("PUB", rec.headers.get("x-api-token"), "registerPlayer sends api_token header");
+        check(rec.query == null || !rec.query.contains("api_token"),
+            "registerPlayer keeps token out of query");
         JsonNode body = parse(rec.body);
         eq("Tester", body.get("player_name").asText(), "register body player_name");
         eq("{\"level\":3}", body.get("player_data").asText(), "register body player_data is JSON string");
@@ -220,7 +226,9 @@ public class SdkTests {
 
         RecordedRequest rec = api.lastRequest("game_data.php/game/get");
         eq("GET", rec.method, "getGameData uses GET");
-        check(rec.query != null && rec.query.contains("api_token=PUB"), "getGameData sends api_token");
+        eq("PUB", rec.headers.get("x-api-token"), "getGameData sends api_token header");
+        check(rec.query == null || !rec.query.contains("api_token"),
+            "getGameData keeps token out of query");
     }
 
     private static void testPendingActionsTyped(MockApi api, Client client) throws IOException {
@@ -245,7 +253,9 @@ public class SdkTests {
         eq(9, a.getRequestData().level, "pending typed request_data.level");
 
         RecordedRequest rec = api.lastRequest("game_room.php/actions/pending");
-        check(rec.query != null && rec.query.contains("player_token=PT"), "getPendingActions sends player_token");
+        eq("PT", rec.headers.get("x-game-player-token"), "getPendingActions sends player_token header");
+        check(rec.query == null || !rec.query.contains("player_token"),
+            "getPendingActions keeps token out of query");
     }
 
     private static void testPollActionsTyped(MockApi api, Client client) throws IOException {
@@ -306,8 +316,10 @@ public class SdkTests {
 
         RecordedRequest rec = api.lastRequest("game_players.php/ban");
         eq("POST", rec.method, "banPlayer uses POST");
-        check(rec.query != null && rec.query.contains("api_token=PUB"), "banPlayer sends api_token");
-        check(rec.query != null && rec.query.contains("private_token=PRIV"), "banPlayer sends private_token");
+        eq("PUB", rec.headers.get("x-api-token"), "banPlayer sends api_token header");
+        eq("PRIV", rec.headers.get("x-api-private-token"), "banPlayer sends private_token header");
+        check(rec.query == null || !rec.query.contains("token"),
+            "banPlayer keeps tokens out of query");
         JsonNode body = parse(rec.body);
         eq("week", body.get("ban_duration").asText(), "ban body ban_duration=week");
         eq(11, body.get("player_id").asInt(), "ban body player_id");
@@ -359,7 +371,9 @@ public class SdkTests {
 
         RecordedRequest rec = api.lastRequest("game_room.php/actions");
         eq("POST", rec.method, "submitAction uses POST");
-        check(rec.query != null && rec.query.contains("player_token=PT"), "submitAction sends player_token");
+        eq("PT", rec.headers.get("x-game-player-token"), "submitAction sends player_token header");
+        check(rec.query == null || !rec.query.contains("player_token"),
+            "submitAction keeps token out of query");
         JsonNode body = parse(rec.body);
         eq("specific", body.get("target_players").asText(), "action body target_players=specific");
         eq("trade", body.get("action_type").asText(), "action body action_type");

@@ -272,8 +272,8 @@ public:
         ActionSubmitRequest<T> request(action.targetPlayers, action.actionType, 
                                        action.data, action.targetPlayerIds);
         return client.post<ActionSubmitResponse>(
-            client.url(Endpoints::GameRoomActions, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(Endpoints::GameRoomActions),
+            request.toJson(), playerToken
         );
     }
     
@@ -282,7 +282,7 @@ public:
     static ActionPollResponse<T> pollActions(Client& client,
                                              const std::string& playerToken) {
         return client.get<ActionPollResponse<T>>(
-            client.url(Endpoints::GameRoomActionsPoll, "&player_token=" + playerToken)
+            client.url(Endpoints::GameRoomActionsPoll), playerToken
         );
     }
     
@@ -291,7 +291,7 @@ public:
     static ActionPendingResponse<T> getPendingActions(Client& client,
                                                       const std::string& playerToken) {
         return client.get<ActionPendingResponse<T>>(
-            client.url(Endpoints::GameRoomActionsPending, "&player_token=" + playerToken)
+            client.url(Endpoints::GameRoomActionsPending), playerToken
         );
     }
     
@@ -308,8 +308,8 @@ public:
             endpoint.replace(pos, 3, std::to_string(actionId));
         }
         return client.post<ActionCompleteResponse>(
-            client.url(endpoint, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(endpoint),
+            request.toJson(), playerToken
         );
     }
 };

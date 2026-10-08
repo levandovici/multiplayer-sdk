@@ -29,7 +29,7 @@ public class Actions {
             requestDataJson, 
             request.getTargetPlayersIds()
         );
-        return client.post(client.url(Endpoints.GAME_ROOM_ACTIONS, "&player_token=" + playerToken), submitRequest, ActionSubmitResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_ROOM_ACTIONS), submitRequest, ActionSubmitResponse.class, playerToken, false);
     }
 
     /**
@@ -55,8 +55,8 @@ public class Actions {
      * @throws IOException if the request fails.
      */
     public static <T> ActionPollResponse<T> pollActions(Client client, String playerToken, Class<T> dataType) throws IOException {
-        return client.get(client.url(Endpoints.GAME_ROOM_ACTIONS_POLL, "&player_token=" + playerToken),
-            client.parametricType(ActionPollResponse.class, dataType));
+        return client.send("GET",client.url(Endpoints.GAME_ROOM_ACTIONS_POLL), null,
+            client.parametricType(ActionPollResponse.class, dataType), playerToken, false);
     }
 
     /**
@@ -84,8 +84,8 @@ public class Actions {
      * @throws IOException if the request fails.
      */
     public static <T> ActionPendingResponse<T> getPendingActions(Client client, String playerToken, Class<T> dataType) throws IOException {
-        return client.get(client.url(Endpoints.GAME_ROOM_ACTIONS_PENDING, "&player_token=" + playerToken),
-            client.parametricType(ActionPendingResponse.class, dataType));
+        return client.send("GET",client.url(Endpoints.GAME_ROOM_ACTIONS_PENDING), null,
+            client.parametricType(ActionPendingResponse.class, dataType), playerToken, false);
     }
 
     /**
@@ -106,6 +106,6 @@ public class Actions {
             responseDataJson
         );
         String endpoint = String.format(Endpoints.GAME_ROOM_ACTION_COMPLETE, actionId);
-        return client.post(client.url(endpoint, "&player_token=" + playerToken), completeRequest, ActionCompleteResponse.class);
+        return client.send("POST",client.url(endpoint), completeRequest, ActionCompleteResponse.class, playerToken, false);
     }
 }

@@ -355,8 +355,8 @@ public:
         RoomCreateRequest<TPlayerData, TRules> request(roomName, maxPlayers, password,
                                                        hostSwitch, realtime, playerData, rules);
         return client.post<RoomCreateResponse>(
-            client.url(Endpoints::GameRoomCreate, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(Endpoints::GameRoomCreate),
+            request.toJson(), playerToken
         );
     }
     
@@ -389,13 +389,13 @@ public:
         if (hasBody) {
             RoomJoinRequest<T> request(password, playerData);
             return client.post<RoomJoinResponse>(
-                client.url(endpoint, "&player_token=" + playerToken),
-                request.toJson()
+                client.url(endpoint),
+                request.toJson(), playerToken
             );
         } else {
             return client.post<RoomJoinResponse>(
-                client.url(endpoint, "&player_token=" + playerToken),
-                nlohmann::json{}
+                client.url(endpoint),
+                nlohmann::json{}, playerToken
             );
         }
     }
@@ -404,8 +404,8 @@ public:
     static RoomLeaveResponse leaveRoom(Client& client,
                                         const std::string& playerToken) {
         return client.post<RoomLeaveResponse>(
-            client.url(Endpoints::GameRoomLeave, "&player_token=" + playerToken),
-            nlohmann::json{}
+            client.url(Endpoints::GameRoomLeave),
+            nlohmann::json{}, playerToken
         );
     }
     
@@ -414,7 +414,7 @@ public:
     static RoomPlayersResponse<T> getRoomPlayers(Client& client,
                                                   const std::string& playerToken) {
         return client.get<RoomPlayersResponse<T>>(
-            client.url(Endpoints::GameRoomPlayers, "&player_token=" + playerToken)
+            client.url(Endpoints::GameRoomPlayers), playerToken
         );
     }
     
@@ -422,8 +422,8 @@ public:
     static HeartbeatResponse sendRoomHeartbeat(Client& client,
                                                const std::string& playerToken) {
         return client.post<HeartbeatResponse>(
-            client.url(Endpoints::GameRoomHeartbeat, "&player_token=" + playerToken),
-            nlohmann::json{}
+            client.url(Endpoints::GameRoomHeartbeat),
+            nlohmann::json{}, playerToken
         );
     }
     
@@ -432,7 +432,7 @@ public:
     static CurrentRoomResponse<T> getCurrentRoom(Client& client,
                                                   const std::string& playerToken) {
         return client.get<CurrentRoomResponse<T>>(
-            client.url(Endpoints::GameRoomCurrent, "&player_token=" + playerToken)
+            client.url(Endpoints::GameRoomCurrent), playerToken
         );
     }
     
@@ -440,8 +440,8 @@ public:
     static SuccessResponse stopRoom(Client& client,
                                     const std::string& playerToken) {
         return client.post<SuccessResponse>(
-            client.url(Endpoints::GameRoomStop, "&player_token=" + playerToken),
-            nlohmann::json{}
+            client.url(Endpoints::GameRoomStop),
+            nlohmann::json{}, playerToken
         );
     }
     
@@ -451,8 +451,8 @@ public:
                                        int playerId) {
         RoomKickRequest request(playerId);
         return client.post<RoomKickResponse>(
-            client.url(Endpoints::GameRoomKick, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(Endpoints::GameRoomKick),
+            request.toJson(), playerToken
         );
     }
     
@@ -462,8 +462,8 @@ public:
                                               const std::optional<std::string>& password = std::nullopt) {
         RoomPasswordUpdateRequest request(password);
         return client.post<SuccessResponse>(
-            client.url(Endpoints::GameRoomPassword, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(Endpoints::GameRoomPassword),
+            request.toJson(), playerToken
         );
     }
 };

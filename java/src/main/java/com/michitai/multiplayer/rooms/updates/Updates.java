@@ -29,7 +29,7 @@ public class Updates {
             dataJson, 
             request.getTargetPlayersIds()
         );
-        return client.post(client.url(Endpoints.GAME_ROOM_UPDATES, "&player_token=" + playerToken), updateRequest, UpdatePlayersResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_ROOM_UPDATES), updateRequest, UpdatePlayersResponse.class, playerToken, false);
     }
 
     /**
@@ -62,7 +62,7 @@ public class Updates {
             request.getFromPlayersIds(), 
             request.getLastUpdate()
         );
-        return client.post(client.url(Endpoints.GAME_ROOM_UPDATES_POLL, "&player_token=" + playerToken), pollRequest,
-            client.parametricType(PollUpdatesResponse.class, dataType));
+        return client.send("POST",client.url(Endpoints.GAME_ROOM_UPDATES_POLL), pollRequest,
+            client.parametricType(PollUpdatesResponse.class, dataType), playerToken, false);
     }
 }

@@ -52,8 +52,8 @@ public class Players {
      * @throws IOException if the request fails.
      */
     public static <T> PlayerAuthResponse<T> authenticatePlayer(Client client, String playerToken, Class<T> dataType) throws IOException {
-        return client.put(client.url(Endpoints.GAME_PLAYERS_LOGIN, "&player_token=" + playerToken), null,
-            client.parametricType(PlayerAuthResponse.class, dataType));
+        return client.send("PUT",client.url(Endpoints.GAME_PLAYERS_LOGIN), null,
+            client.parametricType(PlayerAuthResponse.class, dataType), playerToken, false);
     }
 
     /**
@@ -65,7 +65,7 @@ public class Players {
      * @throws IOException if the request fails.
      */
     public static PlayerHeartbeatResponse sendPlayerHeartbeat(Client client, String playerToken) throws IOException {
-        return client.post(client.url(Endpoints.GAME_PLAYERS_HEARTBEAT, "&player_token=" + playerToken), null, PlayerHeartbeatResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_PLAYERS_HEARTBEAT), null, PlayerHeartbeatResponse.class, playerToken, false);
     }
 
     /**
@@ -77,7 +77,7 @@ public class Players {
      * @throws IOException if the request fails.
      */
     public static PlayerLogoutResponse logoutPlayer(Client client, String playerToken) throws IOException {
-        return client.post(client.url(Endpoints.GAME_PLAYERS_LOGOUT, "&player_token=" + playerToken), null, PlayerLogoutResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_PLAYERS_LOGOUT), null, PlayerLogoutResponse.class, playerToken, false);
     }
 
     /**
@@ -91,7 +91,20 @@ public class Players {
      */
     public static PlayerRenameResponse renamePlayer(Client client, String playerToken, String newName) throws IOException {
         PlayerRenameRequest request = new PlayerRenameRequest(newName);
-        return client.put(client.url(Endpoints.GAME_PLAYERS_RENAME, "&player_token=" + playerToken), request, PlayerRenameResponse.class);
+        return client.send("PUT",client.url(Endpoints.GAME_PLAYERS_RENAME), request, PlayerRenameResponse.class, playerToken, false);
+    }
+
+    /**
+     * Rotates the player's private key. The current token authenticates the
+     * request and is invalidated; persist the returned new key.
+     *
+     * @param client The API client instance.
+     * @param playerToken The player's current private authentication token.
+     * @return Response containing the new private key token.
+     * @throws IOException if the request fails.
+     */
+    public static PlayerRotateResponse rotatePlayerKey(Client client, String playerToken) throws IOException {
+        return client.send("POST",client.url(Endpoints.GAME_PLAYERS_ROTATE), null, PlayerRotateResponse.class, playerToken, false);
     }
 
     /**
@@ -107,7 +120,7 @@ public class Players {
      */
     public static PlayerBanResponse banPlayer(Client client, int playerId, String banDuration, String banReason) throws IOException {
         PlayerBanRequest request = new PlayerBanRequest(playerId, banDuration, banReason);
-        return client.post(client.privateUrl(Endpoints.GAME_PLAYERS_BAN), request, PlayerBanResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_PLAYERS_BAN), request, PlayerBanResponse.class, null, true);
     }
 
     /**
@@ -136,7 +149,7 @@ public class Players {
      */
     public static PlayerUnbanResponse unbanPlayer(Client client, int playerId) throws IOException {
         PlayerUnbanRequest request = new PlayerUnbanRequest(playerId);
-        return client.post(client.privateUrl(Endpoints.GAME_PLAYERS_UNBAN), request, PlayerUnbanResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_PLAYERS_UNBAN), request, PlayerUnbanResponse.class, null, true);
     }
 
     /**
@@ -162,8 +175,8 @@ public class Players {
      * @throws IOException if the request fails.
      */
     public static <T> PlayerDataResponse<T> getPlayerData(Client client, String playerToken, Class<T> dataType) throws IOException {
-        return client.get(client.url(Endpoints.GAME_DATA_PLAYER_GET, "&player_token=" + playerToken),
-            client.parametricType(PlayerDataResponse.class, dataType));
+        return client.send("GET",client.url(Endpoints.GAME_DATA_PLAYER_GET), null,
+            client.parametricType(PlayerDataResponse.class, dataType), playerToken, false);
     }
 
     /**
@@ -176,6 +189,6 @@ public class Players {
      * @throws IOException if the request fails.
      */
     public static SuccessResponse updatePlayerData(Client client, String playerToken, Object data) throws IOException {
-        return client.put(client.url(Endpoints.GAME_DATA_PLAYER_UPDATE, "&player_token=" + playerToken), data, SuccessResponse.class);
+        return client.send("PUT",client.url(Endpoints.GAME_DATA_PLAYER_UPDATE), data, SuccessResponse.class, playerToken, false);
     }
 }

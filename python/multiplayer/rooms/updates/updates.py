@@ -40,7 +40,7 @@ class Updates:
         """
         return self._client.send(
             "POST",
-            self._client.player_url(GAME_ROOM_UPDATES, player_token),
+            self._client.url(GAME_ROOM_UPDATES),
             {
                 "target_players": target_players.value,
                 "target_players_ids": target_players_ids,
@@ -48,6 +48,7 @@ class Updates:
                 "data": data,
             },
             UpdatePlayersResponse,
+            player_token=player_token
         )
 
     def poll(
@@ -67,13 +68,14 @@ class Updates:
         """
         response = self._client.send(
             "POST",
-            self._client.player_url(GAME_ROOM_UPDATES_POLL, player_token),
+            self._client.url(GAME_ROOM_UPDATES_POLL),
             {
                 "from_players": from_players.value,
                 "from_players_ids": from_players_ids,
                 "last_update": last_update,
             },
             PollUpdatesResponse,
+            player_token=player_token
         )
         if data_cls is not None:
             for update in response.updates:

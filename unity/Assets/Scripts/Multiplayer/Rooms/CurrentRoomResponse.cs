@@ -1,4 +1,5 @@
 ﻿using Michitai.Multiplayer.Errors;
+using Michitai.Multiplayer.Rooms.Updates;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,13 +27,13 @@ namespace Michitai.Multiplayer.Rooms
         public CurrentRoomInfo<T> room;
 
         /// <summary>
-        /// List of pending actions as raw JSON strings.
+        /// Pending actions queued for this player (host processing queue).
         /// </summary>
-        public List<string> pending_actions_json;   // raw JSON strings
+        public List<PendingActionInfo> pending_actions;
 
         /// <summary>
-        /// List of pending updates as raw JSON strings.
+        /// Pending updates addressed to this player.
         /// </summary>
-        public List<string> pending_updates_json;
+        public List<PlayerUpdate> pending_updates;
     }
 }

@@ -97,7 +97,7 @@ public:
     /// @return Response containing the list of all players with their basic information
     static PlayerListResponse getAllPlayers(Client& client) {
         return client.get<PlayerListResponse>(
-            client.privateUrl(Endpoints::GamePlayersList)
+            client.url(Endpoints::GamePlayersList), "", true
         );
     }
     
@@ -125,8 +125,8 @@ public:
             jsonData = nlohmann::json(data);
         }
         return client.put<SuccessResponse>(
-            client.privateUrl(Endpoints::GameDataGameUpdate),
-            jsonData
+            client.url(Endpoints::GameDataGameUpdate),
+            jsonData, "", true
         );
     }
 };

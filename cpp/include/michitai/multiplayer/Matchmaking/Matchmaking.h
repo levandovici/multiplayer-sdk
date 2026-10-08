@@ -385,8 +385,8 @@ public:
             matchmakingName, maxPlayers, strictFull, joinByRequests,
             hostSwitch, canLeaveRoom, realtimeRoom, password, playerData, rules);
         return client.post<MatchmakingCreateResponse>(
-            client.url(Endpoints::MatchmakingCreate, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(Endpoints::MatchmakingCreate),
+            request.toJson(), playerToken
         );
     }
     
@@ -396,7 +396,7 @@ public:
         Client& client,
         const std::string& playerToken) {
         return client.get<MatchmakingCurrentResponse<T>>(
-            client.url(Endpoints::MatchmakingCurrent, "&player_token=" + playerToken)
+            client.url(Endpoints::MatchmakingCurrent), playerToken
         );
     }
     
@@ -406,30 +406,30 @@ public:
         Client& client,
         const std::string& playerToken,
         const std::string& matchmakingId,
-        const std::optional<T>& playerData = std::nullopt) {
+        const std::optional<T>& playerData = std::nullopt,
+        const std::optional<std::string>& password = std::nullopt) {
         std::string endpoint = std::string(Endpoints::MatchmakingJoin);
         size_t pos = endpoint.find("{0}");
         if (pos != std::string::npos) {
             endpoint.replace(pos, 3, matchmakingId);
         }
-        
+
+        // Backend expects { password, player_data } — never a bare object.
+        nlohmann::json body = nlohmann::json::object();
         if (playerData.has_value()) {
-            nlohmann::json jsonData;
             if constexpr (std::is_same_v<T, nlohmann::json>) {
-                jsonData = playerData.value();
+                body["player_data"] = playerData.value();
             } else {
-                jsonData = nlohmann::json(playerData.value());
+                body["player_data"] = nlohmann::json(playerData.value());
             }
-            return client.post<MatchmakingDirectJoinResponse>(
-                client.url(endpoint, "&player_token=" + playerToken),
-                jsonData
-            );
-        } else {
-            return client.post<MatchmakingDirectJoinResponse>(
-                client.url(endpoint, "&player_token=" + playerToken),
-                nlohmann::json{}
-            );
         }
+        if (password.has_value()) {
+            body["password"] = password.value();
+        }
+        return client.post<MatchmakingDirectJoinResponse>(
+            client.url(endpoint),
+            body, playerToken
+        );
     }
     
     /// Leaves the current matchmaking lobby.
@@ -437,8 +437,8 @@ public:
         Client& client,
         const std::string& playerToken) {
         return client.post<MatchmakingLeaveResponse>(
-            client.url(Endpoints::MatchmakingLeave, "&player_token=" + playerToken),
-            nlohmann::json{}
+            client.url(Endpoints::MatchmakingLeave),
+            nlohmann::json{}, playerToken
         );
     }
     
@@ -448,7 +448,7 @@ public:
         Client& client,
         const std::string& playerToken) {
         return client.get<MatchmakingPlayersResponse<T>>(
-            client.url(Endpoints::MatchmakingPlayers, "&player_token=" + playerToken)
+            client.url(Endpoints::MatchmakingPlayers), playerToken
         );
     }
     
@@ -457,8 +457,8 @@ public:
         Client& client,
         const std::string& playerToken) {
         return client.post<MatchmakingHeartbeatResponse>(
-            client.url(Endpoints::MatchmakingHeartbeat, "&player_token=" + playerToken),
-            nlohmann::json{}
+            client.url(Endpoints::MatchmakingHeartbeat),
+            nlohmann::json{}, playerToken
         );
     }
     
@@ -467,8 +467,8 @@ public:
         Client& client,
         const std::string& playerToken) {
         return client.post<MatchmakingRemoveResponse>(
-            client.url(Endpoints::MatchmakingRemove, "&player_token=" + playerToken),
-            nlohmann::json{}
+            client.url(Endpoints::MatchmakingRemove),
+            nlohmann::json{}, playerToken
         );
     }
     
@@ -477,8 +477,8 @@ public:
         Client& client,
         const std::string& playerToken) {
         return client.post<MatchmakingStartResponse>(
-            client.url(Endpoints::MatchmakingStart, "&player_token=" + playerToken),
-            nlohmann::json{}
+            client.url(Endpoints::MatchmakingStart),
+            nlohmann::json{}, playerToken
         );
     }
     
@@ -487,8 +487,8 @@ public:
         Client& client,
         const std::string& playerToken) {
         return client.post<SuccessResponse>(
-            client.url(Endpoints::MatchmakingStop, "&player_token=" + playerToken),
-            nlohmann::json{}
+            client.url(Endpoints::MatchmakingStop),
+            nlohmann::json{}, playerToken
         );
     }
     
@@ -499,8 +499,8 @@ public:
         int playerId) {
         MatchmakingKickRequest request(playerId);
         return client.post<MatchmakingKickResponse>(
-            client.url(Endpoints::MatchmakingKick, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(Endpoints::MatchmakingKick),
+            request.toJson(), playerToken
         );
     }
     
@@ -511,8 +511,8 @@ public:
         const std::optional<std::string>& password = std::nullopt) {
         MatchmakingPasswordUpdateRequest request(password);
         return client.post<SuccessResponse>(
-            client.url(Endpoints::MatchmakingPassword, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(Endpoints::MatchmakingPassword),
+            request.toJson(), playerToken
         );
     }
 };

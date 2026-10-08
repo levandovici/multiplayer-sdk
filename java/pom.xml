@@ -9,6 +9,14 @@
   <version>1.0.0</version>
   <packaging>jar</packaging>
 
+  <licenses>
+    <license>
+      <name>Proprietary - Copyright (c) 2026 Nichita Levandovici. All rights reserved.</name>
+      <url>https://api.michitai.com/LICENSE</url>
+      <comments>Use, modification, and redistribution require prior written permission, except as required by applicable law. Third-party components retain their own licenses.</comments>
+    </license>
+  </licenses>
+
   <properties>
     <maven.compiler.release>11</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

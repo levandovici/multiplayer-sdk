@@ -15,6 +15,7 @@ from .models import (
     PlayerLogoutResponse,
     PlayerRegisterResponse,
     PlayerRenameResponse,
+    PlayerRotateResponse,
     PlayerUnbanResponse,
 )
 
@@ -26,6 +27,7 @@ GAME_PLAYERS_LOGIN = "game_players.php/login"
 GAME_PLAYERS_HEARTBEAT = "game_players.php/heartbeat"
 GAME_PLAYERS_LOGOUT = "game_players.php/logout"
 GAME_PLAYERS_RENAME = "game_players.php/rename"
+GAME_PLAYERS_ROTATE = "game_players.php/rotate"
 GAME_PLAYERS_BAN = "game_players.php/ban"
 GAME_PLAYERS_UNBAN = "game_players.php/unban"
 GAME_DATA_PLAYER_GET = "game_data.php/player/get"
@@ -68,9 +70,10 @@ class Players:
         """
         response = self._client.send(
             "PUT",
-            self._client.player_url(GAME_PLAYERS_LOGIN, player_token),
+            self._client.url(GAME_PLAYERS_LOGIN),
             None,
             PlayerAuthResponse,
+            player_token=player_token
         )
         if data_cls is not None and response.player is not None:
             response.player.player_data = _convert_data(
@@ -82,27 +85,44 @@ class Players:
         """Send a heartbeat to maintain the player's online status."""
         return self._client.send(
             "POST",
-            self._client.player_url(GAME_PLAYERS_HEARTBEAT, player_token),
+            self._client.url(GAME_PLAYERS_HEARTBEAT),
             None,
             PlayerHeartbeatResponse,
+            player_token=player_token
         )
 
     def logout(self, player_token: str) -> PlayerLogoutResponse:
         """Log out a player from the game."""
         return self._client.send(
             "POST",
-            self._client.player_url(GAME_PLAYERS_LOGOUT, player_token),
+            self._client.url(GAME_PLAYERS_LOGOUT),
             None,
             PlayerLogoutResponse,
+            player_token=player_token
         )
 
     def rename(self, player_token: str, new_name: str) -> PlayerRenameResponse:
         """Rename a player (new name must be 2-50 characters)."""
         return self._client.send(
             "PUT",
-            self._client.player_url(GAME_PLAYERS_RENAME, player_token),
+            self._client.url(GAME_PLAYERS_RENAME),
             {"new_name": new_name},
             PlayerRenameResponse,
+            player_token=player_token
+        )
+
+    def rotate(self, player_token: str) -> PlayerRotateResponse:
+        """Rotate the player's private key.
+
+        The current token authenticates the request and is invalidated;
+        persist ``response.private_key`` as the new token.
+        """
+        return self._client.send(
+            "POST",
+            self._client.url(GAME_PLAYERS_ROTATE),
+            None,
+            PlayerRotateResponse,
+            player_token=player_token
         )
 
     def ban(
@@ -119,22 +139,24 @@ class Players:
         """
         return self._client.send(
             "POST",
-            self._client.private_url(GAME_PLAYERS_BAN),
+            self._client.url(GAME_PLAYERS_BAN),
             {
                 "player_id": player_id,
                 "ban_duration": ban_duration.value,
                 "ban_reason": ban_reason,
             },
             PlayerBanResponse,
+            use_private_token=True
         )
 
     def unban(self, player_id: int) -> PlayerUnbanResponse:
         """Unban a previously banned player. Requires the private API token."""
         return self._client.send(
             "POST",
-            self._client.private_url(GAME_PLAYERS_UNBAN),
+            self._client.url(GAME_PLAYERS_UNBAN),
             {"player_id": player_id},
             PlayerUnbanResponse,
+            use_private_token=True
         )
 
     def get_data(
@@ -148,9 +170,10 @@ class Players:
         """
         response = self._client.send(
             "GET",
-            self._client.player_url(GAME_DATA_PLAYER_GET, player_token),
+            self._client.url(GAME_DATA_PLAYER_GET),
             None,
             PlayerDataResponse,
+            player_token=player_token
         )
         if data_cls is not None and response.data is not None:
             response.data = _convert_data(response.data, data_cls)
@@ -160,9 +183,10 @@ class Players:
         """Replace a player's custom data with the provided object."""
         return self._client.send(
             "PUT",
-            self._client.player_url(GAME_DATA_PLAYER_UPDATE, player_token),
+            self._client.url(GAME_DATA_PLAYER_UPDATE),
             data,
             SuccessResponse,
+            player_token=player_token
         )
 
 

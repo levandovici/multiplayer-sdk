@@ -70,4 +70,8 @@ await rt.send(RoomTargetPlayer.ALL, "move", {"x": 1, "y": 2})
 
 ## License
 
-MIT No Attribution (MIT-0) — see `../LICENSE`.
+Copyright (c) 2026 Nichita Levandovici. All rights reserved.
+
+Proprietary software. Use, modification, and redistribution require prior
+written permission, except as required by applicable law. See `../LICENSE`.
+Third-party components remain subject to their own licenses.

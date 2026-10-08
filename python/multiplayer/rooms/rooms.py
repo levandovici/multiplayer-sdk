@@ -65,7 +65,7 @@ class Rooms:
         """
         return self._client.send(
             "POST",
-            self._client.player_url(GAME_ROOM_CREATE, player_token),
+            self._client.url(GAME_ROOM_CREATE),
             {
                 "room_name": room_name,
                 "max_players": max_players,
@@ -76,6 +76,7 @@ class Rooms:
                 "rules": rules,
             },
             RoomCreateResponse,
+            player_token=player_token
         )
 
     def list(
@@ -110,20 +111,20 @@ class Rooms:
             body = {"password": password, "player_data": player_data}
         return self._client.send(
             "POST",
-            self._client.player_url(
-                GAME_ROOM_JOIN.format(room_id=room_id), player_token
-            ),
+            self._client.url(GAME_ROOM_JOIN.format(room_id=room_id)),
             body,
             RoomJoinResponse,
+            player_token=player_token
         )
 
     def leave(self, player_token: str) -> RoomLeaveResponse:
         """Leave the current game room."""
         return self._client.send(
             "POST",
-            self._client.player_url(GAME_ROOM_LEAVE, player_token),
+            self._client.url(GAME_ROOM_LEAVE),
             None,
             RoomLeaveResponse,
+            player_token=player_token
         )
 
     def get_players(
@@ -137,9 +138,10 @@ class Rooms:
         """
         response = self._client.send(
             "GET",
-            self._client.player_url(GAME_ROOM_PLAYERS, player_token),
+            self._client.url(GAME_ROOM_PLAYERS),
             None,
             RoomPlayersResponse,
+            player_token=player_token
         )
         _apply_type((p for p in response.players), "player_data", data_cls)
         return response
@@ -148,9 +150,10 @@ class Rooms:
         """Send a heartbeat to maintain presence in the room."""
         return self._client.send(
             "POST",
-            self._client.player_url(GAME_ROOM_HEARTBEAT, player_token),
+            self._client.url(GAME_ROOM_HEARTBEAT),
             None,
             HeartbeatResponse,
+            player_token=player_token
         )
 
     def get_current(
@@ -164,9 +167,10 @@ class Rooms:
         """
         response = self._client.send(
             "GET",
-            self._client.player_url(GAME_ROOM_CURRENT, player_token),
+            self._client.url(GAME_ROOM_CURRENT),
             None,
             CurrentRoomResponse,
+            player_token=player_token
         )
         if rules_cls is not None and response.room is not None:
             response.room.rules = _convert(response.room.rules, rules_cls)
@@ -176,18 +180,20 @@ class Rooms:
         """Stop the current game room and remove all its data (host only)."""
         return self._client.send(
             "POST",
-            self._client.player_url(GAME_ROOM_STOP, player_token),
+            self._client.url(GAME_ROOM_STOP),
             None,
             RoomStopResponse,
+            player_token=player_token
         )
 
     def kick(self, player_token: str, player_id: int) -> RoomKickResponse:
         """Kick a player from the room (host only). Cannot kick yourself."""
         return self._client.send(
             "POST",
-            self._client.player_url(GAME_ROOM_KICK, player_token),
+            self._client.url(GAME_ROOM_KICK),
             {"player_id": player_id},
             RoomKickResponse,
+            player_token=player_token
         )
 
     def update_password(
@@ -198,9 +204,10 @@ class Rooms:
         """Update the room password (host only). Pass ``None`` to remove it."""
         return self._client.send(
             "POST",
-            self._client.player_url(GAME_ROOM_PASSWORD, player_token),
+            self._client.url(GAME_ROOM_PASSWORD),
             {"password": password},
             RoomPasswordResponse,
+            player_token=player_token
         )
 
 

@@ -37,8 +37,8 @@ namespace Michitai.Multiplayer.Matchmaking.Requests
         /// <returns>Task containing the matchmaking creation response.</returns>
         public static Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<TPlayerData, TRules>(Client client, string playerToken, string matchmakingName, int maxPlayers = 4, bool strictFull = false,
             bool joinByRequests = false, bool hostSwitch = false, bool canLeaveRoom = false, bool realtimeRoom = false, string password = null, TPlayerData playerData = null, TRules rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
-            => client.Send<MatchmakingCreateResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingCreate, $"&player_token={playerToken}"),
-                new MatchmakingCreateRequest(matchmakingName, maxPlayers, strictFull, joinByRequests, hostSwitch, canLeaveRoom, realtimeRoom, password, JsonUtility.ToJson(playerData), JsonUtility.ToJson(rules)), ct);
+            => client.Send<MatchmakingCreateResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingCreate),
+                new MatchmakingCreateRequest(matchmakingName, maxPlayers, strictFull, joinByRequests, hostSwitch, canLeaveRoom, realtimeRoom, password, JsonUtility.ToJson(playerData), JsonUtility.ToJson(rules)), ct, playerToken: playerToken);
 
         /// <summary>
         /// Requests to join an existing matchmaking lobby.
@@ -48,10 +48,12 @@ namespace Michitai.Multiplayer.Matchmaking.Requests
         /// <param name="playerToken">The player's authentication token.</param>
         /// <param name="matchmakingId">The ID of the matchmaking lobby to join.</param>
         /// <param name="playerData">Optional player data to include with the request.</param>
+        /// <param name="password">Optional password if the lobby is password-protected.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Task containing the join request response.</returns>
-        public static Task<MatchmakingJoinRequestResponse> RequestToJoinMatchmakingAsync<T>(Client client, string playerToken, string matchmakingId, T playerData = null, CancellationToken ct = default) where T : class, new()
-            => client.Send<MatchmakingJoinRequestResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.MatchmakingRequest, matchmakingId), $"&player_token={playerToken}"), playerData, ct);
+        public static Task<MatchmakingJoinRequestResponse> RequestToJoinMatchmakingAsync<T>(Client client, string playerToken, string matchmakingId, T playerData = null, string password = null, CancellationToken ct = default) where T : class, new()
+            => client.Send<MatchmakingJoinRequestResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.MatchmakingRequest, matchmakingId)),
+                (password != null || playerData != null) ? new MatchmakingJoinRequest(password, playerData != null ? JsonUtility.ToJson(playerData) : null) : null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Responds to a pending join request (approve or reject).
@@ -64,8 +66,8 @@ namespace Michitai.Multiplayer.Matchmaking.Requests
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Task containing the permission response.</returns>
         public static Task<MatchmakingPermissionResponse> RespondToJoinRequestAsync(Client client, string playerToken, string requestId, EMatchmakingRequestAction action, CancellationToken ct = default)
-            => client.Send<MatchmakingPermissionResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.MatchmakingResponse, requestId), $"&player_token={playerToken}"),
-                new MatchmakingPermissionRequest(action.ToString().ToLower()), ct);
+            => client.Send<MatchmakingPermissionResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.MatchmakingResponse, requestId)),
+                new MatchmakingPermissionRequest(action.ToString().ToLower()), ct, playerToken: playerToken);
 
         /// <summary>
         /// Checks the status of a specific join request.
@@ -76,6 +78,6 @@ namespace Michitai.Multiplayer.Matchmaking.Requests
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Task containing the request status response.</returns>
         public static Task<MatchmakingRequestStatusResponse> CheckJoinRequestStatusAsync(Client client, string playerToken, string requestId, CancellationToken ct = default)
-            => client.Send<MatchmakingRequestStatusResponse>(HttpMethod.Get, client.Url(string.Format(Endpoints.MatchmakingRequestStatus, requestId), $"&player_token={playerToken}"), null, ct);
+            => client.Send<MatchmakingRequestStatusResponse>(HttpMethod.Get, client.Url(string.Format(Endpoints.MatchmakingRequestStatus, requestId)), null, ct, playerToken: playerToken);
     }
 }

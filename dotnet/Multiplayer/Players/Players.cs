@@ -35,7 +35,7 @@ namespace Michitai.Multiplayer.Players
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the authenticated player information and typed data.</returns>
         public  static Task<PlayerAuthResponse<T>> AuthenticatePlayer<T>(Client client, string playerToken, CancellationToken ct = default) where T : class, new()
-            => client.Send<PlayerAuthResponse<T>>(HttpMethod.Put, client.Url(Endpoints.GamePlayersLogin, $"&player_token={playerToken}"), null, ct);
+            => client.Send<PlayerAuthResponse<T>>(HttpMethod.Put, client.Url(Endpoints.GamePlayersLogin), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Sends a heartbeat to maintain the player's online status.
@@ -45,7 +45,7 @@ namespace Michitai.Multiplayer.Players
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the heartbeat was received.</returns>
         public static Task<PlayerHeartbeatResponse> SendPlayerHeartbeatAsync(Client client, string playerToken, CancellationToken ct = default)
-            => client.Send<PlayerHeartbeatResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersHeartbeat, $"&player_token={playerToken}"), null, ct);
+            => client.Send<PlayerHeartbeatResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersHeartbeat), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Logs out a player from the game.
@@ -55,7 +55,7 @@ namespace Michitai.Multiplayer.Players
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the logout.</returns>
         public static Task<PlayerLogoutResponse> LogoutPlayerAsync(Client client, string playerToken, CancellationToken ct = default)
-            => client.Send<PlayerLogoutResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersLogout, $"&player_token={playerToken}"), null, ct);
+            => client.Send<PlayerLogoutResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersLogout), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Renames a player to a new name (2-50 characters).
@@ -66,7 +66,7 @@ namespace Michitai.Multiplayer.Players
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the name change.</returns>
         public static Task<PlayerRenameResponse> RenamePlayerAsync(Client client, string playerToken, string newName, CancellationToken ct = default)
-            => client.Send<PlayerRenameResponse>(HttpMethod.Put, client.Url(Endpoints.GamePlayersRename, $"&player_token={playerToken}"), new PlayerRenameRequest(newName), ct);
+            => client.Send<PlayerRenameResponse>(HttpMethod.Put, client.Url(Endpoints.GamePlayersRename), new PlayerRenameRequest(newName), ct, playerToken: playerToken);
 
         /// <summary>
         /// Bans a player from the game with a specified duration.
@@ -79,7 +79,7 @@ namespace Michitai.Multiplayer.Players
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the ban details.</returns>
         public static Task<PlayerBanResponse> BanPlayerAsync(Client client, int playerId, EBanTime banDuration, string? banReason = null, CancellationToken ct = default)
-            => client.Send<PlayerBanResponse>(HttpMethod.Post, client.PrivateUrl(Endpoints.GamePlayersBan), new PlayerBanRequest(playerId, banDuration, banReason), ct);
+            => client.Send<PlayerBanResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersBan), new PlayerBanRequest(playerId, banDuration, banReason), ct, includePrivateToken: true);
 
         /// <summary>
         /// Unbans a previously banned player.
@@ -90,8 +90,19 @@ namespace Michitai.Multiplayer.Players
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the player was unbanned.</returns>
         public static Task<PlayerUnbanResponse> UnbanPlayerAsync(Client client, int playerId, CancellationToken ct = default)
-            => client.Send<PlayerUnbanResponse>(HttpMethod.Post, client.PrivateUrl(Endpoints.GamePlayersUnban), new PlayerUnbanRequest(playerId), ct);
+            => client.Send<PlayerUnbanResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersUnban), new PlayerUnbanRequest(playerId), ct, includePrivateToken: true);
 
+
+        /// <summary>
+        /// Rotates the player's private key. The current token authenticates the
+        /// request and is invalidated; persist the returned new key.
+        /// </summary>
+        /// <param name="client">The API client instance.</param>
+        /// <param name="playerToken">The player's current private authentication token.</param>
+        /// <param name="ct">Cancellation token for the async operation.</param>
+        /// <returns>Response containing the new private key token.</returns>
+        public static Task<PlayerRotateResponse> RotatePlayerKeyAsync(Client client, string playerToken, CancellationToken ct = default)
+            => client.Send<PlayerRotateResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRotate), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Retrieves a player's data with typed deserialization support.
@@ -102,7 +113,7 @@ namespace Michitai.Multiplayer.Players
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the player's data deserialized into the specified type.</returns>
         public static Task<PlayerDataResponse<T>> GetPlayerData<T>(Client client, string playerToken, CancellationToken ct = default) where T : class, new()
-            => client.Send<PlayerDataResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameDataPlayerGet, $"&player_token={playerToken}"), null, ct);
+            => client.Send<PlayerDataResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameDataPlayerGet), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Updates a player's data with the provided object.
@@ -114,6 +125,6 @@ namespace Michitai.Multiplayer.Players
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Success response confirming the update.</returns>
         public static Task<SuccessResponse> UpdatePlayerData<T>(Client client, string playerToken, T data, CancellationToken ct = default) where T : class, new()
-            => client.Send<SuccessResponse>(HttpMethod.Put, client.Url(Endpoints.GameDataPlayerUpdate, $"&player_token={playerToken}"), data, ct);
+            => client.Send<SuccessResponse>(HttpMethod.Put, client.Url(Endpoints.GameDataPlayerUpdate), data, ct, playerToken: playerToken);
     }
 }

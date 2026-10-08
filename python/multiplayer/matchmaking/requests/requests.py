@@ -42,7 +42,7 @@ class MatchmakingRequests:
         """Create a matchmaking lobby, optionally requiring join approval."""
         return self._client.send(
             "POST",
-            self._client.player_url(MATCHMAKING_CREATE, player_token),
+            self._client.url(MATCHMAKING_CREATE),
             {
                 "matchmaking_name": matchmaking_name,
                 "max_players": max_players,
@@ -56,6 +56,7 @@ class MatchmakingRequests:
                 "rules": rules,
             },
             MatchmakingCreateResponse,
+            player_token=player_token
         )
 
     def request_to_join(
@@ -63,16 +64,20 @@ class MatchmakingRequests:
         player_token: str,
         matchmaking_id: str,
         player_data: Any = None,
+        password: Optional[str] = None,
     ) -> MatchmakingJoinRequestResponse:
         """Request to join an existing matchmaking lobby."""
+        body = {}
+        if password is not None:
+            body["password"] = password
+        if player_data is not None:
+            body["player_data"] = player_data
         return self._client.send(
             "POST",
-            self._client.player_url(
-                MATCHMAKING_REQUEST.format(matchmaking_id=matchmaking_id),
-                player_token,
-            ),
-            player_data,
+            self._client.url(MATCHMAKING_REQUEST.format(matchmaking_id=matchmaking_id)),
+            body or None,
             MatchmakingJoinRequestResponse,
+            player_token=player_token
         )
 
     def respond(
@@ -84,11 +89,10 @@ class MatchmakingRequests:
         """Approve or reject a pending join request (host only)."""
         return self._client.send(
             "POST",
-            self._client.player_url(
-                MATCHMAKING_RESPONSE.format(request_id=request_id), player_token
-            ),
+            self._client.url(MATCHMAKING_RESPONSE.format(request_id=request_id)),
             {"action": action.value},
             MatchmakingPermissionResponse,
+            player_token=player_token
         )
 
     def check_status(
@@ -99,10 +103,8 @@ class MatchmakingRequests:
         """Check the status of a join request."""
         return self._client.send(
             "GET",
-            self._client.player_url(
-                MATCHMAKING_REQUEST_STATUS.format(request_id=request_id),
-                player_token,
-            ),
+            self._client.url(MATCHMAKING_REQUEST_STATUS.format(request_id=request_id)),
             None,
             MatchmakingRequestStatusResponse,
+            player_token=player_token
         )

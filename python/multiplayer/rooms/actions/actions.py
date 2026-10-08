@@ -42,7 +42,7 @@ class Actions:
         """Submit an action to target players in the room."""
         return self._client.send(
             "POST",
-            self._client.player_url(GAME_ROOM_ACTIONS, player_token),
+            self._client.url(GAME_ROOM_ACTIONS),
             {
                 "target_players": target_players.value,
                 "target_players_ids": target_players_ids,
@@ -50,6 +50,7 @@ class Actions:
                 "request_data": request_data,
             },
             ActionSubmitResponse,
+            player_token=player_token
         )
 
     def poll(
@@ -63,9 +64,10 @@ class Actions:
         """
         response = self._client.send(
             "GET",
-            self._client.player_url(GAME_ROOM_ACTIONS_POLL, player_token),
+            self._client.url(GAME_ROOM_ACTIONS_POLL),
             None,
             ActionPollResponse,
+            player_token=player_token
         )
         _apply_type(response.actions, "response_data", data_cls)
         return response
@@ -81,9 +83,10 @@ class Actions:
         """
         response = self._client.send(
             "GET",
-            self._client.player_url(GAME_ROOM_ACTIONS_PENDING, player_token),
+            self._client.url(GAME_ROOM_ACTIONS_PENDING),
             None,
             ActionPendingResponse,
+            player_token=player_token
         )
         _apply_type(response.actions, "request_data", data_cls)
         return response
@@ -98,11 +101,10 @@ class Actions:
         """Mark an action as complete with an optional response (host only)."""
         return self._client.send(
             "POST",
-            self._client.player_url(
-                GAME_ROOM_ACTION_COMPLETE.format(action_id=action_id), player_token
-            ),
+            self._client.url(GAME_ROOM_ACTION_COMPLETE.format(action_id=action_id)),
             {"status": status.value, "response_data": response_data},
             ActionCompleteResponse,
+            player_token=player_token
         )
 
 

@@ -26,8 +26,8 @@ namespace Michitai.Multiplayer.Rooms.Updates
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Task containing the update players response.</returns>
         public static Task<UpdatePlayersResponse> UpdatePlayersAsync<T>(Client client, string playerToken, UpdatePlayers<T> request, CancellationToken ct = default) where T : class, new()
-            => client.Send<UpdatePlayersResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomUpdates, $"&player_token={playerToken}"),
-                new UpdatePlayersRequest(request.TargetPlayers, request.Type, JsonUtility.ToJson(request.Data), request.TargetPlayersIds), ct);
+            => client.Send<UpdatePlayersResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomUpdates),
+                new UpdatePlayersRequest(request.TargetPlayers, request.Type, JsonUtility.ToJson(request.Data), request.TargetPlayersIds), ct, playerToken: playerToken);
 
         /// <summary>
         /// Polls for updates that were sent to the current player.
@@ -39,7 +39,7 @@ namespace Michitai.Multiplayer.Rooms.Updates
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Task containing the poll updates response with received updates.</returns>
         public static Task<PollUpdatesResponse> PollUpdatesAsync(Client client, string playerToken, PollUpdates request, string lastUpdateId = null, CancellationToken ct = default)
-            => client.Send<PollUpdatesResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomUpdatesPoll, $"&player_token={playerToken}"),
-                new PollUpdatesRequest(request.FromPlayers, request.FromPlayersIds, request.LastUpdate), ct);
+            => client.Send<PollUpdatesResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomUpdatesPoll),
+                new PollUpdatesRequest(request.FromPlayers, request.FromPlayersIds, request.LastUpdate), ct, playerToken: playerToken);
     }
 }

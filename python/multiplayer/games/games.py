@@ -28,9 +28,10 @@ class Games:
         """List all players in the game. Requires the private API token."""
         return self._client.send(
             "GET",
-            self._client.private_url(GAME_PLAYERS_LIST),
+            self._client.url(GAME_PLAYERS_LIST),
             None,
             PlayerListResponse,
+            use_private_token=True
         )
 
     def get_data(self, data_cls: Optional[Type[T]] = None) -> GameDataResponse:
@@ -56,7 +57,8 @@ class Games:
         """Update global game data. Requires the private API token."""
         return self._client.send(
             "PUT",
-            self._client.private_url(GAME_DATA_GAME_UPDATE),
+            self._client.url(GAME_DATA_GAME_UPDATE),
             data,
             SuccessResponse,
+            use_private_token=True
         )

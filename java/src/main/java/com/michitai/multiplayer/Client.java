@@ -10,10 +10,14 @@ import com.michitai.multiplayer.errors.ConsoleLogger;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Main HTTP client for communicating with the Michitai Multiplayer API.
@@ -26,6 +30,16 @@ public class Client {
     private final HttpClient httpClient;
     private final Logger logger;
     private final ObjectMapper objectMapper;
+    private volatile boolean debugLogging = false;
+
+    /**
+     * Enable verbose request/response body logging. Default false — response
+     * bodies can contain credentials; keep disabled in production builds.
+     */
+    public Client setDebugLogging(boolean enabled) {
+        this.debugLogging = enabled;
+        return this;
+    }
 
     /**
      * JSON object mapper configured for camelCase property naming and case-insensitive deserialization.
@@ -39,21 +53,19 @@ public class Client {
      * Initializes a new instance of the Client class.
      *
      * @param apiToken Public API token for game identification.
-     * @param apiPrivateToken Private API token for admin operations.
+     * @param apiPrivateToken Private API token for admin operations (may be empty —
+     *                        omit it in shipped/game clients; admin endpoints then fail fast).
      * @param baseUrl Base URL for the API (default: https://api.michitai.com/api).
      * @param logger Optional logger for debugging and error tracking.
-     * @throws IllegalArgumentException if apiToken or apiPrivateToken is null.
+     * @throws IllegalArgumentException if apiToken is null.
      */
     public Client(String apiToken, String apiPrivateToken, String baseUrl, Logger logger) {
         if (apiToken == null) {
             throw new IllegalArgumentException("apiToken cannot be null");
         }
-        if (apiPrivateToken == null) {
-            throw new IllegalArgumentException("apiPrivateToken cannot be null");
-        }
 
         this.apiToken = apiToken;
-        this.apiPrivateToken = apiPrivateToken;
+        this.apiPrivateToken = apiPrivateToken != null ? apiPrivateToken : "";
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
         this.logger = logger != null ? logger : new ConsoleLogger();
         this.objectMapper = JSON_MAPPER;
@@ -70,39 +82,42 @@ public class Client {
     }
 
     /**
-     * Generates a URL for public API endpoints.
-     *
-     * @param endpoint The API endpoint path.
-     * @param extra Additional query parameters.
-     * @return Complete URL with API token.
+     * Player-facing client: no admin key, so admin endpoints are unavailable.
+     * This is the secure default for shipped game builds.
      */
-    public String url(String endpoint, String extra) {
-        return baseUrl + endpoint + "?api_token=" + apiToken + extra;
+    public Client(String apiToken) {
+        this(apiToken, "", "https://api.michitai.com/api", null);
     }
 
     /**
-     * Generates a URL for public API endpoints without extra parameters.
+     * Player-facing client with a custom logger; no admin key.
+     */
+    public Client(String apiToken, Logger logger) {
+        this(apiToken, "", "https://api.michitai.com/api", logger);
+    }
+
+    /**
+     * Generates a URL for an API endpoint. Credentials are never placed in the
+     * URL — they are sent as headers by {@link #send}.
+     *
+     * @param endpoint The API endpoint path.
+     * @param extra Additional query parameters, with or without a leading '?' or '&'.
+     * @return Complete URL without credentials.
+     */
+    public String url(String endpoint, String extra) {
+        if (extra == null || extra.isEmpty()) {
+            return baseUrl + endpoint;
+        }
+        String normalized = (extra.startsWith("?") || extra.startsWith("&"))
+            ? extra.substring(1) : extra;
+        return baseUrl + endpoint + "?" + normalized;
+    }
+
+    /**
+     * Generates a URL for an API endpoint without extra parameters.
      */
     public String url(String endpoint) {
         return url(endpoint, "");
-    }
-
-    /**
-     * Generates a URL for private API endpoints requiring admin access.
-     *
-     * @param endpoint The API endpoint path.
-     * @param extra Additional query parameters.
-     * @return Complete URL with API token and private token.
-     */
-    public String privateUrl(String endpoint, String extra) {
-        return baseUrl + endpoint + "?api_token=" + apiToken + "&private_token=" + apiPrivateToken + extra;
-    }
-
-    /**
-     * Generates a URL for private API endpoints without extra parameters.
-     */
-    public String privateUrl(String endpoint) {
-        return privateUrl(endpoint, "");
     }
 
     /**
@@ -118,6 +133,17 @@ public class Client {
      */
     public <T extends ApiResponse> T send(String method, String url, Object body, Class<T> responseClass) throws IOException {
         return send(method, url, body, objectMapper.getTypeFactory().constructType(responseClass));
+    }
+
+    /**
+     * Sends an HTTP request with explicit player/admin credentials as headers.
+     *
+     * @param playerToken Optional player token (sent as X-Game-Player-Token).
+     * @param includePrivateToken Send the admin X-Api-Private-Token header (admin endpoints only).
+     */
+    public <T extends ApiResponse> T send(String method, String url, Object body, Class<T> responseClass,
+                                          String playerToken, boolean includePrivateToken) throws IOException {
+        return send(method, url, body, objectMapper.getTypeFactory().constructType(responseClass), playerToken, includePrivateToken);
     }
 
     /**
@@ -142,12 +168,29 @@ public class Client {
      * @return Deserialized API response of type T.
      * @throws IOException if the request fails or deserialization fails.
      */
-    @SuppressWarnings("unchecked")
     public <T extends ApiResponse> T send(String method, String url, Object body, JavaType responseType) throws IOException {
+        return send(method, url, body, responseType, null, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends ApiResponse> T send(String method, String url, Object body, JavaType responseType,
+                                          String playerToken, boolean includePrivateToken) throws IOException {
         try {
             HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(Duration.ofSeconds(30));
+
+            requestBuilder.header("X-Api-Token", apiToken);
+            if (playerToken != null) {
+                requestBuilder.header("X-Game-Player-Token", playerToken);
+            }
+            if (includePrivateToken) {
+                if (apiPrivateToken == null || apiPrivateToken.isEmpty()) {
+                    throw new IllegalStateException(
+                        "Admin operations require apiPrivateToken — construct Client with the private key (server-side tooling only)");
+                }
+                requestBuilder.header("X-Api-Private-Token", apiPrivateToken);
+            }
 
             if ("GET".equalsIgnoreCase(method)) {
                 requestBuilder.GET();
@@ -171,7 +214,9 @@ public class Client {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             String responseText = response.body();
-            logger.log("API Response: " + responseText);
+            if (debugLogging) {
+                logger.log("API Response: " + responseText);
+            }
 
             try {
                 T apiResponse = objectMapper.readValue(responseText, responseType);
@@ -182,7 +227,9 @@ public class Client {
 
                 return apiResponse;
             } catch (Exception e) {
-                logger.warn("JSON Deserialization Error. Raw: " + responseText + ". Exception: " + e.getMessage());
+                logger.warn(debugLogging
+                    ? "JSON Deserialization Error. Raw: " + responseText + ". Exception: " + e.getMessage()
+                    : "JSON Deserialization Error. Exception: " + e.getMessage());
 
                 // Return a default error response instead of throwing
                 T errorResponse = (T) responseType.getRawClass().getDeclaredConstructor().newInstance();

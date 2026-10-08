@@ -84,7 +84,7 @@ class Matchmaking:
         """
         return self._client.send(
             "POST",
-            self._client.player_url(MATCHMAKING_CREATE, player_token),
+            self._client.url(MATCHMAKING_CREATE),
             {
                 "matchmaking_name": matchmaking_name,
                 "max_players": max_players,
@@ -98,6 +98,7 @@ class Matchmaking:
                 "rules": rules,
             },
             MatchmakingCreateResponse,
+            player_token=player_token
         )
 
     def get_current(
@@ -111,9 +112,10 @@ class Matchmaking:
         """
         response = self._client.send(
             "GET",
-            self._client.player_url(MATCHMAKING_CURRENT, player_token),
+            self._client.url(MATCHMAKING_CURRENT),
             None,
             MatchmakingCurrentResponse,
+            player_token=player_token
         )
         if rules_cls is not None and response.matchmaking is not None:
             response.matchmaking.rules = _convert(
@@ -126,24 +128,30 @@ class Matchmaking:
         player_token: str,
         matchmaking_id: str,
         player_data: Any = None,
+        password: Optional[str] = None,
     ) -> MatchmakingDirectJoinResponse:
         """Join a matchmaking lobby directly (no host approval)."""
+        body = {}
+        if password is not None:
+            body["password"] = password
+        if player_data is not None:
+            body["player_data"] = player_data
         return self._client.send(
             "POST",
-            self._client.player_url(
-                MATCHMAKING_JOIN.format(matchmaking_id=matchmaking_id), player_token
-            ),
-            player_data,
+            self._client.url(MATCHMAKING_JOIN.format(matchmaking_id=matchmaking_id)),
+            body or None,
             MatchmakingDirectJoinResponse,
+            player_token=player_token
         )
 
     def leave(self, player_token: str) -> MatchmakingLeaveResponse:
         """Leave the current matchmaking lobby."""
         return self._client.send(
             "POST",
-            self._client.player_url(MATCHMAKING_LEAVE, player_token),
+            self._client.url(MATCHMAKING_LEAVE),
             None,
             MatchmakingLeaveResponse,
+            player_token=player_token
         )
 
     def get_players(
@@ -157,9 +165,10 @@ class Matchmaking:
         """
         response = self._client.send(
             "GET",
-            self._client.player_url(MATCHMAKING_PLAYERS, player_token),
+            self._client.url(MATCHMAKING_PLAYERS),
             None,
             MatchmakingPlayersResponse,
+            player_token=player_token
         )
         _apply_type(response.players, "player_data", data_cls)
         return response
@@ -168,45 +177,50 @@ class Matchmaking:
         """Send a heartbeat to maintain presence in the lobby."""
         return self._client.send(
             "POST",
-            self._client.player_url(MATCHMAKING_HEARTBEAT, player_token),
+            self._client.url(MATCHMAKING_HEARTBEAT),
             None,
             MatchmakingHeartbeatResponse,
+            player_token=player_token
         )
 
     def remove(self, player_token: str) -> MatchmakingRemoveResponse:
         """Remove the current matchmaking lobby (host only)."""
         return self._client.send(
             "POST",
-            self._client.player_url(MATCHMAKING_REMOVE, player_token),
+            self._client.url(MATCHMAKING_REMOVE),
             None,
             MatchmakingRemoveResponse,
+            player_token=player_token
         )
 
     def start(self, player_token: str) -> MatchmakingStartResponse:
         """Start the game: creates a game room and transfers all players."""
         return self._client.send(
             "POST",
-            self._client.player_url(MATCHMAKING_START, player_token),
+            self._client.url(MATCHMAKING_START),
             None,
             MatchmakingStartResponse,
+            player_token=player_token
         )
 
     def stop(self, player_token: str) -> MatchmakingStopResponse:
         """Stop the current lobby (host only, before the game started)."""
         return self._client.send(
             "POST",
-            self._client.player_url(MATCHMAKING_STOP, player_token),
+            self._client.url(MATCHMAKING_STOP),
             None,
             MatchmakingStopResponse,
+            player_token=player_token
         )
 
     def kick(self, player_token: str, player_id: int) -> MatchmakingKickResponse:
         """Kick a player from the lobby (host only, before the game started)."""
         return self._client.send(
             "POST",
-            self._client.player_url(MATCHMAKING_KICK, player_token),
+            self._client.url(MATCHMAKING_KICK),
             {"player_id": player_id},
             MatchmakingKickResponse,
+            player_token=player_token
         )
 
     def update_password(
@@ -217,9 +231,10 @@ class Matchmaking:
         """Update the lobby password (host only, before the game started)."""
         return self._client.send(
             "POST",
-            self._client.player_url(MATCHMAKING_PASSWORD, player_token),
+            self._client.url(MATCHMAKING_PASSWORD),
             {"password": password},
             MatchmakingPasswordResponse,
+            player_token=player_token
         )
 
 

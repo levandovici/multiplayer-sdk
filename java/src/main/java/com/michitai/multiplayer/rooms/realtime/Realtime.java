@@ -82,8 +82,8 @@ public class Realtime {
      * @throws IOException if the request fails.
      */
     public static TokenResponse getToken(Client client, String playerToken) throws IOException {
-        String url = client.url(Endpoints.REALTIME_TOKEN, "&player_token=" + playerToken);
-        return client.post(url, null, TokenResponse.class);
+        String url = client.url(Endpoints.REALTIME_TOKEN);
+        return client.send("POST", url, null, TokenResponse.class, playerToken, false);
     }
 
     /**
@@ -105,7 +105,8 @@ public class Realtime {
                 .build();
             httpClient.send(wakeRequest, HttpResponse.BodyHandlers.ofString());
 
-            URI uri = URI.create(realtimeWebSocketUrl + "?token=" + token + "&client=json");
+            // Token goes in a header so it stays out of URLs/logs.
+            URI uri = URI.create(realtimeWebSocketUrl + "?client=json");
             
             WebSocket.Listener listener = new WebSocket.Listener() {
                 private StringBuilder messageBuilder = new StringBuilder();
@@ -133,6 +134,7 @@ public class Realtime {
 
             webSocket = HttpClient.newHttpClient()
                 .newWebSocketBuilder()
+                .header("X-Realtime-Token", token)
                 .buildAsync(uri, listener)
                 .join();
 

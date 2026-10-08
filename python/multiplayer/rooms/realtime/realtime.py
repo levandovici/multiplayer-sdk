@@ -46,9 +46,10 @@ def get_token(client: Client, player_token: str) -> TokenResponse:
     """
     return client.send(
         "POST",
-        client.player_url(REALTIME_TOKEN, player_token),
+        client.url(REALTIME_TOKEN),
         None,
         TokenResponse,
+        player_token=player_token,
     )
 
 
@@ -102,9 +103,23 @@ class Realtime:
                 None, self._wake_up_server
             )
 
-            self._ws = await websockets.connect(
-                f"{self._url}?token={self._token}&client=json"
-            )
+            # Prefer the header so the token stays out of URLs/logs.
+            # websockets renamed extra_headers -> additional_headers in v12.
+            try:
+                self._ws = await websockets.connect(
+                    f"{self._url}?client=json",
+                    additional_headers={"X-Realtime-Token": self._token},
+                )
+            except TypeError:
+                try:
+                    self._ws = await websockets.connect(
+                        f"{self._url}?client=json",
+                        extra_headers={"X-Realtime-Token": self._token},
+                    )
+                except TypeError:
+                    self._ws = await websockets.connect(
+                        f"{self._url}?client=json&token={self._token}"
+                    )
 
             self._listen_task = asyncio.ensure_future(self._listen())
             self._heartbeat_task = asyncio.ensure_future(self._heartbeat_loop())

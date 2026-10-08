@@ -22,8 +22,7 @@ namespace Michitai.Multiplayer.Rooms.Actions
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Task containing the action submission response.</returns>
         public static Task<ActionSubmitResponse> SubmitActionAsync<T>(Client client, string playerToken, SubmitAction<T> request, CancellationToken ct = default) where T : class, new()
-            => client.Send<ActionSubmitResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomActions,
-        $"&player_token={playerToken}"), new ActionSubmitRequest<T>(request.Target_players, request.Action_type, request.Request_data, request.Target_players_ids), ct);
+            => client.Send<ActionSubmitResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomActions), new ActionSubmitRequest<T>(request.Target_players, request.Action_type, request.Request_data, request.Target_players_ids), ct, playerToken: playerToken);
 
         /// <summary>
         /// Polls for completed actions that were targeted to the current player.
@@ -34,7 +33,7 @@ namespace Michitai.Multiplayer.Rooms.Actions
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Task containing the poll actions response with completed actions.</returns>
         public static Task<ActionPollResponse<T>> PollActionsAsync<T>(Client client, string playerToken, CancellationToken ct = default) where T : class, new()
-            => client.Send<ActionPollResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameRoomActionsPoll, $"&player_token={playerToken}"), null, ct);
+            => client.Send<ActionPollResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameRoomActionsPoll), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Retrieves pending actions that need to be completed by the host.
@@ -46,7 +45,7 @@ namespace Michitai.Multiplayer.Rooms.Actions
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Task containing the pending actions response.</returns>
         public static Task<ActionPendingResponse<T>> GetPendingActionsAsync<T>(Client client, string playerToken, CancellationToken ct = default) where T : class, new()
-            => client.Send<ActionPendingResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameRoomActionsPending, $"&player_token={playerToken}"), null, ct);
+            => client.Send<ActionPendingResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameRoomActionsPending), null, ct, playerToken: playerToken);
         
         /// <summary>
         /// Marks an action as complete with an optional response.
@@ -61,7 +60,6 @@ namespace Michitai.Multiplayer.Rooms.Actions
         /// <returns>Task containing the action completion response.</returns>
         public static Task<ActionCompleteResponse> CompleteActionAsync<T>(Client client, string actionId, string playerToken,
             ActionComplete<T> request, CancellationToken ct = default) where T : class, new()
-            => client.Send<ActionCompleteResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.GameRoomActionComplete, actionId),
-                $"&player_token={playerToken}"), new ActionCompleteRequest<T>(request.Status, request.Response_data), ct);
+            => client.Send<ActionCompleteResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.GameRoomActionComplete, actionId)), new ActionCompleteRequest<T>(request.Status, request.Response_data), ct, playerToken: playerToken);
     }
 }

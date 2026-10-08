@@ -10,6 +10,7 @@ from .models import (
     PlayerLogoutResponse,
     PlayerRegisterResponse,
     PlayerRenameResponse,
+    PlayerRotateResponse,
     PlayerUnbanResponse,
 )
 from .players import Players
@@ -27,5 +28,6 @@ __all__ = [
     "PlayerLogoutResponse",
     "PlayerRegisterResponse",
     "PlayerRenameResponse",
+    "PlayerRotateResponse",
     "PlayerUnbanResponse",
 ]

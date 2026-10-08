@@ -36,7 +36,7 @@ public class Rooms {
         String rulesJson = rules != null ? objectMapper.writeValueAsString(rules) : null;
         
         RoomCreateRequest request = new RoomCreateRequest(roomName, password, maxPlayers, hostSwitch, realtime, playerDataJson, rulesJson);
-        return client.post(client.url(Endpoints.GAME_ROOM_CREATE, "&player_token=" + playerToken), request, RoomCreateResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_ROOM_CREATE), request, RoomCreateResponse.class, playerToken, false);
     }
 
     /**
@@ -87,7 +87,7 @@ public class Rooms {
         RoomJoinRequest request = (password != null || playerDataJson != null) ? 
             new RoomJoinRequest(password, playerDataJson) : null;
         
-        return client.post(client.url(endpoint, "&player_token=" + playerToken), request, RoomJoinResponse.class);
+        return client.send("POST",client.url(endpoint), request, RoomJoinResponse.class, playerToken, false);
     }
 
     /**
@@ -99,7 +99,7 @@ public class Rooms {
      * @throws IOException if the request fails.
      */
     public static RoomLeaveResponse leaveRoom(Client client, String playerToken) throws IOException {
-        return client.post(client.url(Endpoints.GAME_ROOM_LEAVE, "&player_token=" + playerToken), null, RoomLeaveResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_ROOM_LEAVE), null, RoomLeaveResponse.class, playerToken, false);
     }
 
     /**
@@ -125,8 +125,8 @@ public class Rooms {
      * @throws IOException if the request fails.
      */
     public static <T> RoomPlayersResponse<T> getRoomPlayers(Client client, String playerToken, Class<T> dataType) throws IOException {
-        return client.get(client.url(Endpoints.GAME_ROOM_PLAYERS, "&player_token=" + playerToken),
-            client.parametricType(RoomPlayersResponse.class, dataType));
+        return client.send("GET",client.url(Endpoints.GAME_ROOM_PLAYERS), null,
+            client.parametricType(RoomPlayersResponse.class, dataType), playerToken, false);
     }
 
     /**
@@ -138,7 +138,7 @@ public class Rooms {
      * @throws IOException if the request fails.
      */
     public static HeartbeatResponse sendRoomHeartbeat(Client client, String playerToken) throws IOException {
-        return client.post(client.url(Endpoints.GAME_ROOM_HEARTBEAT, "&player_token=" + playerToken), null, HeartbeatResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_ROOM_HEARTBEAT), null, HeartbeatResponse.class, playerToken, false);
     }
 
     /**
@@ -164,8 +164,8 @@ public class Rooms {
      * @throws IOException if the request fails.
      */
     public static <T> CurrentRoomResponse<T> getCurrentRoom(Client client, String playerToken, Class<T> rulesType) throws IOException {
-        return client.get(client.url(Endpoints.GAME_ROOM_CURRENT, "&player_token=" + playerToken),
-            client.parametricType(CurrentRoomResponse.class, rulesType));
+        return client.send("GET",client.url(Endpoints.GAME_ROOM_CURRENT), null,
+            client.parametricType(CurrentRoomResponse.class, rulesType), playerToken, false);
     }
 
     /**
@@ -177,7 +177,7 @@ public class Rooms {
      * @throws IOException if the request fails.
      */
     public static SuccessResponse stopRoom(Client client, String playerToken) throws IOException {
-        return client.post(client.url(Endpoints.GAME_ROOM_STOP, "&player_token=" + playerToken), null, SuccessResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_ROOM_STOP), null, SuccessResponse.class, playerToken, false);
     }
 
     /**
@@ -192,7 +192,7 @@ public class Rooms {
      */
     public static RoomKickResponse kickPlayer(Client client, String playerToken, int playerId) throws IOException {
         RoomKickRequest request = new RoomKickRequest(playerId);
-        return client.post(client.url(Endpoints.GAME_ROOM_KICK, "&player_token=" + playerToken), request, RoomKickResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_ROOM_KICK), request, RoomKickResponse.class, playerToken, false);
     }
 
     /**
@@ -207,6 +207,6 @@ public class Rooms {
      */
     public static SuccessResponse updateRoomPassword(Client client, String playerToken, String password) throws IOException {
         RoomPasswordUpdateRequest request = new RoomPasswordUpdateRequest(password);
-        return client.post(client.url(Endpoints.GAME_ROOM_PASSWORD, "&player_token=" + playerToken), request, SuccessResponse.class);
+        return client.send("POST",client.url(Endpoints.GAME_ROOM_PASSWORD), request, SuccessResponse.class, playerToken, false);
     }
 }

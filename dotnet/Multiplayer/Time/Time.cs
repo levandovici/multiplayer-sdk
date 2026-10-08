@@ -28,6 +28,7 @@ namespace Michitai.Multiplayer.Time
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the adjusted time with offset information.</returns>
         public static Task<ServerTimeWithOffsetResponse> GetServerTimeWithOffset(Client client, int utcOffset, CancellationToken ct = default)
-            => client.Send<ServerTimeWithOffsetResponse>(HttpMethod.Get, client.Url(Endpoints.Time, $"&utc={utcOffset:+#;-#}"), null, ct);
+            // '+' must be percent-encoded — in a query string it decodes as a space
+            => client.Send<ServerTimeWithOffsetResponse>(HttpMethod.Get, client.Url(Endpoints.Time, $"&utc={Uri.EscapeDataString(utcOffset.ToString("+#;-#;0"))}"), null, ct);
     }
 }

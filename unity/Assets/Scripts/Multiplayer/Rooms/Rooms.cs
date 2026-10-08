@@ -31,8 +31,8 @@ namespace Michitai.Multiplayer.Rooms
         /// <returns>Response containing the created room ID.</returns>
         public static Task<RoomCreateResponse> CreateRoomAsync<TPlayerData, TRules>(Client client, string playerToken, string roomName, string password, int maxPlayers,
            bool hostSwitch = false, bool realtime = false, TPlayerData playerData = null, TRules rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
-           => client.Send<RoomCreateResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomCreate, $"&player_token={playerToken}"),
-               new RoomCreateRequest(roomName, password, maxPlayers, hostSwitch, realtime, JsonUtility.ToJson(playerData), JsonUtility.ToJson(rules)), ct);
+           => client.Send<RoomCreateResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomCreate),
+               new RoomCreateRequest(roomName, password, maxPlayers, hostSwitch, realtime, JsonUtility.ToJson(playerData), JsonUtility.ToJson(rules)), ct, playerToken: playerToken);
 
         /// <summary>
         /// Retrieves a list of available game rooms.
@@ -58,8 +58,8 @@ namespace Michitai.Multiplayer.Rooms
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the player joined the room.</returns>
         public static Task<RoomJoinResponse> JoinRoomAsync<T>(Client client, string playerToken, string roomId, string password = null, T playerData = null, CancellationToken ct = default) where T : class, new()
-            => client.Send<RoomJoinResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.GameRoomJoin, roomId), $"&player_token={playerToken}"),
-                (password != null || playerData != null) ? new RoomJoinRequest(password, JsonUtility.ToJson(playerData)) : null, ct);
+            => client.Send<RoomJoinResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.GameRoomJoin, roomId)),
+                (password != null || playerData != null) ? new RoomJoinRequest(password, JsonUtility.ToJson(playerData)) : null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Leaves the current game room.
@@ -69,7 +69,7 @@ namespace Michitai.Multiplayer.Rooms
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the player left the room.</returns>
         public static Task<RoomLeaveResponse> LeaveRoomAsync(Client client, string playerToken, CancellationToken ct = default)
-            => client.Send<RoomLeaveResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomLeave, $"&player_token={playerToken}"), null, ct);
+            => client.Send<RoomLeaveResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomLeave), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Gets the list of players in the current game room.
@@ -80,7 +80,7 @@ namespace Michitai.Multiplayer.Rooms
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the list of players in the room.</returns>
         public static Task<RoomPlayersResponse<T>> GetRoomPlayersAsync<T>(Client client, string playerToken, CancellationToken ct = default) where T : class, new()
-            => client.Send<RoomPlayersResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameRoomPlayers, $"&player_token={playerToken}"), null, ct);
+            => client.Send<RoomPlayersResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameRoomPlayers), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Sends a heartbeat to maintain the player's presence in the game room.
@@ -90,7 +90,7 @@ namespace Michitai.Multiplayer.Rooms
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the heartbeat was received.</returns>
         public static Task<HeartbeatResponse> SendRoomHeartbeatAsync(Client client, string playerToken, CancellationToken ct = default)
-            => client.Send<HeartbeatResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomHeartbeat, $"&player_token={playerToken}"), null, ct);
+            => client.Send<HeartbeatResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomHeartbeat), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Gets comprehensive information about the current game room including players and pending actions.
@@ -101,7 +101,7 @@ namespace Michitai.Multiplayer.Rooms
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing detailed room information.</returns>
         public static Task<CurrentRoomResponse<T>> GetCurrentRoomAsync<T>(Client client, string playerToken, CancellationToken ct = default) where T : class, new()
-            => client.Send<CurrentRoomResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameRoomCurrent, $"&player_token={playerToken}"), null, ct);
+            => client.Send<CurrentRoomResponse<T>>(HttpMethod.Get, client.Url(Endpoints.GameRoomCurrent), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Stops the current game room and removes all associated data (host only).
@@ -111,7 +111,7 @@ namespace Michitai.Multiplayer.Rooms
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Success response confirming the room was stopped.</returns>
         public static Task<SuccessResponse> StopRoomAsync(Client client, string playerToken, CancellationToken ct = default)
-            => client.Send<SuccessResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomStop, $"&player_token={playerToken}"), null, ct);
+            => client.Send<SuccessResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomStop), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Kicks a player from the game room (host only).
@@ -123,7 +123,7 @@ namespace Michitai.Multiplayer.Rooms
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the player was kicked.</returns>
         public static Task<RoomKickResponse> KickPlayerAsync(Client client, string playerToken, int playerId, CancellationToken ct = default)
-            => client.Send<RoomKickResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomKick, $"&player_token={playerToken}"), new RoomKickRequest { player_id = playerId }, ct);
+            => client.Send<RoomKickResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomKick), new RoomKickRequest { player_id = playerId }, ct, playerToken: playerToken);
 
         /// <summary>
         /// Updates the password for the game room (host only).
@@ -135,6 +135,6 @@ namespace Michitai.Multiplayer.Rooms
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Success response confirming the password was updated.</returns>
         public static Task<SuccessResponse> UpdateRoomPasswordAsync(Client client, string playerToken, string password = null, CancellationToken ct = default)
-            => client.Send<SuccessResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomPassword, $"&player_token={playerToken}"), new RoomPasswordUpdateRequest(password), ct);
+            => client.Send<SuccessResponse>(HttpMethod.Post, client.Url(Endpoints.GameRoomPassword), new RoomPasswordUpdateRequest(password), ct, playerToken: playerToken);
     }
 }

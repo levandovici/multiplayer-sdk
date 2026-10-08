@@ -19,7 +19,7 @@ public class Games {
      * @throws IOException if the request fails.
      */
     public static PlayerListResponse getAllPlayers(Client client) throws IOException {
-        return client.get(client.privateUrl(Endpoints.GAME_PLAYERS_LIST), PlayerListResponse.class);
+        return client.send("GET",client.url(Endpoints.GAME_PLAYERS_LIST), null, PlayerListResponse.class, null, true);
     }
 
     /**
@@ -57,6 +57,6 @@ public class Games {
      * @throws IOException if the request fails.
      */
     public static SuccessResponse updateGameData(Client client, Object data) throws IOException {
-        return client.put(client.privateUrl(Endpoints.GAME_DATA_GAME_UPDATE), data, SuccessResponse.class);
+        return client.send("PUT",client.url(Endpoints.GAME_DATA_GAME_UPDATE), data, SuccessResponse.class, null, true);
     }
 }

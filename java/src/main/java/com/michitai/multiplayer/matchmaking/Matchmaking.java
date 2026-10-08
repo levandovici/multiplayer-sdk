@@ -72,7 +72,7 @@ public class Matchmaking {
             matchmakingName, maxPlayers, strictFull, joinByRequests, hostSwitch, canLeaveRoom, 
             realtimeRoom, password, playerDataJson, rulesJson);
         
-        return client.post(client.url(Endpoints.MATCHMAKING_CREATE, "&player_token=" + playerToken), request, MatchmakingCreateResponse.class);
+        return client.send("POST",client.url(Endpoints.MATCHMAKING_CREATE), request, MatchmakingCreateResponse.class, playerToken, false);
     }
 
     /**
@@ -98,8 +98,8 @@ public class Matchmaking {
      * @throws IOException if the request fails.
      */
     public static <T> MatchmakingCurrentResponse<T> getCurrentMatchmakingStatus(Client client, String playerToken, Class<T> rulesType) throws IOException {
-        return client.get(client.url(Endpoints.MATCHMAKING_CURRENT, "&player_token=" + playerToken),
-            client.parametricType(MatchmakingCurrentResponse.class, rulesType));
+        return client.send("GET",client.url(Endpoints.MATCHMAKING_CURRENT), null,
+            client.parametricType(MatchmakingCurrentResponse.class, rulesType), playerToken, false);
     }
 
     /**
@@ -114,8 +114,27 @@ public class Matchmaking {
      * @throws IOException if the request fails.
      */
     public static MatchmakingDirectJoinResponse joinMatchmakingDirectly(Client client, String playerToken, String matchmakingId, Object playerData) throws IOException {
+        return joinMatchmakingDirectly(client, playerToken, matchmakingId, null, playerData);
+    }
+
+    /**
+     * Joins a matchmaking lobby directly (without approval).
+     * Only works if the lobby doesn't require host approval.
+     *
+     * @param client The API client instance.
+     * @param playerToken The player's authentication token.
+     * @param matchmakingId The ID of the matchmaking lobby to join.
+     * @param password Optional password if the lobby is password-protected.
+     * @param playerData Optional player data to include when joining.
+     * @return Response confirming the player joined the lobby.
+     * @throws IOException if the request fails.
+     */
+    public static MatchmakingDirectJoinResponse joinMatchmakingDirectly(Client client, String playerToken, String matchmakingId, String password, Object playerData) throws IOException {
+        String playerDataJson = playerData != null ? objectMapper.writeValueAsString(playerData) : null;
         String endpoint = String.format(Endpoints.MATCHMAKING_JOIN, matchmakingId);
-        return client.post(client.url(endpoint, "&player_token=" + playerToken), playerData, MatchmakingDirectJoinResponse.class);
+        MatchmakingJoinRequest request = (password != null || playerDataJson != null) ?
+            new MatchmakingJoinRequest(password, playerDataJson) : null;
+        return client.send("POST",client.url(endpoint), request, MatchmakingDirectJoinResponse.class, playerToken, false);
     }
 
     /**
@@ -127,7 +146,7 @@ public class Matchmaking {
      * @throws IOException if the request fails.
      */
     public static MatchmakingLeaveResponse leaveMatchmaking(Client client, String playerToken) throws IOException {
-        return client.post(client.url(Endpoints.MATCHMAKING_LEAVE, "&player_token=" + playerToken), null, MatchmakingLeaveResponse.class);
+        return client.send("POST",client.url(Endpoints.MATCHMAKING_LEAVE), null, MatchmakingLeaveResponse.class, playerToken, false);
     }
 
     /**
@@ -153,8 +172,8 @@ public class Matchmaking {
      * @throws IOException if the request fails.
      */
     public static <T> MatchmakingPlayersResponse<T> getMatchmakingPlayers(Client client, String playerToken, Class<T> dataType) throws IOException {
-        return client.get(client.url(Endpoints.MATCHMAKING_PLAYERS, "&player_token=" + playerToken),
-            client.parametricType(MatchmakingPlayersResponse.class, dataType));
+        return client.send("GET",client.url(Endpoints.MATCHMAKING_PLAYERS), null,
+            client.parametricType(MatchmakingPlayersResponse.class, dataType), playerToken, false);
     }
 
     /**
@@ -166,7 +185,7 @@ public class Matchmaking {
      * @throws IOException if the request fails.
      */
     public static MatchmakingHeartbeatResponse sendMatchmakingHeartbeat(Client client, String playerToken) throws IOException {
-        return client.post(client.url(Endpoints.MATCHMAKING_HEARTBEAT, "&player_token=" + playerToken), null, MatchmakingHeartbeatResponse.class);
+        return client.send("POST",client.url(Endpoints.MATCHMAKING_HEARTBEAT), null, MatchmakingHeartbeatResponse.class, playerToken, false);
     }
 
     /**
@@ -178,7 +197,7 @@ public class Matchmaking {
      * @throws IOException if the request fails.
      */
     public static MatchmakingRemoveResponse removeMatchmakingLobby(Client client, String playerToken) throws IOException {
-        return client.post(client.url(Endpoints.MATCHMAKING_REMOVE, "&player_token=" + playerToken), null, MatchmakingRemoveResponse.class);
+        return client.send("POST",client.url(Endpoints.MATCHMAKING_REMOVE), null, MatchmakingRemoveResponse.class, playerToken, false);
     }
 
     /**
@@ -190,7 +209,7 @@ public class Matchmaking {
      * @throws IOException if the request fails.
      */
     public static MatchmakingStartResponse startGameFromMatchmaking(Client client, String playerToken) throws IOException {
-        return client.post(client.url(Endpoints.MATCHMAKING_START, "&player_token=" + playerToken), null, MatchmakingStartResponse.class);
+        return client.send("POST",client.url(Endpoints.MATCHMAKING_START), null, MatchmakingStartResponse.class, playerToken, false);
     }
 
     /**
@@ -203,7 +222,7 @@ public class Matchmaking {
      * @throws IOException if the request fails.
      */
     public static SuccessResponse stopMatchmaking(Client client, String playerToken) throws IOException {
-        return client.post(client.url(Endpoints.MATCHMAKING_STOP, "&player_token=" + playerToken), null, SuccessResponse.class);
+        return client.send("POST",client.url(Endpoints.MATCHMAKING_STOP), null, SuccessResponse.class, playerToken, false);
     }
 
     /**
@@ -218,7 +237,7 @@ public class Matchmaking {
      */
     public static MatchmakingKickResponse kickPlayer(Client client, String playerToken, int playerId) throws IOException {
         MatchmakingKickRequest request = new MatchmakingKickRequest(playerId);
-        return client.post(client.url(Endpoints.MATCHMAKING_KICK, "&player_token=" + playerToken), request, MatchmakingKickResponse.class);
+        return client.send("POST",client.url(Endpoints.MATCHMAKING_KICK), request, MatchmakingKickResponse.class, playerToken, false);
     }
 
     /**
@@ -233,6 +252,6 @@ public class Matchmaking {
      */
     public static SuccessResponse updateMatchmakingPassword(Client client, String playerToken, String password) throws IOException {
         MatchmakingPasswordUpdateRequest request = new MatchmakingPasswordUpdateRequest(password);
-        return client.post(client.url(Endpoints.MATCHMAKING_PASSWORD, "&player_token=" + playerToken), request, SuccessResponse.class);
+        return client.send("POST",client.url(Endpoints.MATCHMAKING_PASSWORD), request, SuccessResponse.class, playerToken, false);
     }
 }

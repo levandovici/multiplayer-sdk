@@ -174,8 +174,8 @@ public:
                                                                hostSwitch, canLeaveRoom, realtimeRoom,
                                                                password, playerData, rules);
         return client.post<MatchmakingCreateResponse>(
-            client.url(Endpoints::MatchmakingCreate, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(Endpoints::MatchmakingCreate),
+            request.toJson(), playerToken
         );
     }
     
@@ -185,30 +185,30 @@ public:
         Client& client,
         const std::string& playerToken,
         const std::string& matchmakingId,
-        const std::optional<T>& playerData = std::nullopt) {
+        const std::optional<T>& playerData = std::nullopt,
+        const std::optional<std::string>& password = std::nullopt) {
         std::string endpoint = std::string(Endpoints::MatchmakingRequest);
         size_t pos = endpoint.find("{0}");
         if (pos != std::string::npos) {
             endpoint.replace(pos, 3, matchmakingId);
         }
-        
+
+        // Backend expects { password, player_data } — never a bare object.
+        nlohmann::json body = nlohmann::json::object();
         if (playerData.has_value()) {
-            nlohmann::json jsonData;
             if constexpr (std::is_same_v<T, nlohmann::json>) {
-                jsonData = playerData.value();
+                body["player_data"] = playerData.value();
             } else {
-                jsonData = nlohmann::json(playerData.value());
+                body["player_data"] = nlohmann::json(playerData.value());
             }
-            return client.post<MatchmakingJoinRequestResponse>(
-                client.url(endpoint, "&player_token=" + playerToken),
-                jsonData
-            );
-        } else {
-            return client.post<MatchmakingJoinRequestResponse>(
-                client.url(endpoint, "&player_token=" + playerToken),
-                nlohmann::json{}
-            );
         }
+        if (password.has_value()) {
+            body["password"] = password.value();
+        }
+        return client.post<MatchmakingJoinRequestResponse>(
+            client.url(endpoint),
+            body, playerToken
+        );
     }
     
     /// Responds to a pending join request (approve or reject).
@@ -224,8 +224,8 @@ public:
             endpoint.replace(pos, 3, requestId);
         }
         return client.post<MatchmakingPermissionResponse>(
-            client.url(endpoint, "&player_token=" + playerToken),
-            request.toJson()
+            client.url(endpoint),
+            request.toJson(), playerToken
         );
     }
     
@@ -240,7 +240,7 @@ public:
             endpoint.replace(pos, 3, requestId);
         }
         return client.get<MatchmakingRequestStatusResponse>(
-            client.url(endpoint, "&player_token=" + playerToken)
+            client.url(endpoint), playerToken
         );
     }
 };

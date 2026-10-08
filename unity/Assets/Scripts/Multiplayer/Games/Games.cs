@@ -21,7 +21,7 @@ namespace Michitai.Multiplayer.Games
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the list of all players with their basic information.</returns>
         public static Task<PlayerListResponse> GetAllPlayers(Client client, CancellationToken ct = default)
-            => client.Send<PlayerListResponse>(HttpMethod.Get, client.PrivateUrl(Endpoints.GamePlayersList), null, ct);
+            => client.Send<PlayerListResponse>(HttpMethod.Get, client.Url(Endpoints.GamePlayersList), null, ct, includePrivateToken: true);
 
         /// <summary>
         /// Retrieves global game data with typed deserialization support.
@@ -43,6 +43,6 @@ namespace Michitai.Multiplayer.Games
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Success response confirming the update.</returns>
         public static Task<SuccessResponse> UpdateGameData<T>(Client client, T data, CancellationToken ct = default) where T : class, new()
-            => client.Send<SuccessResponse>(HttpMethod.Put, client.PrivateUrl(Endpoints.GameDataGameUpdate), data, ct);
+            => client.Send<SuccessResponse>(HttpMethod.Put, client.Url(Endpoints.GameDataGameUpdate), data, ct, includePrivateToken: true);
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.michitai.multiplayer.Client;
 import com.michitai.multiplayer.matchmaking.MatchmakingCreateRequest;
 import com.michitai.multiplayer.matchmaking.MatchmakingCreateResponse;
+import com.michitai.multiplayer.matchmaking.MatchmakingJoinRequest;
 
 import java.io.IOException;
 
@@ -42,7 +43,7 @@ public class Requests {
             matchmakingName, maxPlayers, strictFull, joinByRequests, hostSwitch, canLeaveRoom, 
             realtimeRoom, password, playerDataJson, rulesJson);
         
-        return client.post(client.url(Endpoints.MATCHMAKING_CREATE, "&player_token=" + playerToken), request, MatchmakingCreateResponse.class);
+        return client.send("POST",client.url(Endpoints.MATCHMAKING_CREATE), request, MatchmakingCreateResponse.class, playerToken, false);
     }
 
     /**
@@ -56,8 +57,26 @@ public class Requests {
      * @throws IOException if the request fails.
      */
     public static MatchmakingJoinRequestResponse requestToJoinMatchmaking(Client client, String playerToken, String matchmakingId, Object playerData) throws IOException {
+        return requestToJoinMatchmaking(client, playerToken, matchmakingId, null, playerData);
+    }
+
+    /**
+     * Requests to join an existing matchmaking lobby.
+     *
+     * @param client The API client instance.
+     * @param playerToken The player's authentication token.
+     * @param matchmakingId The ID of the matchmaking lobby to join.
+     * @param password Optional password if the lobby is password-protected.
+     * @param playerData Optional player data to include with the request.
+     * @return Response containing the request ID.
+     * @throws IOException if the request fails.
+     */
+    public static MatchmakingJoinRequestResponse requestToJoinMatchmaking(Client client, String playerToken, String matchmakingId, String password, Object playerData) throws IOException {
+        String playerDataJson = playerData != null ? objectMapper.writeValueAsString(playerData) : null;
         String endpoint = String.format(Endpoints.MATCHMAKING_REQUEST, matchmakingId);
-        return client.post(client.url(endpoint, "&player_token=" + playerToken), playerData, MatchmakingJoinRequestResponse.class);
+        MatchmakingJoinRequest request = (password != null || playerDataJson != null) ?
+            new MatchmakingJoinRequest(password, playerDataJson) : null;
+        return client.send("POST",client.url(endpoint), request, MatchmakingJoinRequestResponse.class, playerToken, false);
     }
 
     /**
@@ -74,7 +93,7 @@ public class Requests {
     public static MatchmakingPermissionResponse respondToJoinRequest(Client client, String playerToken, String requestId, EMatchmakingRequestAction action) throws IOException {
         MatchmakingPermissionRequest request = new MatchmakingPermissionRequest(action.name().toLowerCase());
         String endpoint = String.format(Endpoints.MATCHMAKING_RESPONSE, requestId);
-        return client.post(client.url(endpoint, "&player_token=" + playerToken), request, MatchmakingPermissionResponse.class);
+        return client.send("POST",client.url(endpoint), request, MatchmakingPermissionResponse.class, playerToken, false);
     }
 
     /**
@@ -88,6 +107,6 @@ public class Requests {
      */
     public static MatchmakingRequestStatusResponse checkJoinRequestStatus(Client client, String playerToken, String requestId) throws IOException {
         String endpoint = String.format(Endpoints.MATCHMAKING_REQUEST_STATUS, requestId);
-        return client.get(client.url(endpoint, "&player_token=" + playerToken), MatchmakingRequestStatusResponse.class);
+        return client.send("GET",client.url(endpoint), null, MatchmakingRequestStatusResponse.class, playerToken, false);
     }
 }
