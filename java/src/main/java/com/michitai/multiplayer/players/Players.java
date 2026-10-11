@@ -30,6 +30,42 @@ public class Players {
     }
 
     /**
+     * Registers or logs in a player via a Steam auth ticket. Requires the
+     * project to enable Steam accounts in the API cabinet. The ticket comes
+     * from ISteamUser::GetAuthTicketForWebApi, hex-encoded, and is
+     * single-use — request a fresh one for every login. The same call
+     * creates the account on first use and logs the player in afterwards,
+     * so the account survives reinstalls via the SteamID.
+     *
+     * @param client The API client instance.
+     * @param steamTicket Hex-encoded ticket from GetAuthTicketForWebApi.
+     * @param steamIdentity Identity string passed to GetAuthTicketForWebApi (pass null if none was used).
+     * @param name Optional display name; the server generates one from the SteamID when null.
+     * @param playerData Optional initial player data.
+     * @return Response containing the player ID, private key token and steam ID.
+     * @throws IOException if the request fails.
+     */
+    public static PlayerRegisterResponse registerPlayerWithSteam(Client client, String steamTicket,
+            String steamIdentity, String name, Object playerData) throws IOException {
+        String dataJson = playerData != null ? objectMapper.writeValueAsString(playerData) : null;
+        PlayerRegisterRequest request = new PlayerRegisterRequest(name, dataJson, steamTicket, steamIdentity);
+        return client.post(client.url(Endpoints.GAME_PLAYERS_REGISTER), request, PlayerRegisterResponse.class);
+    }
+
+    /**
+     * Registers or logs in a player via a Steam auth ticket with defaults.
+     * See {@link #registerPlayerWithSteam(Client, String, String, String, Object)}.
+     *
+     * @param client The API client instance.
+     * @param steamTicket Hex-encoded ticket from GetAuthTicketForWebApi.
+     * @return Response containing the player ID, private key token and steam ID.
+     * @throws IOException if the request fails.
+     */
+    public static PlayerRegisterResponse registerPlayerWithSteam(Client client, String steamTicket) throws IOException {
+        return registerPlayerWithSteam(client, steamTicket, null, null, null);
+    }
+
+    /**
      * Authenticates a player using their private token and retrieves their data.
      *
      * @param client The API client instance.

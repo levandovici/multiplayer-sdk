@@ -58,6 +58,41 @@ class Players:
             PlayerRegisterResponse,
         )
 
+    def register_steam(
+        self,
+        steam_ticket: str,
+        steam_identity: Optional[str] = None,
+        name: Optional[str] = None,
+        player_data: Any = None,
+    ) -> PlayerRegisterResponse:
+        """Register or log in a player via a Steam auth ticket.
+
+        Requires the project to enable Steam accounts in the API cabinet.
+        The ticket comes from ``ISteamUser::GetAuthTicketForWebApi``,
+        hex-encoded, and is single-use — request a fresh one for every login.
+        The same call creates the account on first use and logs the player in
+        afterwards, so the account survives reinstalls via the SteamID.
+
+        :param steam_ticket: Hex-encoded ticket from GetAuthTicketForWebApi.
+        :param steam_identity: Identity string passed to GetAuthTicketForWebApi
+            (omit if none was used).
+        :param name: Optional display name; the server generates one from the
+            SteamID when omitted.
+        :param player_data: Optional initial player data (dict or dataclass).
+        :returns: Response with ``player_id``, ``private_key`` and ``steam_id``.
+        """
+        return self._client.send(
+            "POST",
+            self._client.url(GAME_PLAYERS_REGISTER),
+            {
+                "steam_ticket": steam_ticket,
+                "steam_identity": steam_identity,
+                "player_name": name,
+                "player_data": player_data,
+            },
+            PlayerRegisterResponse,
+        )
+
     def authenticate(
         self,
         player_token: str,

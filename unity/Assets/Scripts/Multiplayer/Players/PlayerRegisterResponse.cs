@@ -34,5 +34,21 @@ namespace Michitai.Multiplayer.Players
         /// The ID of the game the player was registered to.
         /// </summary>
         public int game_id;
+
+        /// <summary>
+        /// How the account was authenticated: "steam" or "guest".
+        /// </summary>
+        public string auth;
+
+        /// <summary>
+        /// Whether this call created a new account ("created") or logged into
+        /// an existing one ("existing").
+        /// </summary>
+        public string account;
+
+        /// <summary>
+        /// The verified SteamID64 when auth is "steam", otherwise null.
+        /// </summary>
+        public string steam_id;
     }
 }

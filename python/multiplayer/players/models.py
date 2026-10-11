@@ -34,6 +34,7 @@ class PlayerInfo:
     last_logout: Optional[datetime] = None
     last_heartbeat: Optional[datetime] = None
     created_at: Optional[datetime] = None
+    steam_id: Optional[str] = None
 
 
 @dataclass
@@ -46,6 +47,9 @@ class PlayerRegisterResponse(ApiResponse):
     private_key: str = ""
     player_name: str = ""
     game_id: int = 0
+    auth: str = ""
+    account: str = ""
+    steam_id: Optional[str] = None
 
 
 @dataclass

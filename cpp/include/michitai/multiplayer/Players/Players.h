@@ -40,6 +40,7 @@ struct PlayerInfo {
     std::string lastLogout;
     std::string createdAt;
     std::string updatedAt;
+    std::string steamId;
 
     static PlayerInfo fromJson(const nlohmann::json& j) {
         PlayerInfo info;
@@ -66,6 +67,9 @@ struct PlayerInfo {
         if (j.contains("updated_at") && !j["updated_at"].is_null()) {
             info.updatedAt = j["updated_at"].get<std::string>();
         }
+        if (j.contains("steam_id") && !j["steam_id"].is_null()) {
+            info.steamId = j["steam_id"].get<std::string>();
+        }
 
         return info;
     }
@@ -77,6 +81,9 @@ struct PlayerRegisterResponse : public ApiResponse {
     std::string privateKey;
     std::string playerName;
     int gameId = 0;
+    std::string auth;      // "steam" or "guest"
+    std::string account;   // "created" or "existing"
+    std::string steamId;   // SteamID64 when auth == "steam"
 
     static PlayerRegisterResponse fromJson(const nlohmann::json& j) {
         PlayerRegisterResponse response;
@@ -86,6 +93,11 @@ struct PlayerRegisterResponse : public ApiResponse {
         response.privateKey = j.value("private_key", "");
         response.playerName = j.value("player_name", "");
         response.gameId = j.value("game_id", 0);
+        response.auth = j.value("auth", "");
+        response.account = j.value("account", "");
+        if (j.contains("steam_id") && !j["steam_id"].is_null()) {
+            response.steamId = j["steam_id"].get<std::string>();
+        }
         return response;
     }
 };
@@ -212,9 +224,14 @@ template<typename T = nlohmann::json>
 struct PlayerRegisterRequest {
     std::string name;
     std::optional<T> playerData;
+    std::optional<std::string> steamTicket;
+    std::optional<std::string> steamIdentity;
 
-    PlayerRegisterRequest(const std::string& name, const std::optional<T>& data = std::nullopt)
-        : name(name), playerData(data) {}
+    PlayerRegisterRequest(const std::string& name,
+                          const std::optional<T>& data = std::nullopt,
+                          const std::optional<std::string>& ticket = std::nullopt,
+                          const std::optional<std::string>& identity = std::nullopt)
+        : name(name), playerData(data), steamTicket(ticket), steamIdentity(identity) {}
 
     nlohmann::json toJson() const {
         nlohmann::json j;
@@ -225,6 +242,12 @@ struct PlayerRegisterRequest {
             } else {
                 j["player_data"] = nlohmann::json(playerData.value());
             }
+        }
+        if (steamTicket.has_value()) {
+            j["steam_ticket"] = steamTicket.value();
+        }
+        if (steamIdentity.has_value()) {
+            j["steam_identity"] = steamIdentity.value();
         }
         return j;
     }
@@ -284,10 +307,35 @@ public:
     /// @param playerData Optional initial player data
     /// @return Response containing the player ID and private key token
     template<typename T = nlohmann::json>
-    static PlayerRegisterResponse registerPlayer(Client& client, 
+    static PlayerRegisterResponse registerPlayer(Client& client,
                                                    const std::string& name,
                                                    const std::optional<T>& playerData = std::nullopt) {
         PlayerRegisterRequest<T> request(name, playerData);
+        return client.post<PlayerRegisterResponse>(
+            client.url(Endpoints::GamePlayersRegister),
+            request.toJson()
+        );
+    }
+
+    /// Registers or logs in a player via a Steam auth ticket. Requires the
+    /// project to enable Steam accounts in the API cabinet. The ticket comes
+    /// from ISteamUser::GetAuthTicketForWebApi, hex-encoded, and is
+    /// single-use — request a fresh one for every login. The same call
+    /// creates the account on first use and logs the player in afterwards,
+    /// so the account survives reinstalls via the SteamID.
+    /// @param client The API client instance
+    /// @param steamTicket Hex-encoded ticket from GetAuthTicketForWebApi
+    /// @param steamIdentity Identity string passed to GetAuthTicketForWebApi (omit if none was used)
+    /// @param name Optional display name; the server generates one from the SteamID when omitted
+    /// @param playerData Optional initial player data
+    /// @return Response containing the player ID, private key token and steamId
+    template<typename T = nlohmann::json>
+    static PlayerRegisterResponse registerPlayerWithSteam(Client& client,
+                                                          const std::string& steamTicket,
+                                                          const std::optional<std::string>& steamIdentity = std::nullopt,
+                                                          const std::optional<std::string>& name = std::nullopt,
+                                                          const std::optional<T>& playerData = std::nullopt) {
+        PlayerRegisterRequest<T> request(name.value_or(""), playerData, steamTicket, steamIdentity);
         return client.post<PlayerRegisterResponse>(
             client.url(Endpoints::GamePlayersRegister),
             request.toJson()

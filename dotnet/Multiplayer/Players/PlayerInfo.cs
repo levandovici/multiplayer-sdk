@@ -54,6 +54,11 @@ namespace Michitai.Multiplayer.Players
         public DateTimeOffset Updated_at { get; set; }
 
         /// <summary>
+        /// The verified SteamID64 for Steam-authenticated accounts, otherwise null.
+        /// </summary>
+        public string? Steam_id { get; set; }
+
+        /// <summary>
         /// The deserialized player data object.
         /// </summary>
         [JsonIgnore]

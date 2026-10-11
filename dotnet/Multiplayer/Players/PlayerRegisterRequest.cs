@@ -19,17 +19,25 @@ namespace Michitai.Multiplayer.Players
         internal required string Player_name { get; set; }
         [JsonInclude]
         private T? Player_data { get; set; }
+        [JsonInclude]
+        internal string? Steam_ticket { get; set; }
+        [JsonInclude]
+        internal string? Steam_identity { get; set; }
 
         /// <summary>
         /// Initializes a new PlayerRegisterRequest.
         /// </summary>
         /// <param name="playerName">The player's display name.</param>
         /// <param name="playerData">Optional player data to include.</param>
+        /// <param name="steamTicket">Optional hex-encoded Steam auth ticket.</param>
+        /// <param name="steamIdentity">Optional Steam ticket identity string.</param>
         [SetsRequiredMembers]
-        public PlayerRegisterRequest(string playerName, T? playerData = null)
+        public PlayerRegisterRequest(string playerName, T? playerData = null, string? steamTicket = null, string? steamIdentity = null)
         {
             this.Player_name = playerName;
             this.Player_data = playerData;
+            this.Steam_ticket = steamTicket;
+            this.Steam_identity = steamIdentity;
         }
     }
 }

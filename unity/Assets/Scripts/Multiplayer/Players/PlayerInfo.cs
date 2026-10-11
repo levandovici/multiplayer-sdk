@@ -59,6 +59,11 @@ namespace Michitai.Multiplayer.Players
         public string created_at;
 
         /// <summary>
+        /// The verified SteamID64 for Steam-authenticated accounts, otherwise null.
+        /// </summary>
+        public string steam_id;
+
+        /// <summary>
         /// The deserialized player data object.
         /// </summary>
         public T PlayerData

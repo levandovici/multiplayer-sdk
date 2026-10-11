@@ -29,6 +29,25 @@ namespace Michitai.Multiplayer.Players
             => client.Send<PlayerRegisterResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData)), ct);
 
         /// <summary>
+        /// Registers or logs in a player via a Steam auth ticket. Requires the
+        /// project to enable Steam accounts in the API cabinet. The ticket comes
+        /// from ISteamUser::GetAuthTicketForWebApi, hex-encoded, and is
+        /// single-use — request a fresh one for every login. The same call
+        /// creates the account on first use and logs the player in afterwards,
+        /// so the account survives reinstalls via the SteamID.
+        /// </summary>
+        /// <typeparam name="T">The type of optional player data to include.</typeparam>
+        /// <param name="client">The API client instance.</param>
+        /// <param name="steamTicket">Hex-encoded ticket from GetAuthTicketForWebApi.</param>
+        /// <param name="steamIdentity">Identity string passed to GetAuthTicketForWebApi (omit if none was used).</param>
+        /// <param name="name">Optional display name; the server generates one from the SteamID when omitted.</param>
+        /// <param name="playerData">Optional initial player data.</param>
+        /// <param name="ct">Cancellation token for the async operation.</param>
+        /// <returns>Response containing the player ID, private key token and steam_id.</returns>
+        public static Task<PlayerRegisterResponse> RegisterPlayerWithSteam<T>(Client client, string steamTicket, string steamIdentity = null, string name = null, T playerData = null, CancellationToken ct = default) where T : class, new()
+            => client.Send<PlayerRegisterResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData), steamTicket, steamIdentity), ct);
+
+        /// <summary>
         /// Authenticates a player using their private token and retrieves their data.
         /// </summary>
         /// <typeparam name="T">The type to deserialize player data into.</typeparam>

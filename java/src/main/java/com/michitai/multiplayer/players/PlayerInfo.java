@@ -41,6 +41,9 @@ public class PlayerInfo<T> {
     @JsonProperty("updated_at")
     private String updatedAt;
 
+    @JsonProperty("steam_id")
+    private String steamId;
+
     public int getId() {
         return id;
     }
@@ -127,5 +130,13 @@ public class PlayerInfo<T> {
 
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getSteamId() {
+        return steamId;
+    }
+
+    public void setSteamId(String steamId) {
+        this.steamId = steamId;
     }
 }

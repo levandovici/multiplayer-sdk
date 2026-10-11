@@ -20,6 +20,15 @@ public class PlayerRegisterResponse extends ApiResponse {
     @JsonProperty("game_id")
     private int gameId;
 
+    @JsonProperty("auth")
+    private String auth;
+
+    @JsonProperty("account")
+    private String account;
+
+    @JsonProperty("steam_id")
+    private String steamId;
+
     public int getPlayerId() {
         return playerId;
     }
@@ -50,5 +59,29 @@ public class PlayerRegisterResponse extends ApiResponse {
 
     public void setGameId(int gameId) {
         this.gameId = gameId;
+    }
+
+    public String getAuth() {
+        return auth;
+    }
+
+    public void setAuth(String auth) {
+        this.auth = auth;
+    }
+
+    public String getAccount() {
+        return account;
+    }
+
+    public void setAccount(String account) {
+        this.account = account;
+    }
+
+    public String getSteamId() {
+        return steamId;
+    }
+
+    public void setSteamId(String steamId) {
+        this.steamId = steamId;
     }
 }
