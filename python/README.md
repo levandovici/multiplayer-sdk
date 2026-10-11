@@ -72,6 +72,9 @@ await rt.send(RoomTargetPlayer.ALL, "move", {"x": 1, "y": 2})
 
 Copyright (c) 2026 Nichita Levandovici. All rights reserved.
 
-Proprietary software. Use, modification, and redistribution require prior
-written permission, except as required by applicable law. See `../LICENSE`.
-Third-party components remain subject to their own licenses.
+Licensed under the [Michitai Service SDK License](https://api.michitai.com/SDK-LICENSE).
+You may integrate, modify and bundle this SDK in applications that use the
+Michitai service, including commercial games. Standalone SDK resale, relicensing
+and harmful modifications are prohibited. Service subscriptions and usage limits
+are separate from SDK permissions. Third-party components retain their own
+licenses, and valid licenses for earlier releases are not revoked.

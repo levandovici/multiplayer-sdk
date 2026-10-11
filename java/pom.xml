@@ -11,9 +11,9 @@
 
   <licenses>
     <license>
-      <name>Proprietary - Copyright (c) 2026 Nichita Levandovici. All rights reserved.</name>
-      <url>https://api.michitai.com/LICENSE</url>
-      <comments>Use, modification, and redistribution require prior written permission, except as required by applicable law. Third-party components retain their own licenses.</comments>
+      <name>Michitai Service SDK License</name>
+      <url>https://api.michitai.com/SDK-LICENSE</url>
+      <comments>Service-only integration, modification and bundled distribution are permitted, including in commercial games. Standalone SDK resale, relicensing and harmful modifications are prohibited. Third-party components retain their own licenses.</comments>
     </license>
   </licenses>
 

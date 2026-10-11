@@ -1,18 +1,92 @@
-MIT No Attribution
+Michitai Service SDK License
+Version 1.0 — October 11, 2026
 
-Copyright 2026 Nichita Levandovici
+Copyright (c) 2026 Nichita Levandovici. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so.
+1. Scope
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+This license applies to the original official Michitai Multiplayer API client
+SDKs, their examples and accompanying SDK documentation (the "SDK"). The
+"Service" means the hosted Multiplayer API operated by Michitai, including
+managed regional deployments operated by us. The backend server software is
+not licensed under this license. This is a proprietary, service-only license,
+not an open-source license.
+
+2. Permitted use
+
+Subject to this license, you receive a non-exclusive, worldwide, royalty-free
+license to use, copy and modify the SDK solely to develop, test, maintain and
+operate your applications that integrate with the Service. Permitted changes
+include compatibility work, debugging and authorized security fixes.
+
+You may distribute the SDK, including permitted modifications, in source or
+compiled form only as an integrated component of those applications. You may
+sell your applications and games; this does not permit selling the SDK itself.
+Recipients may use the bundled SDK only as part of the application to access
+the Service. Contractors may receive copies solely to perform permitted work
+on your behalf and must comply with this license. Retain this license and
+copyright notices with distributed SDK copies. Clearly identify SDK changes
+without implying that Michitai authored or endorsed them.
+
+No separate written permission or SDK royalty is required for these permitted
+uses. Access to the Service remains subject to its Terms of Service, account
+authorization, subscription fees and usage limits. This license does not grant
+free, unlimited or perpetual access to the Service.
+
+3. Restrictions
+
+Except with prior written permission from Nichita Levandovici or to the extent
+required by applicable law, you may not:
+
+- Sell, resell, rent, lease, sublicense or relicense the SDK itself, or publish
+  or distribute it as a standalone library, toolkit or competing SDK product.
+- Use or adapt the SDK to provide a competing backend service or to access an
+  unauthorized replacement of the Service.
+- Modify or use the SDK to introduce malicious code, steal credentials or data,
+  obtain unauthorized access, bypass authentication, authorization, billing or
+  usage controls, or intentionally harm users, applications or infrastructure.
+- Remove copyright or license notices or misrepresent the SDK's origin.
+
+Ordinary integration changes and authorized security testing and remediation
+are permitted; they do not authorize attacks on the live Service or its users.
+
+4. Ownership and third-party materials
+
+The SDK remains the property of Nichita Levandovici. You retain ownership of
+your applications and game content, subject to our rights in the SDK. No
+trademark, backend source-code or self-hosting rights are granted.
+Third-party components remain subject to their own licenses. Steamworks SDK
+files and redistributables are governed by Valve's terms; this license grants
+no rights to those materials.
+
+5. Earlier releases and termination
+
+Rights validly granted for earlier versions under MIT No Attribution or other
+prior licenses are not revoked or restricted by this license. This license
+applies to SDK versions distributed under it.
+
+A material breach of this license terminates the rights it grants. On
+termination, stop using and distributing the SDK under this license and remove
+it from future application distributions, except as required by law or
+separately authorized in writing. Service cancellation or suspension does not
+by itself prohibit retaining SDK copies for permitted development, but grants
+no right to continue accessing the Service without authorization.
+
+6. Disclaimer and liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SDK IS PROVIDED "AS IS",
+WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM OR IN CONNECTION WITH THE SDK OR ITS USE. Nothing in this license excludes
+rights or liabilities that cannot lawfully be excluded.
+
+7. Applicable terms and contact
+
+The laws of the Republic of Moldova govern this license, subject to mandatory
+applicable law. A separate written agreement may grant additional permissions
+or replace specified provisions of this license. All other rights are reserved.
+
+Service terms: https://api.michitai.com/terms.php
+Privacy policy: https://api.michitai.com/privacy.php
+Permissions and support: support@michitai.com
