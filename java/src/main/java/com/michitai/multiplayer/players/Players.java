@@ -36,6 +36,11 @@ public class Players {
      * single-use — request a fresh one for every login. The same call
      * creates the account on first use and logs the player in afterwards,
      * so the account survives reinstalls via the SteamID.
+     * <p>
+     * Ticket minting is out of scope for this SDK (server-side tooling and
+     * tests): Java game clients should use a Steamworks binding such as
+     * steamworks4j — {@code SteamUser.getAuthTicketForWebApi(identity)} —
+     * or the built-in Steam helpers in the unity/.NET/C++ SDKs.
      *
      * @param client The API client instance.
      * @param steamTicket Hex-encoded ticket from GetAuthTicketForWebApi.

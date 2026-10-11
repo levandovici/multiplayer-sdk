@@ -73,6 +73,10 @@ class Players:
         The same call creates the account on first use and logs the player in
         afterwards, so the account survives reinstalls via the SteamID.
 
+        Ticket minting is out of scope for this SDK (server-side tooling
+        and tests); game clients should use the built-in Steam helpers in
+        the unity/.NET/C++ SDKs or a Python Steamworks binding.
+
         :param steam_ticket: Hex-encoded ticket from GetAuthTicketForWebApi.
         :param steam_identity: Identity string passed to GetAuthTicketForWebApi
             (omit if none was used).

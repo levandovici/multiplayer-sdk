@@ -71,3 +71,27 @@ add_executable(game_example
 target_link_libraries(game_example
   PRIVATE multiplayer_sdk
 )
+
+# Optional Steam support: enables the Steam login demo in Game.cpp via
+# include/michitai/multiplayer/Steam/SteamTicket.h (GetAuthTicketForWebApi
+# -> Players::registerPlayerWithSteam). Requires the Steamworks SDK
+# (>= 1.57, partner.steamgames.com) — point STEAMWORKS_SDK_DIR at the
+# extracted sdk/ dir containing public/ and redistributable_bin/.
+# Ship steam_api64.dll + steam_appid.txt next to the exe.
+#
+# option(MICHITAI_STEAM "Build the Steam login demo" OFF)
+# if(MICHITAI_STEAM)
+#   set(STEAMWORKS_SDK_DIR "" CACHE PATH "Path to Steamworks SDK root")
+#   target_compile_definitions(game_example PRIVATE MICHITAI_STEAM)
+#   target_include_directories(game_example PRIVATE "${STEAMWORKS_SDK_DIR}/public")
+#   if(WIN32)
+#     target_link_directories(game_example PRIVATE "${STEAMWORKS_SDK_DIR}/redistributable_bin/win64")
+#     target_link_libraries(game_example PRIVATE steam_api64)
+#   elseif(APPLE)
+#     target_link_directories(game_example PRIVATE "${STEAMWORKS_SDK_DIR}/redistributable_bin/osx")
+#     target_link_libraries(game_example PRIVATE steam_api)
+#   else()
+#     target_link_directories(game_example PRIVATE "${STEAMWORKS_SDK_DIR}/redistributable_bin/linux64")
+#     target_link_libraries(game_example PRIVATE steam_api)
+#   endif()
+# endif()

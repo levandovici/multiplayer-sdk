@@ -14,6 +14,15 @@
 #include "../include/michitai/multiplayer/Leaderboard/Leaderboard.h"
 #include "../include/michitai/multiplayer/Types.h"
 
+// Optional Steam login demo — requires the real Steamworks SDK (>= 1.57):
+// compile with -DMICHITAI_STEAM, add the SDK public/ dir to the include
+// path and link redistributable_bin/win64/steam_api64.lib; ship
+// steam_api64.dll + steam_appid.txt next to the exe. See the commented
+// block in CMakeLists.txt.
+#ifdef MICHITAI_STEAM
+#include "../include/michitai/multiplayer/Steam/SteamTicket.h"
+#endif
+
 using namespace michitai::multiplayer;
 using namespace michitai::multiplayer::games;
 using namespace michitai::multiplayer::time;
@@ -229,6 +238,46 @@ void setupPlayers() {
             std::cout << "[PLAYER DATA] Player data updated" << std::endl;
         });
     }
+}
+
+// ====================== STEAM LOGIN DEMO ======================
+
+void runSteamLoginDemo() {
+    std::cout << "\n=== STEAM LOGIN DEMO ===\n" << std::endl;
+#ifdef MICHITAI_STEAM
+    safeExecute("Steam Login", [&]() {
+        michitai::multiplayer::steam::SteamTicket steam;
+        if (!steam.Init()) {
+            // No Steam client running (or no steam_appid.txt / DLL) — the
+            // game decides the offline policy, the SDK only reports it.
+            std::cout << "[STEAM] Steam not available — skipping" << std::endl;
+            return;
+        }
+        std::cout << "[STEAM] SteamID: " << steam.SteamId()
+                  << ", Persona: " << steam.PersonaName() << std::endl;
+
+        // Fresh single-use ticket per login — never cache or retry one.
+        std::string ticketHex;
+        if (!steam.GetAuthTicketHex(ticketHex, "michitai")) {
+            std::cout << "[STEAM] Ticket request failed" << std::endl;
+            return;
+        }
+
+        auto reg = michitai::multiplayer::players::Players::registerPlayerWithSteam<PlayerData>(
+            *client, ticketHex, "michitai", steam.PersonaName());
+        if (reg.success) {
+            std::cout << "[STEAM] auth=" << reg.auth << " account=" << reg.account
+                      << " steam_id=" << reg.steamId << std::endl;
+            playerMap["steam"] = PlayerInfo{reg.playerId, reg.privateKey, "SteamPlayer"};
+        } else {
+            std::cout << "[STEAM] Register failed: " << reg.error << std::endl;
+        }
+        steam.Shutdown();
+    });
+#else
+    std::cout << "[STEAM] Built without MICHITAI_STEAM — see "
+                 "include/michitai/multiplayer/Steam/SteamTicket.h" << std::endl;
+#endif
 }
 
 void cleanupEverything() {
@@ -462,6 +511,9 @@ int main() {
         runDemoDirectRoom();
         cleanupEverything();
         
+        // Steam auth ticket -> register/login round-trip
+        runSteamLoginDemo();
+
         // Common tests
         runCommonTests();
     } catch (const std::exception& ex) {

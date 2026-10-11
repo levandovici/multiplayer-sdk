@@ -114,7 +114,7 @@ public:
             return result;
         } catch (const nlohmann::json::exception& ex) {
             logger_->warn(debugLogging_ ? "JSON Deserialization Error. Raw: " + response.text + ". Exception: " + ex.what()
-                                    : "JSON Deserialization Error. Exception: " + ex.what());
+                                    : std::string("JSON Deserialization Error. Exception: ") + ex.what());
             
             T result;
             result.success = false;
@@ -168,7 +168,7 @@ public:
             return result;
         } catch (const nlohmann::json::exception& ex) {
             logger_->warn(debugLogging_ ? "JSON Deserialization Error. Raw: " + response.text + ". Exception: " + ex.what()
-                                    : "JSON Deserialization Error. Exception: " + ex.what());
+                                    : std::string("JSON Deserialization Error. Exception: ") + ex.what());
             
             T result;
             result.success = false;
@@ -222,7 +222,7 @@ public:
             return result;
         } catch (const nlohmann::json::exception& ex) {
             logger_->warn(debugLogging_ ? "JSON Deserialization Error. Raw: " + response.text + ". Exception: " + ex.what()
-                                    : "JSON Deserialization Error. Exception: " + ex.what());
+                                    : std::string("JSON Deserialization Error. Exception: ") + ex.what());
             
             T result;
             result.success = false;
@@ -272,7 +272,7 @@ public:
             return result;
         } catch (const nlohmann::json::exception& ex) {
             logger_->warn(debugLogging_ ? "JSON Deserialization Error. Raw: " + response.text + ". Exception: " + ex.what()
-                                    : "JSON Deserialization Error. Exception: " + ex.what());
+                                    : std::string("JSON Deserialization Error. Exception: ") + ex.what());
             
             T result;
             result.success = false;
