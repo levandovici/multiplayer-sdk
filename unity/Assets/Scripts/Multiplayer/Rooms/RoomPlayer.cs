@@ -54,8 +54,16 @@ namespace Michitai.Multiplayer.Rooms
         {
             get
             {
-                return JsonUtility.FromJson<T>(player_data_json);
+                return string.IsNullOrEmpty(player_data_json) ? null : JsonUtility.FromJson<T>(player_data_json);
             }
+        }
+
+        /// <summary>
+        /// Sets the serialized player data payload (e.g. for locally constructed players).
+        /// </summary>
+        public void SetPlayerDataJson(string json)
+        {
+            player_data_json = json;
         }
 
         /// <summary>
