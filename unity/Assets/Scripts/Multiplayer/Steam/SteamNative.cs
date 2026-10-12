@@ -135,7 +135,7 @@ namespace Michitai.Multiplayer.Steam
             try
             {
                 if (IsWindows)
-                    _lib = LoadLibrary(IntPtr.Size == 8 ? "steam_api64.dll" : "steam_api.dll");
+                    _lib = LoadWindowsLibrary();
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     _lib = dlopen("libsteam_api.dylib", RtldNow);
                 else
@@ -149,7 +149,7 @@ namespace Michitai.Multiplayer.Steam
             if (_lib == IntPtr.Zero)
             {
                 if (_loadError == null)
-                    _loadError = "steam_api native library not found next to the executable";
+                    _loadError = "steam_api native library not found (searched the executable dir and the Unity plugin folder)";
                 return false;
             }
 
@@ -178,6 +178,26 @@ namespace Michitai.Multiplayer.Steam
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Locates steam_api on Windows. The bare name relies on the OS search
+        /// order (exe dir, PATH), which never includes Unity's plugin folder —
+        /// in the editor it is Assets/Plugins/x86_64, in a player build
+        /// &lt;Game&gt;_Data/Plugins/x86_64. Both resolve via Application.dataPath.
+        /// </summary>
+        static IntPtr LoadWindowsLibrary()
+        {
+            string name = IntPtr.Size == 8 ? "steam_api64.dll" : "steam_api.dll";
+
+            IntPtr h = LoadLibrary(name);
+            if (h != IntPtr.Zero) return h;
+
+#if UNITY_5_3_OR_NEWER
+            h = LoadLibrary(System.IO.Path.Combine(UnityEngine.Application.dataPath,
+                "Plugins", IntPtr.Size == 8 ? "x86_64" : "x86", name));
+#endif
+            return h;
         }
 
         static T Bind<T>(string name) where T : class
