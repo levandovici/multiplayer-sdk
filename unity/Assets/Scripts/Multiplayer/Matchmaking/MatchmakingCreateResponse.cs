@@ -55,6 +55,12 @@ namespace Michitai.Multiplayer.Matchmaking
         public bool realtime_room;
 
         /// <summary>
+        /// The lobby's shared join token for invites (also available via the
+        /// current-status endpoint to every lobby member).
+        /// </summary>
+        public string join_token;
+
+        /// <summary>
         /// Whether the player who created the lobby is the host.
         /// </summary>
         public bool is_host;

@@ -139,6 +139,33 @@ public final class ErrorConverter {
         m.put("Only host can update matchmaking password", "OnlyHostCanUpdateMatchmakingPassword");
         m.put("Cannot change password after matchmaking has started", "CannotChangePasswordAfterMatchmakingHasStarted");
 
+        // Friends errors
+        m.put("Player is offline \u2014 log in again", "PlayerIsOfflineLogInAgain");
+        m.put("Invalid player tag \u2014 expected # plus 8 characters", "InvalidPlayerTagExpectedHashPlus8Characters");
+        m.put("No player with that tag", "NoPlayerWithThatTag");
+        m.put("Player not found", "PlayerNotFound");
+        m.put("You cannot add yourself", "YouCannotAddYourself");
+        m.put("Already friends", "AlreadyFriends");
+        m.put("Friend request already sent", "FriendRequestAlreadySent");
+        m.put("Friends list is full", "FriendsListIsFull");
+        m.put("Too many pending requests \u2014 wait for answers first", "TooManyPendingRequestsWaitForAnswersFirst");
+        m.put("No pending request from that player", "NoPendingRequestFromThatPlayer");
+        m.put("Not in your friends list", "NotInYourFriendsList");
+        m.put("Missing required field: steam_ids (array)", "MissingRequiredFieldSteamIds");
+        m.put("Too many steam_ids \u2014 max 100", "TooManySteamIdsMax100");
+        m.put("You cannot invite yourself", "YouCannotInviteYourself");
+        m.put("You can only invite friends", "YouCanOnlyInviteFriends");
+        m.put("You are not in a lobby or room", "YouAreNotInALobbyOrRoom");
+        m.put("The lobby is full", "TheLobbyIsFull");
+        m.put("The room is full", "TheRoomIsFull");
+        m.put("Invite not found or already answered", "InviteNotFoundOrAlreadyAnswered");
+        m.put("Missing required field: invite_id", "MissingRequiredFieldInviteId");
+        m.put("Leave your current lobby first", "LeaveYourCurrentLobbyFirst");
+        m.put("Leave your current room first", "LeaveYourCurrentRoomFirst");
+        m.put("Lobby no longer exists or already started", "LobbyNoLongerExistsOrAlreadyStarted");
+        m.put("Room no longer exists", "RoomNoLongerExists");
+        m.put("Friends service unavailable \u2014 schema not ready", "FriendsServiceUnavailableSchemaNotReady");
+
         // Time errors
         m.put("API key is required", "ApiKeyIsRequired");
         m.put("Invalid API key", "InvalidApiKey");

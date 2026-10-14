@@ -104,11 +104,19 @@ class Rooms:
         room_id: str,
         password: Optional[str] = None,
         player_data: Any = None,
+        join_token: Optional[str] = None,
     ) -> RoomJoinResponse:
-        """Join an existing game room."""
+        """Join an existing game room.
+
+        :param join_token: Optional invite join token — bypasses the password.
+        """
         body = None
-        if password is not None or player_data is not None:
-            body = {"password": password, "player_data": player_data}
+        if password is not None or player_data is not None or join_token is not None:
+            body = {
+                "password": password,
+                "player_data": player_data,
+                "join_token": join_token,
+            }
         return self._client.send(
             "POST",
             self._client.url(GAME_ROOM_JOIN.format(room_id=room_id)),

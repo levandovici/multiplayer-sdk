@@ -13,9 +13,17 @@ public class MatchmakingJoinRequest {
     @JsonProperty("player_data")
     private String playerData;
 
+    @JsonProperty("join_token")
+    private String joinToken;
+
     public MatchmakingJoinRequest(String password, String playerData) {
+        this(password, playerData, null);
+    }
+
+    public MatchmakingJoinRequest(String password, String playerData, String joinToken) {
         this.password = password;
         this.playerData = playerData;
+        this.joinToken = joinToken;
     }
 
     public String getPassword() {
@@ -32,5 +40,16 @@ public class MatchmakingJoinRequest {
 
     public void setPlayerData(String playerData) {
         this.playerData = playerData;
+    }
+
+    /**
+     * Invite join token — bypasses the password and join_by_requests approval.
+     */
+    public String getJoinToken() {
+        return joinToken;
+    }
+
+    public void setJoinToken(String joinToken) {
+        this.joinToken = joinToken;
     }
 }

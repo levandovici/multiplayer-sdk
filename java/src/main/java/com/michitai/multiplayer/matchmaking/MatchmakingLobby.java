@@ -56,6 +56,11 @@ public class MatchmakingLobby<T> {
     @JsonProperty("last_heartbeat")
     private String lastHeartbeat;
 
+    /** The host's public friend tag in display form ("#XXXXXXXX"). */
+    @JsonProperty("host_tag")
+    private String hostTag;
+
+
     public String getMatchmakingId() {
         return matchmakingId;
     }
@@ -182,5 +187,13 @@ public class MatchmakingLobby<T> {
 
     public void setLastHeartbeat(String lastHeartbeat) {
         this.lastHeartbeat = lastHeartbeat;
+    }
+
+    public String getHostTag() {
+        return hostTag;
+    }
+
+    public void setHostTag(String hostTag) {
+        this.hostTag = hostTag;
     }
 }

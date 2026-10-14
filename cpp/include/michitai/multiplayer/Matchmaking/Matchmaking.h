@@ -44,6 +44,8 @@ struct MatchmakingLobby {
     bool canLeaveRoom = false;
     bool realtimeRoom = false;
     bool hasPassword = false;
+    std::string hostTag;   // host's public friend tag ("#XXXXXXXX"), when provided
+    std::string joinToken; // shared invite token — only present in member-visible responses
     T rules;
     std::string createdAt;
     std::string lastHeartbeat;
@@ -62,6 +64,8 @@ struct MatchmakingLobby {
         lobby.canLeaveRoom = j.value("can_leave_room", false);
         lobby.realtimeRoom = j.value("realtime_room", false);
         lobby.hasPassword = j.value("has_password", false);
+        lobby.hostTag = j.value("host_tag", "");
+        lobby.joinToken = j.value("join_token", "");
         lobby.createdAt = j.value("created_at", "");
         lobby.lastHeartbeat = j.value("last_heartbeat", "");
         lobby.isStarted = j.value("is_started", false);
@@ -83,6 +87,7 @@ template<typename T = nlohmann::json>
 struct MatchmakingPlayer {
     int playerId = 0;
     std::string playerName;
+    std::string playerTag;
     bool isOnline = false;
     T playerData;
     std::string joinedAt;
@@ -92,6 +97,7 @@ struct MatchmakingPlayer {
         MatchmakingPlayer player;
         player.playerId = j.value("player_id", 0);
         player.playerName = j.value("player_name", "");
+        player.playerTag = j.value("player_tag", "");
         player.isOnline = j.value("is_online", false);
         player.joinedAt = j.value("joined_at", "");
         player.lastHeartbeat = j.value("last_heartbeat", "");
@@ -133,12 +139,14 @@ struct MatchmakingListResponse : public ApiResponse {
 /// Response for matchmaking creation
 struct MatchmakingCreateResponse : public ApiResponse {
     std::string matchmakingId;
+    std::string joinToken;  // shared invite token — publish to friends or Steam rich presence
     
     static MatchmakingCreateResponse fromJson(const nlohmann::json& j) {
         MatchmakingCreateResponse response;
         response.success = j.value("success", false);
         response.error = j.value("error", "");
         response.matchmakingId = j.value("matchmaking_id", "");
+        response.joinToken = j.value("join_token", "");
         return response;
     }
 };
@@ -400,21 +408,23 @@ public:
         );
     }
     
-    /// Joins a matchmaking lobby directly (without approval).
+    /// Joins a matchmaking lobby directly (without approval). A valid invite
+    /// join token bypasses both the password and join_by_requests approval.
     template<typename T = nlohmann::json>
     static MatchmakingDirectJoinResponse joinMatchmakingDirectly(
         Client& client,
         const std::string& playerToken,
         const std::string& matchmakingId,
         const std::optional<T>& playerData = std::nullopt,
-        const std::optional<std::string>& password = std::nullopt) {
+        const std::optional<std::string>& password = std::nullopt,
+        const std::optional<std::string>& joinToken = std::nullopt) {
         std::string endpoint = std::string(Endpoints::MatchmakingJoin);
         size_t pos = endpoint.find("{0}");
         if (pos != std::string::npos) {
             endpoint.replace(pos, 3, matchmakingId);
         }
 
-        // Backend expects { password, player_data } — never a bare object.
+        // Backend expects { password, player_data, join_token } — never a bare object.
         nlohmann::json body = nlohmann::json::object();
         if (playerData.has_value()) {
             if constexpr (std::is_same_v<T, nlohmann::json>) {
@@ -425,6 +435,9 @@ public:
         }
         if (password.has_value()) {
             body["password"] = password.value();
+        }
+        if (joinToken.has_value()) {
+            body["join_token"] = joinToken.value();
         }
         return client.post<MatchmakingDirectJoinResponse>(
             client.url(endpoint),

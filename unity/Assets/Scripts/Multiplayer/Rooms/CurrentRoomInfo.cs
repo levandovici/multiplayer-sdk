@@ -64,6 +64,12 @@ namespace Michitai.Multiplayer.Rooms
         public bool has_password;
 
         /// <summary>
+        /// The room's shared join token — members only. Joining with it
+        /// bypasses the room password.
+        /// </summary>
+        public string join_token;
+
+        /// <summary>
         /// Whether host switching is allowed.
         /// </summary>
         public bool host_switch;

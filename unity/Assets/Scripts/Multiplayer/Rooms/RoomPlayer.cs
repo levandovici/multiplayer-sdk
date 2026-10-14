@@ -38,6 +38,11 @@ namespace Michitai.Multiplayer.Rooms
         public string player_name;
 
         /// <summary>
+        /// The player's public friend tag in display form ("#XXXXXXXX"), or null.
+        /// </summary>
+        public string player_tag;
+
+        /// <summary>
         /// Whether the player is the room host.
         /// </summary>
         public bool is_host;

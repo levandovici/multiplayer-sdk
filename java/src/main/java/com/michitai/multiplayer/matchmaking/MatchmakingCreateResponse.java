@@ -35,6 +35,15 @@ public class MatchmakingCreateResponse extends ApiResponse {
     @JsonProperty("is_host")
     private boolean isHost;
 
+    /**
+     * Shared invite join token — members only. Invited players pass it to the
+     * join call (or a Steam invite connect string) to bypass the password and
+     * join_by_requests approval.
+     */
+    @JsonProperty("join_token")
+    private String joinToken;
+
+
     public String getMatchmakingId() {
         return matchmakingId;
     }
@@ -105,5 +114,13 @@ public class MatchmakingCreateResponse extends ApiResponse {
 
     public void setHost(boolean host) {
         isHost = host;
+    }
+
+    public String getJoinToken() {
+        return joinToken;
+    }
+
+    public void setJoinToken(String joinToken) {
+        this.joinToken = joinToken;
     }
 }

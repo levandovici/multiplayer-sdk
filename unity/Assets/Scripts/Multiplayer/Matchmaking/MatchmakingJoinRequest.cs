@@ -25,14 +25,21 @@ namespace Michitai.Multiplayer.Matchmaking
         public string player_data_json;
 
         /// <summary>
+        /// Invite join token — bypasses the lobby password and join_by_requests.
+        /// </summary>
+        public string join_token;
+
+        /// <summary>
         /// Initializes a new MatchmakingJoinRequest.
         /// </summary>
         /// <param name="password">The lobby password.</param>
         /// <param name="playerData">Serialized JSON string of player data.</param>
-        public MatchmakingJoinRequest(string password, string playerData)
+        /// <param name="joinToken">Optional invite join token.</param>
+        public MatchmakingJoinRequest(string password, string playerData, string joinToken = null)
         {
             this.password = password;
             this.player_data_json = playerData;
+            this.join_token = joinToken;
         }
     }
 }

@@ -42,10 +42,10 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="rules">Optional game rules for the lobby.</param>
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the matchmaking lobby ID.</returns>
-        public static Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<TPlayerData, TRules>(Client client, string playerToken, string matchmakingName, int maxPlayers = 4, bool strictFull = false,
+        public static Task<MatchmakingCreateResponse> CreateMatchmakingLobbyAsync<TPlayerData, TRules>(Client client, string playerToken, string matchmakingName, int maxPlayers = 4, bool strictFull = false, bool joinByRequests = false,
             bool hostSwitch = false, bool canLeaveRoom = false, bool realtimeRoom = false, string? password = null, TPlayerData? playerData = null, TRules? rules = null, CancellationToken ct = default) where TPlayerData : class, new() where TRules : class, new()
             => client.Send<MatchmakingCreateResponse>(HttpMethod.Post, client.Url(Endpoints.MatchmakingCreate),
-                new MatchmakingCreateRequest<TPlayerData, TRules>(matchmakingName, maxPlayers, strictFull, false, hostSwitch, canLeaveRoom, realtimeRoom, password, playerData, rules), ct, playerToken: playerToken);
+                new MatchmakingCreateRequest<TPlayerData, TRules>(matchmakingName, maxPlayers, strictFull, joinByRequests, hostSwitch, canLeaveRoom, realtimeRoom, password, playerData, rules), ct, playerToken: playerToken);
 
         /// <summary>
         /// Gets the current status of the player's matchmaking lobby.
@@ -68,11 +68,12 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="matchmakingId">The ID of the matchmaking lobby to join.</param>
         /// <param name="playerData">Optional player data to include when joining.</param>
         /// <param name="password">Optional password if the lobby is password-protected.</param>
+        /// <param name="joinToken">Optional invite join token — bypasses the password and host approval.</param>
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the player joined the lobby.</returns>
-        public static Task<MatchmakingDirectJoinResponse> JoinMatchmakingDirectlyAsync<T>(Client client, string playerToken, string matchmakingId, T? playerData = null, string? password = null, CancellationToken ct = default) where T : class, new()
+        public static Task<MatchmakingDirectJoinResponse> JoinMatchmakingDirectlyAsync<T>(Client client, string playerToken, string matchmakingId, T? playerData = null, string? password = null, string? joinToken = null, CancellationToken ct = default) where T : class, new()
             => client.Send<MatchmakingDirectJoinResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.MatchmakingJoin, matchmakingId)),
-                (password != null || playerData != null) ? new MatchmakingJoinRequest<T>(password, playerData) : null, ct, playerToken: playerToken);
+                (password != null || playerData != null || joinToken != null) ? new MatchmakingJoinRequest<T>(password, playerData, joinToken) : null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Leaves the current matchmaking lobby.

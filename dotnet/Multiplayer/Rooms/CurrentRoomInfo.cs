@@ -49,6 +49,12 @@ namespace Michitai.Multiplayer.Rooms
         public bool Has_password { get; set; }
 
         /// <summary>
+        /// The room's shared invite join token — members only. Invited
+        /// players pass it to JoinRoomAsync to bypass the password.
+        /// </summary>
+        public string? Join_token { get; set; }
+
+        /// <summary>
         /// Whether host switching is allowed.
         /// </summary>
         public bool Host_switch { get; set; }

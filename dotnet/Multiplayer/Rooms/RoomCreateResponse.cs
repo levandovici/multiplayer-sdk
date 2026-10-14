@@ -32,5 +32,10 @@ namespace Michitai.Multiplayer.Rooms
         /// Whether the player who created the room is the host.
         /// </summary>
         public bool Is_host { get; set; }
+
+        /// <summary>
+        /// The room's shared invite join token — members only.
+        /// </summary>
+        public string? Join_token { get; set; }
     }
 }

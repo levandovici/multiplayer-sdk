@@ -50,5 +50,10 @@ namespace Michitai.Multiplayer.Players
         /// The verified SteamID64 when auth is "steam", otherwise null.
         /// </summary>
         public string steam_id;
+
+        /// <summary>
+        /// The player's public friend tag in display form ("#XXXXXXXX").
+        /// </summary>
+        public string player_tag;
     }
 }

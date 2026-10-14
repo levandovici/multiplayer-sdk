@@ -32,6 +32,11 @@ public class RoomPlayer<T> {
     @JsonProperty("last_heartbeat")
     private String lastHeartbeat;
 
+    /** The player's public friend tag in display form ("#XXXXXXXX"). */
+    @JsonProperty("player_tag")
+    private String playerTag;
+
+
     public int getPlayerId() {
         return playerId;
     }
@@ -94,5 +99,13 @@ public class RoomPlayer<T> {
 
     public void setLastHeartbeat(String lastHeartbeat) {
         this.lastHeartbeat = lastHeartbeat;
+    }
+
+    public String getPlayerTag() {
+        return playerTag;
+    }
+
+    public void setPlayerTag(String playerTag) {
+        this.playerTag = playerTag;
     }
 }

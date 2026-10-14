@@ -59,6 +59,15 @@ public class CurrentRoomInfo<T> {
     @JsonProperty("room_last_activity")
     private String roomLastActivity;
 
+    /**
+     * Shared invite join token — members only. Invited players pass it to the
+     * join call (or a Steam invite connect string) to bypass the password and
+     * join_by_requests approval.
+     */
+    @JsonProperty("join_token")
+    private String joinToken;
+
+
     public String getRoomId() {
         return roomId;
     }
@@ -193,5 +202,13 @@ public class CurrentRoomInfo<T> {
 
     public void setRoomLastActivity(String roomLastActivity) {
         this.roomLastActivity = roomLastActivity;
+    }
+
+    public String getJoinToken() {
+        return joinToken;
+    }
+
+    public void setJoinToken(String joinToken) {
+        this.joinToken = joinToken;
     }
 }

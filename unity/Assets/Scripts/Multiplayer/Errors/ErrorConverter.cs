@@ -143,6 +143,36 @@ namespace Michitai.Multiplayer.Errors
             { "Cannot change password after matchmaking has started", nameof(EMatchmakingPasswordError.CannotChangePasswordAfterMatchmakingHasStarted) },
             { "Failed to update password", nameof(EMatchmakingPasswordError.FailedToUpdatePassword) },
             
+            // Friends errors ("Player token is required" and
+            // "Missing required field: player_id" already map to enum member
+            // names EFriendsError also defines — a second key would break the
+            // dictionary, so they are intentionally not repeated here)
+            { "Player is offline — log in again", nameof(EFriendsError.PlayerIsOfflineLogInAgain) },
+            { "Invalid player tag — expected # plus 8 characters", nameof(EFriendsError.InvalidPlayerTagExpectedHashPlus8Characters) },
+            { "No player with that tag", nameof(EFriendsError.NoPlayerWithThatTag) },
+            { "Player not found", nameof(EFriendsError.PlayerNotFound) },
+            { "You cannot add yourself", nameof(EFriendsError.YouCannotAddYourself) },
+            { "Already friends", nameof(EFriendsError.AlreadyFriends) },
+            { "Friend request already sent", nameof(EFriendsError.FriendRequestAlreadySent) },
+            { "Friends list is full", nameof(EFriendsError.FriendsListIsFull) },
+            { "Too many pending requests — wait for answers first", nameof(EFriendsError.TooManyPendingRequestsWaitForAnswersFirst) },
+            { "No pending request from that player", nameof(EFriendsError.NoPendingRequestFromThatPlayer) },
+            { "Not in your friends list", nameof(EFriendsError.NotInYourFriendsList) },
+            { "Missing required field: steam_ids (array)", nameof(EFriendsError.MissingRequiredFieldSteamIds) },
+            { "Too many steam_ids — max 100", nameof(EFriendsError.TooManySteamIdsMax100) },
+            { "You cannot invite yourself", nameof(EFriendsError.YouCannotInviteYourself) },
+            { "You can only invite friends", nameof(EFriendsError.YouCanOnlyInviteFriends) },
+            { "You are not in a lobby or room", nameof(EFriendsError.YouAreNotInALobbyOrRoom) },
+            { "The lobby is full", nameof(EFriendsError.TheLobbyIsFull) },
+            { "Invite not found or already answered", nameof(EFriendsError.InviteNotFoundOrAlreadyAnswered) },
+            { "Missing required field: invite_id", nameof(EFriendsError.MissingRequiredFieldInviteId) },
+            { "Leave your current lobby first", nameof(EFriendsError.LeaveYourCurrentLobbyFirst) },
+            { "Leave your current room first", nameof(EFriendsError.LeaveYourCurrentRoomFirst) },
+            { "Lobby no longer exists or already started", nameof(EFriendsError.LobbyNoLongerExistsOrAlreadyStarted) },
+            { "Room no longer exists", nameof(EFriendsError.RoomNoLongerExists) },
+            { "The room is full", nameof(EFriendsError.TheRoomIsFull) },
+            { "Friends service unavailable — schema not ready", nameof(EFriendsError.FriendsServiceUnavailableSchemaNotReady) },
+
             // Time errors
             { "API key is required", nameof(ETimeError.ApiKeyIsRequired) },
             { "Invalid API key", nameof(ETimeError.InvalidApiKey) },

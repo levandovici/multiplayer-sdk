@@ -71,11 +71,12 @@ namespace Michitai.Multiplayer.Matchmaking
         /// <param name="matchmakingId">The ID of the matchmaking lobby to join.</param>
         /// <param name="playerData">Optional player data to include when joining.</param>
         /// <param name="password">Optional password if the lobby is password-protected.</param>
+        /// <param name="joinToken">Optional invite join token — bypasses the password and host approval.</param>
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the player joined the lobby.</returns>
-        public static Task<MatchmakingDirectJoinResponse> JoinMatchmakingDirectlyAsync<T>(Client client, string playerToken, string matchmakingId, T playerData = null, string password = null, CancellationToken ct = default) where T : class, new()
+        public static Task<MatchmakingDirectJoinResponse> JoinMatchmakingDirectlyAsync<T>(Client client, string playerToken, string matchmakingId, T playerData = null, string password = null, string joinToken = null, CancellationToken ct = default) where T : class, new()
             => client.Send<MatchmakingDirectJoinResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.MatchmakingJoin, matchmakingId)),
-                (password != null || playerData != null) ? new MatchmakingJoinRequest(password, playerData != null ? JsonUtility.ToJson(playerData) : null) : null, ct, playerToken: playerToken);
+                (password != null || playerData != null || joinToken != null) ? new MatchmakingJoinRequest(password, playerData != null ? JsonUtility.ToJson(playerData) : null, joinToken) : null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Leaves the current matchmaking lobby.

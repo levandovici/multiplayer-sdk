@@ -41,6 +41,7 @@ struct PlayerInfo {
     std::string createdAt;
     std::string updatedAt;
     std::string steamId;
+    std::string playerTag; // public friend tag ("#XXXXXXXX")
 
     static PlayerInfo fromJson(const nlohmann::json& j) {
         PlayerInfo info;
@@ -70,6 +71,9 @@ struct PlayerInfo {
         if (j.contains("steam_id") && !j["steam_id"].is_null()) {
             info.steamId = j["steam_id"].get<std::string>();
         }
+        if (j.contains("player_tag") && !j["player_tag"].is_null()) {
+            info.playerTag = j["player_tag"].get<std::string>();
+        }
 
         return info;
     }
@@ -84,6 +88,7 @@ struct PlayerRegisterResponse : public ApiResponse {
     std::string auth;      // "steam" or "guest"
     std::string account;   // "created" or "existing"
     std::string steamId;   // SteamID64 when auth == "steam"
+    std::string playerTag; // public friend tag ("#XXXXXXXX")
 
     static PlayerRegisterResponse fromJson(const nlohmann::json& j) {
         PlayerRegisterResponse response;
@@ -97,6 +102,9 @@ struct PlayerRegisterResponse : public ApiResponse {
         response.account = j.value("account", "");
         if (j.contains("steam_id") && !j["steam_id"].is_null()) {
             response.steamId = j["steam_id"].get<std::string>();
+        }
+        if (j.contains("player_tag") && !j["player_tag"].is_null()) {
+            response.playerTag = j["player_tag"].get<std::string>();
         }
         return response;
     }

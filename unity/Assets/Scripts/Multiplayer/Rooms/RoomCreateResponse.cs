@@ -30,6 +30,12 @@ namespace Michitai.Multiplayer.Rooms
         public bool realtime;
 
         /// <summary>
+        /// The room's shared join token for invites — joining with it
+        /// bypasses the room password.
+        /// </summary>
+        public string join_token;
+
+        /// <summary>
         /// Whether the player who created the room is the host.
         /// </summary>
         public bool is_host;

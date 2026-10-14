@@ -32,6 +32,7 @@ class RoomCreateResponse(ApiResponse):
     room_name: str = ""
     realtime: bool = False
     is_host: bool = False
+    join_token: Optional[str] = None
 
 
 @dataclass
@@ -78,6 +79,7 @@ class RoomPlayer:
     player_id: int = 0
     is_local: bool = False
     player_name: str = ""
+    player_tag: Optional[str] = None
     is_host: bool = False
     is_online: bool = False
     last_heartbeat: Optional[datetime] = None
@@ -110,6 +112,9 @@ class CurrentRoomInfo:
     max_players: int = 0
     current_players: int = 0
     has_password: bool = False
+    #: Shared invite join token — members only. Invited players pass it to
+    #: :meth:`Rooms.join` to bypass the room password.
+    join_token: Optional[str] = None
     host_switch: bool = False
     can_leave: bool = False
     realtime: bool = False

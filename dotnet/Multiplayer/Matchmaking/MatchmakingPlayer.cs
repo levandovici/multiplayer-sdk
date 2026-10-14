@@ -44,6 +44,11 @@ namespace Michitai.Multiplayer.Matchmaking
         public string Player_name { get; set; } = string.Empty;
 
         /// <summary>
+        /// The player's public friend tag in display form ("#XXXXXXXX"), or null.
+        /// </summary>
+        public string? Player_tag { get; set; }
+
+        /// <summary>
         /// Seconds since the player's last heartbeat.
         /// </summary>
         public int Seconds_since_heartbeat { get; set; }

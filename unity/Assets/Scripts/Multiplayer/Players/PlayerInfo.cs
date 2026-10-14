@@ -64,6 +64,12 @@ namespace Michitai.Multiplayer.Players
         public string steam_id;
 
         /// <summary>
+        /// The player's public friend tag in display form ("#XXXXXXXX"), or null
+        /// for accounts that predate tags and have not logged in since.
+        /// </summary>
+        public string player_tag;
+
+        /// <summary>
         /// The deserialized player data object.
         /// </summary>
         public T PlayerData

@@ -38,6 +38,7 @@ class MatchmakingCreateResponse(ApiResponse):
     can_leave_room: bool = False
     realtime_room: bool = False
     is_host: bool = False
+    join_token: Optional[str] = None
 
 
 @dataclass
@@ -66,6 +67,10 @@ class MatchmakingInfo:
     can_leave_room: bool = False
     realtime_room: bool = False
     has_password: bool = False
+    #: Shared invite join token — members only. Invited players pass it to
+    #: :meth:`Matchmaking.join` (or a Steam invite connect string) to bypass
+    #: the password and join_by_requests approval.
+    join_token: Optional[str] = None
     joined_at: Optional[datetime] = None
     is_online: bool = False
     last_heartbeat: Optional[datetime] = None
@@ -125,6 +130,7 @@ class MatchmakingLobby:
     last_heartbeat: Optional[datetime] = None
     current_players: int = 0
     host_name: str = ""
+    host_tag: Optional[str] = None
     rules: Any = None
 
 
@@ -145,6 +151,7 @@ class MatchmakingPlayer:
     last_heartbeat: Optional[datetime] = None
     is_online: bool = False
     player_name: str = ""
+    player_tag: Optional[str] = None
     seconds_since_heartbeat: int = 0
     is_host: bool = False
     player_data: Any = None

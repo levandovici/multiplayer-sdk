@@ -69,6 +69,13 @@ namespace Michitai.Multiplayer.Matchmaking
         public bool Has_password { get; set; }
 
         /// <summary>
+        /// The lobby's shared join token — members only. Pass it to
+        /// JoinMatchmakingDirectlyAsync (or a Steam invite connect string) so
+        /// invited players bypass the password and join_by_requests approval.
+        /// </summary>
+        public string? Join_token { get; set; }
+
+        /// <summary>
         /// Timestamp when the current player joined the lobby.
         /// </summary>
         public DateTimeOffset Joined_at { get; set; }

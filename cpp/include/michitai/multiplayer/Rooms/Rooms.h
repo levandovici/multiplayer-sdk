@@ -39,6 +39,7 @@ struct RoomShort {
     bool hostSwitch = false;
     bool canLeave = true;
     bool realtime = false;
+    std::string joinToken; // shared invite token — only present in member-visible responses
     T rules;
     
     static RoomShort fromJson(const nlohmann::json& j) {
@@ -51,6 +52,7 @@ struct RoomShort {
         room.hostSwitch = j.value("host_switch", false);
         room.canLeave = j.value("can_leave", true);
         room.realtime = j.value("realtime", false);
+        room.joinToken = j.value("join_token", "");
         
         if (j.contains("rules")) {
             if constexpr (std::is_same_v<T, nlohmann::json>) {
@@ -70,6 +72,7 @@ struct RoomPlayer {
     int playerId = 0;
     bool isLocal = false;
     std::string playerName;
+    std::string playerTag;
     bool isHost = false;
     bool isOnline = false;
     std::string lastHeartbeat;
@@ -80,6 +83,7 @@ struct RoomPlayer {
         player.playerId = j.value("player_id", 0);
         player.isLocal = j.value("is_local", false);
         player.playerName = j.value("player_name", "");
+        player.playerTag = j.value("player_tag", "");
         player.isHost = j.value("is_host", false);
         player.isOnline = j.value("is_online", false);
         player.lastHeartbeat = j.value("last_heartbeat", "");
@@ -101,12 +105,14 @@ struct RoomPlayer {
 /// Response for room creation
 struct RoomCreateResponse : public ApiResponse {
     std::string roomId;
+    std::string joinToken;  // shared invite token — publish to friends or Steam rich presence
     
     static RoomCreateResponse fromJson(const nlohmann::json& j) {
         RoomCreateResponse response;
         response.success = j.value("success", false);
         response.error = j.value("error", "");
         response.roomId = j.value("room_id", "");
+        response.joinToken = j.value("join_token", "");
         return response;
     }
 };
@@ -288,9 +294,11 @@ template<typename T = nlohmann::json>
 struct RoomJoinRequest {
     std::optional<std::string> password;
     std::optional<T> playerData;
+    std::optional<std::string> joinToken;
     
-    RoomJoinRequest(const std::optional<std::string>& pwd, const std::optional<T>& pData)
-        : password(pwd), playerData(pData) {}
+    RoomJoinRequest(const std::optional<std::string>& pwd, const std::optional<T>& pData,
+                    const std::optional<std::string>& token = std::nullopt)
+        : password(pwd), playerData(pData), joinToken(token) {}
     
     nlohmann::json toJson() const {
         nlohmann::json j;
@@ -303,6 +311,9 @@ struct RoomJoinRequest {
             } else {
                 j["player_data"] = nlohmann::json(playerData.value());
             }
+        }
+        if (joinToken.has_value()) {
+            j["join_token"] = joinToken.value();
         }
         return j;
     }
@@ -372,22 +383,24 @@ public:
         );
     }
     
-    /// Joins an existing game room.
+    /// Joins an existing game room. A valid invite join token bypasses the
+    /// room password.
     template<typename T = nlohmann::json>
     static RoomJoinResponse joinRoom(Client& client,
                                       const std::string& playerToken,
                                       const std::string& roomId,
                                       const std::optional<std::string>& password = std::nullopt,
-                                      const std::optional<T>& playerData = std::nullopt) {
+                                      const std::optional<T>& playerData = std::nullopt,
+                                      const std::optional<std::string>& joinToken = std::nullopt) {
         std::string endpoint = std::string(Endpoints::GameRoomJoin);
         size_t pos = endpoint.find("{0}");
         if (pos != std::string::npos) {
             endpoint.replace(pos, 3, roomId);
         }
         
-        bool hasBody = password.has_value() || playerData.has_value();
+        bool hasBody = password.has_value() || playerData.has_value() || joinToken.has_value();
         if (hasBody) {
-            RoomJoinRequest<T> request(password, playerData);
+            RoomJoinRequest<T> request(password, playerData, joinToken);
             return client.post<RoomJoinResponse>(
                 client.url(endpoint),
                 request.toJson(), playerToken

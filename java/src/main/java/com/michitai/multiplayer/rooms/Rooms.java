@@ -81,12 +81,29 @@ public class Rooms {
      * @throws IOException if the request fails.
      */
     public static RoomJoinResponse joinRoom(Client client, String playerToken, String roomId, String password, Object playerData) throws IOException {
+        return joinRoom(client, playerToken, roomId, password, playerData, null);
+    }
+
+    /**
+     * Joins an existing game room. A valid invite join token bypasses the
+     * room password.
+     *
+     * @param client The API client instance.
+     * @param playerToken The player's authentication token.
+     * @param roomId The ID of the room to join.
+     * @param password Optional password if the room is password-protected.
+     * @param playerData Optional player data to include when joining.
+     * @param joinToken Optional invite join token from a friend invite or Steam connect string.
+     * @return Response confirming the player joined the room.
+     * @throws IOException if the request fails.
+     */
+    public static RoomJoinResponse joinRoom(Client client, String playerToken, String roomId, String password, Object playerData, String joinToken) throws IOException {
         String playerDataJson = playerData != null ? objectMapper.writeValueAsString(playerData) : null;
         String endpoint = String.format(Endpoints.GAME_ROOM_JOIN, roomId);
-        
-        RoomJoinRequest request = (password != null || playerDataJson != null) ? 
-            new RoomJoinRequest(password, playerDataJson) : null;
-        
+
+        RoomJoinRequest request = (password != null || playerDataJson != null || joinToken != null) ?
+            new RoomJoinRequest(password, playerDataJson, joinToken) : null;
+
         return client.send("POST",client.url(endpoint), request, RoomJoinResponse.class, playerToken, false);
     }
 

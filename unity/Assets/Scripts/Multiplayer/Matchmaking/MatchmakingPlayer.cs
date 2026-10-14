@@ -45,6 +45,11 @@ namespace Michitai.Multiplayer.Matchmaking
         public string player_name;
 
         /// <summary>
+        /// The player's public friend tag in display form ("#XXXXXXXX"), or null.
+        /// </summary>
+        public string player_tag;
+
+        /// <summary>
         /// Seconds since the player's last heartbeat.
         /// </summary>
         public int seconds_since_heartbeat;

@@ -130,10 +130,29 @@ public class Matchmaking {
      * @throws IOException if the request fails.
      */
     public static MatchmakingDirectJoinResponse joinMatchmakingDirectly(Client client, String playerToken, String matchmakingId, String password, Object playerData) throws IOException {
+        return joinMatchmakingDirectly(client, playerToken, matchmakingId, password, playerData, null);
+    }
+
+    /**
+     * Joins a matchmaking lobby directly (without approval).
+     * Only works if the lobby doesn't require host approval — or the caller
+     * supplies a valid invite join token, which bypasses both the password and
+     * host approval.
+     *
+     * @param client The API client instance.
+     * @param playerToken The player's authentication token.
+     * @param matchmakingId The ID of the matchmaking lobby to join.
+     * @param password Optional password if the lobby is password-protected.
+     * @param playerData Optional player data to include when joining.
+     * @param joinToken Optional invite join token from a friend invite or Steam connect string.
+     * @return Response confirming the player joined the lobby.
+     * @throws IOException if the request fails.
+     */
+    public static MatchmakingDirectJoinResponse joinMatchmakingDirectly(Client client, String playerToken, String matchmakingId, String password, Object playerData, String joinToken) throws IOException {
         String playerDataJson = playerData != null ? objectMapper.writeValueAsString(playerData) : null;
         String endpoint = String.format(Endpoints.MATCHMAKING_JOIN, matchmakingId);
-        MatchmakingJoinRequest request = (password != null || playerDataJson != null) ?
-            new MatchmakingJoinRequest(password, playerDataJson) : null;
+        MatchmakingJoinRequest request = (password != null || playerDataJson != null || joinToken != null) ?
+            new MatchmakingJoinRequest(password, playerDataJson, joinToken) : null;
         return client.send("POST",client.url(endpoint), request, MatchmakingDirectJoinResponse.class, playerToken, false);
     }
 

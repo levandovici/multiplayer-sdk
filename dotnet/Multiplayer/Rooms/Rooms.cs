@@ -56,9 +56,9 @@ namespace Michitai.Multiplayer.Rooms
         /// <param name="playerData">Optional player data to include when joining.</param>
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response confirming the player joined the room.</returns>
-        public static Task<RoomJoinResponse> JoinRoomAsync<T>(Client client, string playerToken, string roomId, string? password = null, T? playerData = null, CancellationToken ct = default) where T : class, new()
+        public static Task<RoomJoinResponse> JoinRoomAsync<T>(Client client, string playerToken, string roomId, string? password = null, T? playerData = null, string? joinToken = null, CancellationToken ct = default) where T : class, new()
             => client.Send<RoomJoinResponse>(HttpMethod.Post, client.Url(string.Format(Endpoints.GameRoomJoin, roomId)),
-                (password != null || playerData != null) ? new RoomJoinRequest<T>(password, playerData) : null, ct, playerToken: playerToken);
+                (password != null || playerData != null || joinToken != null) ? new RoomJoinRequest<T>(password, playerData, joinToken) : null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Leaves the current game room.

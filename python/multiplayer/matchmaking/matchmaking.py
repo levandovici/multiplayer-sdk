@@ -129,13 +129,20 @@ class Matchmaking:
         matchmaking_id: str,
         player_data: Any = None,
         password: Optional[str] = None,
+        join_token: Optional[str] = None,
     ) -> MatchmakingDirectJoinResponse:
-        """Join a matchmaking lobby directly (no host approval)."""
+        """Join a matchmaking lobby directly (no host approval).
+
+        :param join_token: Optional invite join token — bypasses the password
+            and join_by_requests approval.
+        """
         body = {}
         if password is not None:
             body["password"] = password
         if player_data is not None:
             body["player_data"] = player_data
+        if join_token is not None:
+            body["join_token"] = join_token
         return self._client.send(
             "POST",
             self._client.url(MATCHMAKING_JOIN.format(matchmaking_id=matchmaking_id)),

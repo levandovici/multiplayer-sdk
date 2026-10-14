@@ -362,7 +362,8 @@ public final class ErrorEnums {
         YouAreAlreadyInAMatchmakingLobby,
         MatchmakingLobbyNotFoundOrAlreadyStarted,
         ThisMatchmakingLobbyRequiresHostApprovalUseRequestEndpointInstead,
-        MatchmakingLobbyIsFull
+        MatchmakingLobbyIsFull,
+        IncorrectPassword
     }
 
     public enum EMatchmakingLeaveError {
@@ -488,6 +489,43 @@ public final class ErrorEnums {
         OnlyHostCanUpdateMatchmakingPassword,
         CannotChangePasswordAfterMatchmakingHasStarted,
         FailedToUpdatePassword,
+        YouAreBanned
+    }
+
+    // ====================== FRIENDS.PHP ERRORS ======================
+
+    public enum EFriendsError {
+        Unknown,
+        ApiTokenIsRequired,
+        InvalidApiToken,
+        InvalidPlayerToken,
+        PlayerTokenIsRequired,
+        PlayerIsOfflineLogInAgain,
+        InvalidPlayerTagExpectedHashPlus8Characters,
+        NoPlayerWithThatTag,
+        PlayerNotFound,
+        MissingRequiredFieldPlayerId,
+        YouCannotAddYourself,
+        AlreadyFriends,
+        FriendRequestAlreadySent,
+        FriendsListIsFull,
+        TooManyPendingRequestsWaitForAnswersFirst,
+        NoPendingRequestFromThatPlayer,
+        NotInYourFriendsList,
+        MissingRequiredFieldSteamIds,
+        TooManySteamIdsMax100,
+        YouCannotInviteYourself,
+        YouCanOnlyInviteFriends,
+        YouAreNotInALobbyOrRoom,
+        TheLobbyIsFull,
+        InviteNotFoundOrAlreadyAnswered,
+        MissingRequiredFieldInviteId,
+        LeaveYourCurrentLobbyFirst,
+        LeaveYourCurrentRoomFirst,
+        LobbyNoLongerExistsOrAlreadyStarted,
+        RoomNoLongerExists,
+        TheRoomIsFull,
+        FriendsServiceUnavailableSchemaNotReady,
         YouAreBanned
     }
 

@@ -120,6 +120,72 @@ namespace Michitai.Multiplayer.Steam
         internal delegate IntPtr GetPersonaNameFn(IntPtr self);
         internal static GetPersonaNameFn GetPersonaName;
 
+        // ---- ISteamFriends (SteamFriends018, SDK 1.65) ---------------------
+
+        /// <summary>iFriendFlags is an EFriendFlags bitmask (0xFFFF = all,
+        /// 0x04 = immediate friends).</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int GetFriendCountFn(IntPtr self, int iFriendFlags);
+        internal static GetFriendCountFn GetFriendCount;
+
+        /// <summary>Returns the friend's SteamID64 (CSteamID, marshalled as uint64).</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate ulong GetFriendByIndexFn(IntPtr self, int iFriend, int iFriendFlags);
+        internal static GetFriendByIndexFn GetFriendByIndex;
+
+        /// <summary>Returns EFriendRelationship (3 = friend).</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int GetFriendRelationshipFn(IntPtr self, ulong steamIDFriend);
+        internal static GetFriendRelationshipFn GetFriendRelationship;
+
+        /// <summary>Returns EPersonaState (0 = offline, 1 = online).</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate int GetFriendPersonaStateFn(IntPtr self, ulong steamIDFriend);
+        internal static GetFriendPersonaStateFn GetFriendPersonaState;
+
+        /// <summary>Returns a const char* (UTF-8) persona name for the friend.</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate IntPtr GetFriendPersonaNameFn(IntPtr self, ulong steamIDFriend);
+        internal static GetFriendPersonaNameFn GetFriendPersonaName;
+
+        /// <summary>Asks Steam to fetch persona/avatar data; names resolve asynchronously.</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate bool RequestUserInformationFn(IntPtr self, ulong steamIDUser, bool requireNameOnly);
+        internal static RequestUserInformationFn RequestUserInformation;
+
+        /// <summary>dialog is a NUL-terminated UTF-8 buffer (e.g. "friends", "chat").</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate void ActivateGameOverlayFn(IntPtr self, byte[] dialog);
+        internal static ActivateGameOverlayFn ActivateGameOverlay;
+
+        /// <summary>dialog is a NUL-terminated UTF-8 buffer (e.g. "steamid", "chat").</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate void ActivateGameOverlayToUserFn(IntPtr self, byte[] dialog, ulong steamID);
+        internal static ActivateGameOverlayToUserFn ActivateGameOverlayToUser;
+
+        /// <summary>connectString is a NUL-terminated UTF-8 buffer. Opens the Steam
+        /// invite dialog; invitees get "Join Game" which delivers the string via
+        /// GameRichPresenceJoinRequested_t or the +connect launch parameter.</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate void ActivateGameOverlayInviteDialogConnectStringFn(IntPtr self, byte[] connectString);
+        internal static ActivateGameOverlayInviteDialogConnectStringFn ActivateGameOverlayInviteDialogConnectString;
+
+        /// <summary>key/value are NUL-terminated UTF-8 buffers. Max 30 keys,
+        /// key ≤ 64 chars, value ≤ 256 chars (k_cchMaxRichPresence*).</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate bool SetRichPresenceFn(IntPtr self, byte[] key, byte[] value);
+        internal static SetRichPresenceFn SetRichPresence;
+
+        /// <summary>Returns a const char* (UTF-8) rich-presence value, or null.</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate IntPtr GetFriendRichPresenceFn(IntPtr self, ulong steamIDFriend, byte[] key);
+        internal static GetFriendRichPresenceFn GetFriendRichPresence;
+
+        /// <summary>Marks a recently played-with user for the Steam "played with" list.</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate void SetPlayedWithFn(IntPtr self, ulong steamIDUserPlayedWith);
+        internal static SetPlayedWithFn SetPlayedWith;
+
         /// <summary>
         /// Loads the Steamworks native library and binds every export the shim
         /// needs. Returns false (with <see cref="LoadError"/> set) when the DLL
@@ -169,6 +235,18 @@ namespace Michitai.Multiplayer.Steam
                 GetSteamID = Bind<GetSteamIDFn>("SteamAPI_ISteamUser_GetSteamID");
                 CancelAuthTicket = Bind<CancelAuthTicketFn>("SteamAPI_ISteamUser_CancelAuthTicket");
                 GetPersonaName = Bind<GetPersonaNameFn>("SteamAPI_ISteamFriends_GetPersonaName");
+                GetFriendCount = Bind<GetFriendCountFn>("SteamAPI_ISteamFriends_GetFriendCount");
+                GetFriendByIndex = Bind<GetFriendByIndexFn>("SteamAPI_ISteamFriends_GetFriendByIndex");
+                GetFriendRelationship = Bind<GetFriendRelationshipFn>("SteamAPI_ISteamFriends_GetFriendRelationship");
+                GetFriendPersonaState = Bind<GetFriendPersonaStateFn>("SteamAPI_ISteamFriends_GetFriendPersonaState");
+                GetFriendPersonaName = Bind<GetFriendPersonaNameFn>("SteamAPI_ISteamFriends_GetFriendPersonaName");
+                RequestUserInformation = Bind<RequestUserInformationFn>("SteamAPI_ISteamFriends_RequestUserInformation");
+                ActivateGameOverlay = Bind<ActivateGameOverlayFn>("SteamAPI_ISteamFriends_ActivateGameOverlay");
+                ActivateGameOverlayToUser = Bind<ActivateGameOverlayToUserFn>("SteamAPI_ISteamFriends_ActivateGameOverlayToUser");
+                ActivateGameOverlayInviteDialogConnectString = Bind<ActivateGameOverlayInviteDialogConnectStringFn>("SteamAPI_ISteamFriends_ActivateGameOverlayInviteDialogConnectString");
+                SetRichPresence = Bind<SetRichPresenceFn>("SteamAPI_ISteamFriends_SetRichPresence");
+                GetFriendRichPresence = Bind<GetFriendRichPresenceFn>("SteamAPI_ISteamFriends_GetFriendRichPresence");
+                SetPlayedWith = Bind<SetPlayedWithFn>("SteamAPI_ISteamFriends_SetPlayedWith");
             }
             catch (EntryPointNotFoundException ex)
             {

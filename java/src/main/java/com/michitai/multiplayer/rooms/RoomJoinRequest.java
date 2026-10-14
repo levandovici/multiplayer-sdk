@@ -12,9 +12,17 @@ public class RoomJoinRequest {
     @JsonProperty("player_data")
     private String playerData;
 
+    @JsonProperty("join_token")
+    private String joinToken;
+
     public RoomJoinRequest(String password, String playerData) {
+        this(password, playerData, null);
+    }
+
+    public RoomJoinRequest(String password, String playerData, String joinToken) {
         this.password = password;
         this.playerData = playerData;
+        this.joinToken = joinToken;
     }
 
     public String getPassword() {
@@ -31,5 +39,16 @@ public class RoomJoinRequest {
 
     public void setPlayerData(String playerData) {
         this.playerData = playerData;
+    }
+
+    /**
+     * Invite join token — bypasses the password.
+     */
+    public String getJoinToken() {
+        return joinToken;
+    }
+
+    public void setJoinToken(String joinToken) {
+        this.joinToken = joinToken;
     }
 }

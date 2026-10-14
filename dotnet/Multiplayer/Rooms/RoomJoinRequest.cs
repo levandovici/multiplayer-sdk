@@ -17,16 +17,20 @@ namespace Michitai.Multiplayer.Rooms
         private string? Password { get; set; }
         [JsonInclude]
         private T? Player_data { get; set; }
+        [JsonInclude]
+        private string? Join_token { get; set; }
 
         /// <summary>
         /// Initializes a new RoomJoinRequest.
         /// </summary>
         /// <param name="password">Optional password for the room.</param>
         /// <param name="playerData">Optional player data to include.</param>
-        public RoomJoinRequest(string? password = null, T? playerData = null)
+        /// <param name="joinToken">Optional invite join token — bypasses the password.</param>
+        public RoomJoinRequest(string? password = null, T? playerData = null, string? joinToken = null)
         {
             this.Password = password;
             this.Player_data = playerData;
+            this.Join_token = joinToken;
         }
     }
 }

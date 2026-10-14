@@ -360,6 +360,7 @@ class MatchmakingJoinError(enum.Enum):
     MatchmakingLobbyNotFoundOrAlreadyStarted = enum.auto()
     ThisMatchmakingLobbyRequiresHostApprovalUseRequestEndpointInstead = enum.auto()
     MatchmakingLobbyIsFull = enum.auto()
+    IncorrectPassword = enum.auto()
 
 
 class MatchmakingLeaveError(enum.Enum):
@@ -485,6 +486,43 @@ class MatchmakingPasswordError(enum.Enum):
     OnlyHostCanUpdateMatchmakingPassword = enum.auto()
     CannotChangePasswordAfterMatchmakingHasStarted = enum.auto()
     FailedToUpdatePassword = enum.auto()
+    YouAreBanned = enum.auto()
+
+
+# ====================== friends.php ======================
+
+class FriendsError(enum.Enum):
+    Unknown = 0
+    ApiTokenIsRequired = enum.auto()
+    InvalidApiToken = enum.auto()
+    InvalidPlayerToken = enum.auto()
+    PlayerTokenIsRequired = enum.auto()
+    PlayerIsOfflineLogInAgain = enum.auto()
+    InvalidPlayerTagExpectedHashPlus8Characters = enum.auto()
+    NoPlayerWithThatTag = enum.auto()
+    PlayerNotFound = enum.auto()
+    MissingRequiredFieldPlayerId = enum.auto()
+    YouCannotAddYourself = enum.auto()
+    AlreadyFriends = enum.auto()
+    FriendRequestAlreadySent = enum.auto()
+    FriendsListIsFull = enum.auto()
+    TooManyPendingRequestsWaitForAnswersFirst = enum.auto()
+    NoPendingRequestFromThatPlayer = enum.auto()
+    NotInYourFriendsList = enum.auto()
+    MissingRequiredFieldSteamIds = enum.auto()
+    TooManySteamIdsMax100 = enum.auto()
+    YouCannotInviteYourself = enum.auto()
+    YouCanOnlyInviteFriends = enum.auto()
+    YouAreNotInALobbyOrRoom = enum.auto()
+    TheLobbyIsFull = enum.auto()
+    InviteNotFoundOrAlreadyAnswered = enum.auto()
+    MissingRequiredFieldInviteId = enum.auto()
+    LeaveYourCurrentLobbyFirst = enum.auto()
+    LeaveYourCurrentRoomFirst = enum.auto()
+    LobbyNoLongerExistsOrAlreadyStarted = enum.auto()
+    RoomNoLongerExists = enum.auto()
+    TheRoomIsFull = enum.auto()
+    FriendsServiceUnavailableSchemaNotReady = enum.auto()
     YouAreBanned = enum.auto()
 
 

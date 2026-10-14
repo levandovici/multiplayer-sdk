@@ -59,6 +59,11 @@ namespace Michitai.Multiplayer.Players
         public string? Steam_id { get; set; }
 
         /// <summary>
+        /// The player's public friend tag in display form ("#XXXXXXXX"), or null.
+        /// </summary>
+        public string? Player_tag { get; set; }
+
+        /// <summary>
         /// The deserialized player data object.
         /// </summary>
         [JsonIgnore]

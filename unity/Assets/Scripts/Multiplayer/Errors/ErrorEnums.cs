@@ -390,7 +390,8 @@ namespace Michitai.Multiplayer.Errors
         YouAreAlreadyInAMatchmakingLobby,
         MatchmakingLobbyNotFoundOrAlreadyStarted,
         ThisMatchmakingLobbyRequiresHostApprovalUseRequestEndpointInstead,
-        MatchmakingLobbyIsFull
+        MatchmakingLobbyIsFull,
+        IncorrectPassword
     }
 
     public enum EMatchmakingLeaveError 
@@ -527,6 +528,44 @@ namespace Michitai.Multiplayer.Errors
         OnlyHostCanUpdateMatchmakingPassword,
         CannotChangePasswordAfterMatchmakingHasStarted,
         FailedToUpdatePassword,
+        YouAreBanned = ECommonError.YouAreBanned
+    }
+
+    // ====================== FRIENDS.PHP ERRORS ======================
+
+    public enum EFriendsError
+    {
+        Unknown = ECommonError.Unknown,
+        ApiTokenIsRequired = ECommonError.ApiTokenIsRequired,
+        InvalidApiToken = ECommonError.InvalidApiToken,
+        InvalidPlayerToken,
+        PlayerTokenIsRequired,
+        PlayerIsOfflineLogInAgain,
+        InvalidPlayerTagExpectedHashPlus8Characters,
+        NoPlayerWithThatTag,
+        PlayerNotFound,
+        MissingRequiredFieldPlayerId,
+        YouCannotAddYourself,
+        AlreadyFriends,
+        FriendRequestAlreadySent,
+        FriendsListIsFull,
+        TooManyPendingRequestsWaitForAnswersFirst,
+        NoPendingRequestFromThatPlayer,
+        NotInYourFriendsList,
+        MissingRequiredFieldSteamIds,
+        TooManySteamIdsMax100,
+        YouCannotInviteYourself,
+        YouCanOnlyInviteFriends,
+        YouAreNotInALobbyOrRoom,
+        TheLobbyIsFull,
+        InviteNotFoundOrAlreadyAnswered,
+        MissingRequiredFieldInviteId,
+        LeaveYourCurrentLobbyFirst,
+        LeaveYourCurrentRoomFirst,
+        LobbyNoLongerExistsOrAlreadyStarted,
+        RoomNoLongerExists,
+        TheRoomIsFull,
+        FriendsServiceUnavailableSchemaNotReady,
         YouAreBanned = ECommonError.YouAreBanned
     }
 

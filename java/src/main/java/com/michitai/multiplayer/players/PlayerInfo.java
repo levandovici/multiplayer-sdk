@@ -44,6 +44,11 @@ public class PlayerInfo<T> {
     @JsonProperty("steam_id")
     private String steamId;
 
+    /** The player's public friend tag in display form ("#XXXXXXXX"). */
+    @JsonProperty("player_tag")
+    private String playerTag;
+
+
     public int getId() {
         return id;
     }
@@ -138,5 +143,13 @@ public class PlayerInfo<T> {
 
     public void setSteamId(String steamId) {
         this.steamId = steamId;
+    }
+
+    public String getPlayerTag() {
+        return playerTag;
+    }
+
+    public void setPlayerTag(String playerTag) {
+        this.playerTag = playerTag;
     }
 }

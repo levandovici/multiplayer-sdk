@@ -62,8 +62,18 @@ namespace Michitai.Multiplayer.Steam
     {
         /// <summary>k_iSteamUserCallbacks (100) + 68 — GetTicketForWebApiResponse_t.</summary>
         const int GetTicketForWebApiResponseCallback = 168;
+
+        /// <summary>k_iSteamFriendsCallbacks (300) + 37 — GameRichPresenceJoinRequested_t.
+        /// Fired when the local user accepts a rich-presence "join" invite
+        /// (SteamFriends.OpenInviteDialog connect strings land here).</summary>
+        const int RichPresenceJoinRequestedCallback = 337;
+
         const int EResultOK = 1;
         const int MaxTicketBytes = 8192;
+
+        /// <summary>GameRichPresenceJoinRequested_t.m_rgchConnect is
+        /// k_cchMaxRichPresenceValueLength chars after m_steamIDFriend.</summary>
+        const int ConnectStringMaxBytes = 256;
 
         static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
 
@@ -89,6 +99,10 @@ namespace Michitai.Multiplayer.Steam
         /// <summary>Local user's Steam persona name, or null when unavailable.</summary>
         public static string PersonaName { get; private set; }
 
+        /// <summary>The bound ISteamFriends interface pointer — used by
+        /// SteamFriends; IntPtr.Zero when unavailable.</summary>
+        internal static IntPtr FriendsHandle { get { return _friends; } }
+
         /// <summary>ESteamAPIInitResult of the last SteamAPI_InitFlat call
         /// (0=OK, 1=FailedGeneric, 2=NoSteamClient, 3=VersionMismatch), or -1 when
         /// init never ran or the native library is missing.</summary>
@@ -96,6 +110,16 @@ namespace Michitai.Multiplayer.Steam
 
         /// <summary>Human-readable reason the last Initialize failed, or null.</summary>
         public static string InitError { get; private set; }
+
+        /// <summary>
+        /// Raised on the callback-pump thread (Unity: the main thread via
+        /// SteamBehaviour.Update) when the user accepts a rich-presence join
+        /// invite. Parameters: inviter SteamID64, the connect string the
+        /// inviter published (see SteamFriends.SetJoinConnectString).
+        /// Games launched fresh by the invite get the same string as the
+        /// "+connect" launch parameter instead — check Environment args too.
+        /// </summary>
+        public static event Action<ulong, string> RichPresenceJoinRequested;
 
         static SteamTicket()
         {
@@ -223,7 +247,9 @@ namespace Michitai.Multiplayer.Steam
                 {
                     if (msg.Callback == GetTicketForWebApiResponseCallback && msg.ParamSize >= 12)
                         DispatchTicket(msg.Param);
-                    // all other callback ids are irrelevant to auth — ignore
+                    else if (msg.Callback == RichPresenceJoinRequestedCallback && msg.ParamSize >= 9)
+                        DispatchJoinRequested(msg.Param, msg.ParamSize);
+                    // all other callback ids are irrelevant — ignore
                 }
                 finally
                 {
@@ -304,6 +330,19 @@ namespace Michitai.Multiplayer.Steam
                 Marshal.Copy(IntPtr.Add(param, 12), bytes, 0, len);
                 pending.Tcs.TrySetResult(new SteamAuthTicket(ToHex(bytes), handle));
             }
+        }
+
+        static void DispatchJoinRequested(IntPtr param, int paramSize)
+        {
+            // GameRichPresenceJoinRequested_t: CSteamID m_steamIDFriend (8),
+            // char m_rgchConnect[256]. Read the connect string bounded by the
+            // reported param size — older SDKs may report a shorter array.
+            ulong friendId = (ulong)Marshal.ReadInt64(param, 0);
+            int maxLen = Math.Min(ConnectStringMaxBytes, paramSize - 8);
+            var buf = new byte[maxLen];
+            Marshal.Copy(IntPtr.Add(param, 8), buf, 0, maxLen);
+            string connect = CStr(buf);
+            RichPresenceJoinRequested?.Invoke(friendId, connect ?? "");
         }
 
         static void ExpirePending()

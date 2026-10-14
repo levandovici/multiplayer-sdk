@@ -84,6 +84,11 @@ namespace Michitai.Multiplayer.Matchmaking
         public string Host_name { get; set; } = string.Empty;
 
         /// <summary>
+        /// The host's public friend tag in display form ("#XXXXXXXX"), or null.
+        /// </summary>
+        public string? Host_tag { get; set; }
+
+        /// <summary>
         /// The lobby rules deserialized into the specified type.
         /// </summary>
         public T? Rules { get; set; }

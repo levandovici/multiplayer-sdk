@@ -38,6 +38,11 @@ public class MatchmakingPlayer<T> {
     @JsonProperty("seconds_since_heartbeat")
     private int secondsSinceHeartbeat;
 
+    /** The player's public friend tag in display form ("#XXXXXXXX"). */
+    @JsonProperty("player_tag")
+    private String playerTag;
+
+
     public int getPlayerId() {
         return playerId;
     }
@@ -116,5 +121,13 @@ public class MatchmakingPlayer<T> {
 
     public void setSecondsSinceHeartbeat(int secondsSinceHeartbeat) {
         this.secondsSinceHeartbeat = secondsSinceHeartbeat;
+    }
+
+    public String getPlayerTag() {
+        return playerTag;
+    }
+
+    public void setPlayerTag(String playerTag) {
+        this.playerTag = playerTag;
     }
 }

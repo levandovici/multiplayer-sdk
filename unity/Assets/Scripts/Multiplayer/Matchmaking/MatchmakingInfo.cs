@@ -84,6 +84,14 @@ namespace Michitai.Multiplayer.Matchmaking
         public bool has_password;
 
         /// <summary>
+        /// The lobby's shared join token — members only. Pass it to
+        /// JoinMatchmakingDirectlyAsync (or include it in a Steam invite
+        /// connect string) so invited players bypass the password and
+        /// join_by_requests approval.
+        /// </summary>
+        public string join_token;
+
+        /// <summary>
         /// Whether the lobby is currently online/active.
         /// </summary>
         public bool is_online;

@@ -65,6 +65,15 @@ public class MatchmakingInfo<T> {
     @JsonProperty("started_at")
     private String startedAt;
 
+    /**
+     * Shared invite join token — members only. Invited players pass it to the
+     * join call (or a Steam invite connect string) to bypass the password and
+     * join_by_requests approval.
+     */
+    @JsonProperty("join_token")
+    private String joinToken;
+
+
     public String getMatchmakingId() {
         return matchmakingId;
     }
@@ -215,5 +224,13 @@ public class MatchmakingInfo<T> {
 
     public void setStartedAt(String startedAt) {
         this.startedAt = startedAt;
+    }
+
+    public String getJoinToken() {
+        return joinToken;
+    }
+
+    public void setJoinToken(String joinToken) {
+        this.joinToken = joinToken;
     }
 }
