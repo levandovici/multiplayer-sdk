@@ -154,6 +154,17 @@ namespace Michitai.Multiplayer.Steam
         }
 
         /// <summary>
+        /// Opens the Steam overlay on the store page for an app — the UPDATE
+        /// button target when no explicit update_url is configured.
+        /// </summary>
+        /// <param name="appId">Steam AppID whose store page to show.</param>
+        public static void OpenStorePage(uint appId)
+        {
+            if (!SteamTicket.Available || appId == 0) return;
+            SteamNative.ActivateGameOverlayToStore(SteamTicket.FriendsHandle, appId, 0);
+        }
+
+        /// <summary>
         /// Opens the Steam overlay on a user's profile/community page
         /// ("steamid" dialog) — handy for "view profile" on Steam friends.
         /// </summary>

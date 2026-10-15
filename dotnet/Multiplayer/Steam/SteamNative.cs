@@ -170,6 +170,12 @@ namespace Michitai.Multiplayer.Steam
         internal delegate void ActivateGameOverlayInviteDialogConnectStringFn(IntPtr self, byte[] connectString);
         internal static ActivateGameOverlayInviteDialogConnectStringFn ActivateGameOverlayInviteDialogConnectString;
 
+        /// <summary>Opens the overlay on a store page. flag is EOverlayToStoreFlag
+        /// (0 = none — plain store page).</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate void ActivateGameOverlayToStoreFn(IntPtr self, uint appID, int flag);
+        internal static ActivateGameOverlayToStoreFn ActivateGameOverlayToStore;
+
         /// <summary>key/value are NUL-terminated UTF-8 buffers. Max 30 keys,
         /// key ≤ 64 chars, value ≤ 256 chars (k_cchMaxRichPresence*).</summary>
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -244,6 +250,7 @@ namespace Michitai.Multiplayer.Steam
                 ActivateGameOverlay = Bind<ActivateGameOverlayFn>("SteamAPI_ISteamFriends_ActivateGameOverlay");
                 ActivateGameOverlayToUser = Bind<ActivateGameOverlayToUserFn>("SteamAPI_ISteamFriends_ActivateGameOverlayToUser");
                 ActivateGameOverlayInviteDialogConnectString = Bind<ActivateGameOverlayInviteDialogConnectStringFn>("SteamAPI_ISteamFriends_ActivateGameOverlayInviteDialogConnectString");
+                ActivateGameOverlayToStore = Bind<ActivateGameOverlayToStoreFn>("SteamAPI_ISteamFriends_ActivateGameOverlayToStore");
                 SetRichPresence = Bind<SetRichPresenceFn>("SteamAPI_ISteamFriends_SetRichPresence");
                 GetFriendRichPresence = Bind<GetFriendRichPresenceFn>("SteamAPI_ISteamFriends_GetFriendRichPresence");
                 SetPlayedWith = Bind<SetPlayedWithFn>("SteamAPI_ISteamFriends_SetPlayedWith");
