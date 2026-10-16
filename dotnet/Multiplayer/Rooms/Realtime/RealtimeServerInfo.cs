@@ -20,5 +20,10 @@ namespace Michitai.Multiplayer.Rooms.Realtime
         /// The WebSocket protocol (e.g., "ws" or "wss").
         /// </summary>
         public string protocol { get; set; }
+
+        /// <summary>
+        /// The UDP port for the unreliable datagram channel (0 = unavailable).
+        /// </summary>
+        public int udp_port { get; set; }
     }
 }

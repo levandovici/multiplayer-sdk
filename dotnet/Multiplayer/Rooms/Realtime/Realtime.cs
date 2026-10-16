@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -11,8 +13,11 @@ using Michitai.Multiplayer;
 namespace Michitai.Multiplayer.Rooms.Realtime
 {
     /// <summary>
-    /// Manages WebSocket connections for realtime communication in game rooms.
-    /// Handles connection, message sending/receiving, and automatic heartbeat.
+    /// Manages realtime communication in game rooms over two channels:
+    /// a reliable WebSocket (TCP) connection for control traffic plus one
+    /// optional bound UDP address for high-frequency unreliable traffic
+    /// (movement state, inputs). One player may hold one TCP connection
+    /// and one UDP binding at the same time — see <see cref="ConnectUdpAsync"/>.
     /// </summary>
     public class Realtime
     {
@@ -22,8 +27,17 @@ namespace Michitai.Multiplayer.Rooms.Realtime
         private CancellationTokenSource? _heartbeatCancellationTokenSource;
         private readonly string _realtimeWebSocketUrl;
 
+        // UDP companion channel state
+        private UdpClient? _udpSocket;
+        private CancellationTokenSource? _udpCancellationTokenSource;
+        private volatile bool _udpBound;
+        private string? _connectionId;
+        private int _serverUdpPort;
+        private int _udpSeq;
+        private long _lastUdpPingTicks;
+
         /// <summary>
-        /// Event raised when a message is received from the WebSocket.
+        /// Event raised when a message is received (either transport).
         /// </summary>
         public event Action<string, object, SenderInfo>? OnReceive;
 
@@ -31,6 +45,15 @@ namespace Michitai.Multiplayer.Rooms.Realtime
         /// Event raised when the WebSocket connection is established.
         /// </summary>
         public event Action? OnConnected;
+
+        /// <summary>The connection id issued by the server, or null before connect.</summary>
+        public string? ConnectionId => _connectionId;
+
+        /// <summary>True while a UDP address is bound to this session.</summary>
+        public bool IsUdpConnected => _udpBound && _udpSocket != null;
+
+        /// <summary>Last measured UDP round-trip time in milliseconds (0 = unknown).</summary>
+        public int LastUdpRttMs { get; private set; }
 
         /// <summary>
         /// Initializes a new Realtime instance.
@@ -93,6 +116,49 @@ namespace Michitai.Multiplayer.Rooms.Realtime
         }
 
         /// <summary>
+        /// Binds a UDP endpoint to this session. Call after ConnectAsync; the
+        /// server accepts one UDP binding per connection. Datagrams are
+        /// authenticated with the connection id issued on the socket.
+        /// </summary>
+        /// <param name="udpPort">Override port — defaults to the udp_port
+        /// announced in the server's connected payload.</param>
+        /// <returns>True when the server acknowledged the binding.</returns>
+        public async Task<bool> ConnectUdpAsync(int? udpPort = null)
+        {
+            if (_websocket?.State != WebSocketState.Open || _connectionId == null) return false;
+            if (_udpBound) return true;
+
+            try
+            {
+                var uri = new Uri(_realtimeWebSocketUrl);
+                // The WS port is a proxy port for wss:// — UDP needs the
+                // service port announced by the server (3000 by default).
+                int port = udpPort ?? (_serverUdpPort > 0 ? _serverUdpPort : 3000);
+
+                _udpSocket = new UdpClient();
+                _udpSocket.Connect(uri.Host, port);
+                _udpCancellationTokenSource = new CancellationTokenSource();
+                _ = Task.Run(ListenUdpAsync);
+
+                // BIND is unreliable — retry once before giving up.
+                var bindPacket = RealtimeUdpWire.Encode(RealtimeUdpWire.PacketType.Bind, _connectionId, "{\"v\":1}");
+                for (int attempt = 0; attempt < 2 && !_udpBound; attempt++)
+                {
+                    await _udpSocket.SendAsync(bindPacket, bindPacket.Length);
+                    var deadline = DateTime.UtcNow.AddMilliseconds(1500);
+                    while (!_udpBound && DateTime.UtcNow < deadline)
+                        await Task.Delay(25);
+                }
+                return _udpBound;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"UDP connect failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Sends a message to the specified players via WebSocket.
         /// </summary>
         /// <param name="target">The target players (All, Host, Others, Specific).</param>
@@ -123,7 +189,33 @@ namespace Michitai.Multiplayer.Rooms.Realtime
         }
 
         /// <summary>
-        /// Disconnects from the WebSocket server and cleans up resources.
+        /// Sends over the bound UDP channel — unordered, unacknowledged,
+        /// latest-wins via <c>seq</c>. Best for movement/state streams.
+        /// Falls back to the WebSocket when UDP is not bound.
+        /// </summary>
+        public async Task SendUnreliableAsync(ERoomTargetPlayer target, string command, object? data = null, int[]? targetIds = null)
+        {
+            if (!_udpBound || _udpSocket == null || _connectionId == null)
+            {
+                await SendAsync(target, command, data, targetIds);
+                return;
+            }
+
+            var json = JsonSerializer.Serialize(new
+            {
+                type = "send",
+                command = command,
+                data = data,
+                seq = Interlocked.Increment(ref _udpSeq),
+                target_ids = targetIds ?? new int[0],
+                target = target.ToString().ToLower()
+            });
+            var packet = RealtimeUdpWire.Encode(RealtimeUdpWire.PacketType.Msg, _connectionId, json);
+            await _udpSocket.SendAsync(packet, packet.Length);
+        }
+
+        /// <summary>
+        /// Disconnects from the server and cleans up both channels.
         /// </summary>
         public async Task DisconnectAsync()
         {
@@ -131,6 +223,8 @@ namespace Michitai.Multiplayer.Rooms.Realtime
             {
                 _heartbeatCancellationTokenSource?.Cancel();
                 _cancellationTokenSource?.Cancel();
+                _udpCancellationTokenSource?.Cancel();
+                _udpBound = false;
 
                 if (_websocket?.State == WebSocketState.Open)
                 {
@@ -139,6 +233,8 @@ namespace Michitai.Multiplayer.Rooms.Realtime
                         "Client disconnecting",
                         CancellationToken.None);
                 }
+                _udpSocket?.Close();
+                _udpSocket = null;
             }
             catch (Exception ex)
             {
@@ -165,7 +261,11 @@ namespace Michitai.Multiplayer.Rooms.Realtime
                         var realtimeMessage = JsonSerializer.Deserialize<RealtimeMessage>(messageStr,
                             new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                        if (realtimeMessage?.type == "receive" && OnReceive != null)
+                        if (realtimeMessage?.type == "connected")
+                        {
+                            HandleConnected(realtimeMessage.data);
+                        }
+                        else if (realtimeMessage?.type == "receive" && OnReceive != null)
                         {
                             OnReceive.Invoke(realtimeMessage.command ?? string.Empty,
                                 realtimeMessage.data ?? new object(),
@@ -176,6 +276,79 @@ namespace Michitai.Multiplayer.Rooms.Realtime
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     if (ex is WebSocketException) break;
+                }
+            }
+        }
+
+        private void HandleConnected(object? data)
+        {
+            if (data is JsonElement el && el.ValueKind == JsonValueKind.Object)
+            {
+                if (el.TryGetProperty("connection_id", out var cid))
+                    _connectionId = cid.GetString();
+                if (el.TryGetProperty("udp_port", out var up) && up.ValueKind == JsonValueKind.Number)
+                    _serverUdpPort = up.GetInt32();
+            }
+        }
+
+        private async Task ListenUdpAsync()
+        {
+            while (_udpSocket != null &&
+                !(_udpCancellationTokenSource?.Token.IsCancellationRequested ?? true))
+            {
+                UdpReceiveResult result;
+                try
+                {
+                    result = await _udpSocket.ReceiveAsync(_udpCancellationTokenSource?.Token ?? CancellationToken.None);
+                }
+                catch (OperationCanceledException) { break; }
+                catch (ObjectDisposedException) { break; }
+                catch { continue; }
+
+                if (!RealtimeUdpWire.TryDecode(result.Buffer, out var type, out var connId, out var json))
+                    continue;
+                if (connId != _connectionId) continue;
+
+                switch (type)
+                {
+                    case RealtimeUdpWire.PacketType.BindAck:
+                        try
+                        {
+                            using var doc = JsonDocument.Parse(json ?? "{}");
+                            if (doc.RootElement.TryGetProperty("ok", out var ok) && ok.GetBoolean())
+                                _udpBound = true;
+                        }
+                        catch { }
+                        break;
+
+                    case RealtimeUdpWire.PacketType.Msg:
+                        try
+                        {
+                            var msg = JsonSerializer.Deserialize<RealtimeMessage>(json ?? "{}",
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                            if (msg?.type == "receive" && OnReceive != null)
+                            {
+                                OnReceive.Invoke(msg.command ?? string.Empty,
+                                    msg.data ?? new object(), msg.sender);
+                            }
+                        }
+                        catch { }
+                        break;
+
+                    case RealtimeUdpWire.PacketType.Pong:
+                        try
+                        {
+                            using var doc = JsonDocument.Parse(json ?? "{}");
+                            if (doc.RootElement.TryGetProperty("t", out var t) &&
+                                t.ValueKind == JsonValueKind.Number)
+                            {
+                                var sent = t.GetInt64();
+                                var now = (int)(DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond);
+                                LastUdpRttMs = Math.Max(0, now - (int)sent);
+                            }
+                        }
+                        catch { }
+                        break;
                 }
             }
         }
@@ -228,12 +401,65 @@ namespace Michitai.Multiplayer.Rooms.Realtime
                         true,
                         _heartbeatCancellationTokenSource?.Token ?? CancellationToken.None);
                 }
+
+                // Keep the NAT mapping warm on the UDP channel too.
+                if (_udpBound && _udpSocket != null && _connectionId != null)
+                {
+                    var nowMs = (int)(DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond);
+                    var ping = RealtimeUdpWire.Encode(RealtimeUdpWire.PacketType.Ping,
+                        _connectionId, $"{{\"t\":{nowMs}}}");
+                    await _udpSocket.SendAsync(ping, ping.Length);
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Send heartbeat error: {ex.Message}");
             }
         }
+    }
 
+    /// <summary>
+    /// MUR1 datagram codec — [4B magic][1B type][16B connection id][JSON].
+    /// Shared layout with realtime/src/protocol.js.
+    /// </summary>
+    internal static class RealtimeUdpWire
+    {
+        public const int HeaderSize = 21;
+
+        public enum PacketType : byte
+        {
+            Bind = 1,
+            BindAck = 2,
+            Msg = 3,
+            Ping = 4,
+            Pong = 5
+        }
+
+        public static byte[] Encode(PacketType type, string connectionId, string? jsonBody)
+        {
+            byte[] id = Convert.FromHexString(connectionId.Replace("-", ""));
+            byte[] body = jsonBody == null ? Array.Empty<byte>() : Encoding.UTF8.GetBytes(jsonBody);
+            byte[] buf = new byte[HeaderSize + body.Length];
+            buf[0] = (byte)'M'; buf[1] = (byte)'U'; buf[2] = (byte)'R'; buf[3] = (byte)'1';
+            buf[4] = (byte)type;
+            Buffer.BlockCopy(id, 0, buf, 5, 16);
+            Buffer.BlockCopy(body, 0, buf, HeaderSize, body.Length);
+            return buf;
+        }
+
+        public static bool TryDecode(byte[] datagram, out PacketType type, out string? connectionId, out string? json)
+        {
+            type = 0;
+            connectionId = null;
+            json = null;
+            if (datagram == null || datagram.Length < HeaderSize) return false;
+            if (datagram[0] != 'M' || datagram[1] != 'U' || datagram[2] != 'R' || datagram[3] != '1')
+                return false;
+            type = (PacketType)datagram[4];
+            var hex = Convert.ToHexString(datagram, 5, 16).ToLowerInvariant();
+            connectionId = $"{hex.Substring(0, 8)}-{hex.Substring(8, 4)}-{hex.Substring(12, 4)}-{hex.Substring(16, 4)}-{hex.Substring(20)}";
+            json = datagram.Length > HeaderSize ? Encoding.UTF8.GetString(datagram, HeaderSize, datagram.Length - HeaderSize) : null;
+            return true;
+        }
     }
 }

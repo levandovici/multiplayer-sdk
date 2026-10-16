@@ -6,6 +6,7 @@ from .models import (
     SenderInfo,
     TokenResponse,
 )
+from .prediction import PredictionBuffer, SnapshotBuffer
 from .realtime import Realtime, get_token
 
 __all__ = [
@@ -17,4 +18,6 @@ __all__ = [
     "RealtimeServerInfo",
     "SenderInfo",
     "TokenResponse",
+    "PredictionBuffer",
+    "SnapshotBuffer",
 ]

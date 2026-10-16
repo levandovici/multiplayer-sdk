@@ -18,6 +18,11 @@ public class RealtimeMessage {
     @JsonProperty("sender")
     private SenderInfo sender;
 
+    /** Sender-assigned sequence on unreliable (UDP) traffic — drop
+     * messages whose seq is not newer than the last seen. */
+    @JsonProperty("seq")
+    private long seq;
+
     public String getType() {
         return type;
     }
@@ -48,5 +53,13 @@ public class RealtimeMessage {
 
     public void setSender(SenderInfo sender) {
         this.sender = sender;
+    }
+
+    public long getSeq() {
+        return seq;
+    }
+
+    public void setSeq(long seq) {
+        this.seq = seq;
     }
 }

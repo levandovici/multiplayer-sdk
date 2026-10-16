@@ -60,6 +60,11 @@ endif()
 find_package(Threads REQUIRED)
 target_link_libraries(multiplayer_sdk PUBLIC Threads::Threads)
 
+# Realtime's UDP channel uses raw sockets — Winsock on Windows.
+if(WIN32)
+  target_link_libraries(multiplayer_sdk PUBLIC ws2_32)
+endif()
+
 # Set C++ standard
 target_compile_features(multiplayer_sdk PUBLIC cxx_std_17)
 

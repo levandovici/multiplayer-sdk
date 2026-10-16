@@ -16,6 +16,10 @@ public class RealtimeServerInfo {
     @JsonProperty("protocol")
     private String protocol;
 
+    /** The UDP port for the unreliable datagram channel (0 = unavailable). */
+    @JsonProperty("udp_port")
+    private int udpPort;
+
     public String getHost() {
         return host;
     }
@@ -38,5 +42,13 @@ public class RealtimeServerInfo {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public int getUdpPort() {
+        return udpPort;
+    }
+
+    public void setUdpPort(int udpPort) {
+        this.udpPort = udpPort;
     }
 }

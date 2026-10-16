@@ -27,6 +27,7 @@ class RealtimeServerInfo:
     host: str = ""
     port: int = 0
     protocol: str = ""
+    udp_port: int = 0  # unreliable datagram channel (0 = unavailable)
 
 
 @dataclass
@@ -51,9 +52,10 @@ class SenderInfo:
 
 @dataclass
 class RealtimeMessage:
-    """A message received over the realtime WebSocket."""
+    """A message received over the realtime channel."""
 
     type: Optional[str] = None
     command: Optional[str] = None
     data: Any = None
     sender: Optional[SenderInfo] = None
+    seq: int = 0  # sender-assigned on UDP traffic — latest-wins dedup
