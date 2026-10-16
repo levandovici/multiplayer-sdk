@@ -34,7 +34,6 @@ namespace Michitai.Multiplayer.Rooms.Realtime
         private string? _connectionId;
         private int _serverUdpPort;
         private int _udpSeq;
-        private long _lastUdpPingTicks;
 
         /// <summary>
         /// Event raised when a message is received (either transport).
