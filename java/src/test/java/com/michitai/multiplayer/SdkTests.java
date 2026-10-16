@@ -9,6 +9,9 @@ import com.michitai.multiplayer.errors.ErrorConverter;
 import com.michitai.multiplayer.errors.ErrorEnums;
 import com.michitai.multiplayer.games.GameDataResponse;
 import com.michitai.multiplayer.games.Games;
+import com.michitai.multiplayer.moderation.CensorResponse;
+import com.michitai.multiplayer.moderation.Moderation;
+import com.michitai.multiplayer.moderation.TextFilter;
 import com.michitai.multiplayer.players.EBanTime;
 import com.michitai.multiplayer.players.PlayerBanResponse;
 import com.michitai.multiplayer.players.PlayerRegisterResponse;
@@ -381,6 +384,48 @@ public class SdkTests {
         check(body.get("request_data").isTextual(), "action body request_data is JSON string");
     }
 
+    // Dirty literals are base64 so no readable banned words sit in the repo.
+    private static String W(String b) {
+        return new String(java.util.Base64.getDecoder().decode(b), java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private static void testCensorText(MockApi api, Client client) throws IOException {
+        System.out.println("[TEST] censor text");
+
+        api.when("censor.php",
+            "{\"success\":true,\"clean\":false,\"filtered\":\"say **** noob\"}");
+
+        CensorResponse res = Moderation.censor(client, W("c2F5IGZ1Y2sgbm9vYg=="));
+
+        check(res.isSuccess(), "censor success");
+        check(!res.isClean(), "censor clean=false on profanity");
+        eq("say **** noob", res.getFiltered(), "censor filtered output");
+
+        RecordedRequest rec = api.lastRequest("censor.php");
+        eq("POST", rec.method, "censor uses POST");
+        eq("PUB", rec.headers.get("x-api-token"), "censor sends api_token header");
+        check(rec.query == null || !rec.query.contains("api_token"),
+            "censor keeps token out of query");
+        JsonNode body = parse(rec.body);
+        eq(W("c2F5IGZ1Y2sgbm9vYg=="), body.get("text").asText(), "censor body text");
+    }
+
+    private static void testLocalTextFilter() {
+        System.out.println("[TEST] local TextFilter (hashed list)");
+
+        check(TextFilter.isClean("Player1"), "local clean name");
+        check(!TextFilter.isClean(W("ZnVjaw==")), "local flags profanity");
+        check(!TextFilter.isClean(W("NWgxdA==")), "local flags digit leet");
+        check(!TextFilter.isClean(W("M2E3YmE=")), "local flags marker overlap");
+        check(!TextFilter.isClean(W("0YHRg9C60LA=")), "local flags cyrillic");
+        check(TextFilter.isClean("Knight"), "local keeps Knight");
+        check(TextFilter.isClean("Therapist"), "local allowlist");
+        eq("say **** ****", TextFilter.filter(W("c2F5IGZ1Y2sgbm9vYg==")),
+            "local filter masks");
+        check(TextFilter.isNameAllowed("CoolDude"), "local name allowed");
+        check(!TextFilter.isNameAllowed(W("c2gxdGxvcmQ=")), "local name rejected");
+    }
+
     private static JsonNode parse(String json) throws IOException {
         return Client.JSON_MAPPER.readTree(json);
     }
@@ -401,6 +446,8 @@ public class SdkTests {
             testPollUpdatesTyped(api, client);
             testSubmitActionRequest(api, client);
             testBanPlayerWireValue(api, client);
+            testCensorText(api, client);
+            testLocalTextFilter();
             testErrorResponse(api, client);
             testErrorConverter();
         } finally {

@@ -83,6 +83,7 @@ namespace Michitai.Multiplayer.Errors
         ApiTokenIsRequired = ECommonError.ApiTokenIsRequired,
         InvalidApiToken = ECommonError.InvalidApiToken,
         PlayerNameIsRequired,
+        PlayerNameIsNotAllowed,
         FailedToRegisterPlayer
     }
 
@@ -119,6 +120,7 @@ namespace Michitai.Multiplayer.Errors
         InvalidPlayerToken,
         NewNameIsRequired,
         PlayerNameMustBeBetween2And50Characters,
+        PlayerNameIsNotAllowed,
         FailedToUpdatePlayerName
     }
 
@@ -591,5 +593,21 @@ namespace Michitai.Multiplayer.Errors
         PlayerTokenIsRequired,
         PlayerIsNotInARealtimeEnabledRoom,
         FailedToGenerateRealtimeToken
+    }
+
+    // ====================== CENSOR.PHP ERRORS ======================
+
+    public enum ECensorError
+    {
+        Unknown = ECommonError.Unknown,
+        MethodNotAllowedUsePost,
+        ApiTokenIsRequired,
+        InvalidOrExpiredApiToken,
+        InvalidJsonBody,
+        TextIsRequiredAndMustBeAString,
+        TextMustBeAtMost1000Characters,
+        TooManyRequests,
+        DatabaseError,
+        ServerError
     }
 }

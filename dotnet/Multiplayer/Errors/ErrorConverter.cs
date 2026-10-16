@@ -40,6 +40,7 @@ public static class ErrorConverter
         { "Failed to update heartbeat", nameof(EPlayerHeartbeatError.FailedToUpdateHeartbeat) },
         { "New name is required", nameof(EPlayerRenameError.NewNameIsRequired) },
         { "Player name must be between 2 and 50 characters", nameof(EPlayerRenameError.PlayerNameMustBeBetween2And50Characters) },
+        { "Player name is not allowed", nameof(EPlayerRenameError.PlayerNameIsNotAllowed) },
         { "Failed to update player name", nameof(EPlayerRenameError.FailedToUpdatePlayerName) },
         { "API token and private token are required", nameof(EPlayerListError.ApiTokenAndPrivateTokenAreRequired) },
         { "Invalid API credentials", nameof(EPlayerListError.InvalidApiCredentials) },
@@ -178,7 +179,12 @@ public static class ErrorConverter
         { "Invalid player token", nameof(ERealtimeTokenError.InvalidPlayerToken) },
         { "Player token is required", nameof(ERealtimeTokenError.PlayerTokenIsRequired) },
         { "Player is not in a realtime-enabled room", nameof(ERealtimeTokenError.PlayerIsNotInARealtimeEnabledRoom) },
-        { "Failed to generate realtime token", nameof(ERealtimeTokenError.FailedToGenerateRealtimeToken) }
+        { "Failed to generate realtime token", nameof(ERealtimeTokenError.FailedToGenerateRealtimeToken) },
+
+        // Censor errors
+        { "text is required and must be a string", nameof(ECensorError.TextIsRequiredAndMustBeAString) },
+        { "text must be at most 1000 characters", nameof(ECensorError.TextMustBeAtMost1000Characters) },
+        { "Too many requests", nameof(ECensorError.TooManyRequests) }
     };
 
     /// <summary>

@@ -174,6 +174,12 @@ public final class ErrorConverter {
         m.put("Player is not in a realtime-enabled room", "PlayerIsNotInARealtimeEnabledRoom");
         m.put("Failed to generate realtime token", "FailedToGenerateRealtimeToken");
 
+        // Censor errors
+        m.put("text is required and must be a string", "TextIsRequiredAndMustBeAString");
+        m.put("text must be at most 1000 characters", "TextMustBeAtMost1000Characters");
+        m.put("Too many requests", "TooManyRequests");
+        m.put("Player name is not allowed", "PlayerNameIsNotAllowed");
+
         ERROR_MAPPINGS = Collections.unmodifiableMap(m);
     }
 

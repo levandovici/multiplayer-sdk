@@ -36,6 +36,7 @@ ERROR_MAPPINGS = {
     "Failed to update heartbeat": "FailedToUpdateHeartbeat",
     "New name is required": "NewNameIsRequired",
     "Player name must be between 2 and 50 characters": "PlayerNameMustBeBetween2And50Characters",
+    "Player name is not allowed": "PlayerNameIsNotAllowed",
     "Failed to update player name": "FailedToUpdatePlayerName",
     "API token and private token are required": "ApiTokenAndPrivateTokenAreRequired",
     "Invalid API credentials": "InvalidApiCredentials",
@@ -164,6 +165,11 @@ ERROR_MAPPINGS = {
     # Realtime errors
     "Player is not in a realtime-enabled room": "PlayerIsNotInARealtimeEnabledRoom",
     "Failed to generate realtime token": "FailedToGenerateRealtimeToken",
+
+    # Censor errors
+    "text is required and must be a string": "TextIsRequiredAndMustBeAString",
+    "text must be at most 1000 characters": "TextMustBeAtMost1000Characters",
+    "Too many requests": "TooManyRequests",
 }
 
 

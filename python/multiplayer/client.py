@@ -58,6 +58,7 @@ class Client:
         from .leaderboard.leaderboard import Leaderboard
         from .matchmaking.matchmaking import Matchmaking
         from .matchmaking.requests.requests import MatchmakingRequests
+        from .moderation.moderation import Moderation
         from .players.players import Players
         from .rooms.actions.actions import Actions
         from .rooms.rooms import Rooms
@@ -73,6 +74,7 @@ class Client:
         self.leaderboard = Leaderboard(self)
         self.games = Games(self)
         self.time = Time(self)
+        self.moderation = Moderation(self)
 
     @property
     def api_token(self) -> str:

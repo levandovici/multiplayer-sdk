@@ -59,6 +59,7 @@ class PlayerRegisterError(enum.Enum):
     ApiTokenIsRequired = enum.auto()
     InvalidApiToken = enum.auto()
     PlayerNameIsRequired = enum.auto()
+    PlayerNameIsNotAllowed = enum.auto()
     FailedToRegisterPlayer = enum.auto()
 
 
@@ -92,6 +93,7 @@ class PlayerRenameError(enum.Enum):
     InvalidPlayerToken = enum.auto()
     NewNameIsRequired = enum.auto()
     PlayerNameMustBeBetween2And50Characters = enum.auto()
+    PlayerNameIsNotAllowed = enum.auto()
     FailedToUpdatePlayerName = enum.auto()
 
 
@@ -546,3 +548,18 @@ class RealtimeTokenError(enum.Enum):
     PlayerTokenIsRequired = enum.auto()
     PlayerIsNotInARealtimeEnabledRoom = enum.auto()
     FailedToGenerateRealtimeToken = enum.auto()
+
+
+# ====================== censor.php ======================
+
+class CensorError(enum.Enum):
+    Unknown = 0
+    MethodNotAllowedUsePost = enum.auto()
+    ApiTokenIsRequired = enum.auto()
+    InvalidOrExpiredApiToken = enum.auto()
+    InvalidJsonBody = enum.auto()
+    TextIsRequiredAndMustBeAString = enum.auto()
+    TextMustBeAtMost1000Characters = enum.auto()
+    TooManyRequests = enum.auto()
+    DatabaseError = enum.auto()
+    ServerError = enum.auto()

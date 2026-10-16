@@ -25,6 +25,7 @@ from .errors import (
 from .games import Games
 from .leaderboard import Leaderboard
 from .matchmaking import Matchmaking, MatchmakingRequests
+from .moderation import Moderation
 from .players import BanTime, Players, is_banned
 from .rooms import Rooms, RoomTargetPlayers
 from .rooms.actions import Actions, RoomActionStatus, RoomCompleteActionStatus
@@ -48,6 +49,7 @@ __all__ = [
     "Leaderboard",
     "Matchmaking",
     "MatchmakingRequests",
+    "Moderation",
     "Players",
     "BanTime",
     "is_banned",

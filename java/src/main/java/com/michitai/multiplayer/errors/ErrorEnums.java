@@ -63,6 +63,7 @@ public final class ErrorEnums {
         ApiTokenIsRequired,
         InvalidApiToken,
         PlayerNameIsRequired,
+        PlayerNameIsNotAllowed,
         FailedToRegisterPlayer
     }
 
@@ -95,6 +96,7 @@ public final class ErrorEnums {
         InvalidPlayerToken,
         NewNameIsRequired,
         PlayerNameMustBeBetween2And50Characters,
+        PlayerNameIsNotAllowed,
         FailedToUpdatePlayerName
     }
 
@@ -549,5 +551,20 @@ public final class ErrorEnums {
         PlayerTokenIsRequired,
         PlayerIsNotInARealtimeEnabledRoom,
         FailedToGenerateRealtimeToken
+    }
+
+    // ====================== CENSOR.PHP ERRORS ======================
+
+    public enum ECensorError {
+        Unknown,
+        MethodNotAllowedUsePost,
+        ApiTokenIsRequired,
+        InvalidOrExpiredApiToken,
+        InvalidJsonBody,
+        TextIsRequiredAndMustBeAString,
+        TextMustBeAtMost1000Characters,
+        TooManyRequests,
+        DatabaseError,
+        ServerError
     }
 }
