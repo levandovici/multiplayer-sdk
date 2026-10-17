@@ -950,9 +950,31 @@ private:
             kept.push_back(sp);
         }
 
+        // A match with zero literal letters is only evidence when it covers
+        // its whole digit group: "455" or "14_88" as standalone tokens flag,
+        // but a subslice of a longer digit run ("segg" inside a timestamp's
+        // digits) is incidental noise.
+        std::vector<Span> grouped;
+        for (const Span& sp : kept) {
+            bool literal = false;
+            for (int p = sp.start; p < sp.end; p++) {
+                if (kind[p] == 0) { literal = true; break; }
+            }
+            if (literal) {
+                grouped.push_back(sp);
+                continue;
+            }
+            int gs = sp.start, ge = sp.start + 1;
+            while (gs > 0 && kind[gs - 1] != 0) gs--;
+            while (ge < n && kind[ge] != 0) ge++;
+            if (sp.start == gs && sp.end == ge) {
+                grouped.push_back(sp);
+            }
+        }
+
         // Mask the whole token(s) a match touches — leaving "W***D" behind
         // defeats the purpose.
-        for (Span& sp : kept) {
+        for (Span& sp : grouped) {
             int first = f.token[sp.start];
             int last = f.token[sp.end - 1];
             sp.start = f.tokenStart[first];
@@ -960,7 +982,7 @@ private:
                          ? f.tokenStart[last + 1] : n;
         }
 
-        out.swap(kept);
+        out.swap(grouped);
     }
 };
 

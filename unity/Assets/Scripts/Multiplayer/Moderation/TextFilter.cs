@@ -1071,6 +1071,27 @@ namespace Michitai.Multiplayer.Moderation
                     spans.RemoveAt(i);
             }
 
+            // A match with zero literal letters is only evidence when it
+            // covers its whole digit group: "455" or "14_88" as standalone
+            // tokens flag, but a subslice of a longer digit run ("segg"
+            // inside a timestamp's digits) is incidental noise.
+            for (int i = spans.Count - 1; i >= 0; i--)
+            {
+                Span span = spans[i];
+                bool literal = false;
+                for (int p = span.Start; p < span.End; p++)
+                {
+                    if (kind[p] == 0) { literal = true; break; }
+                }
+                if (literal || kind[span.Start] == 0)
+                    continue;
+                int gs = span.Start, ge = span.Start + 1;
+                while (gs > 0 && kind[gs - 1] != 0) gs--;
+                while (ge < n && kind[ge] != 0) ge++;
+                if (span.Start != gs || span.End != ge)
+                    spans.RemoveAt(i);
+            }
+
             // Mask the whole token(s) a match touches — leaving "W***D" behind
             // defeats the purpose.
             for (int i = 0; i < spans.Count; i++)

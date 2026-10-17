@@ -679,6 +679,22 @@ class _State:
 
         spans = [sp for sp in spans if not _in_allow_run(sp)]
 
+        # A match with zero literal letters is only evidence when it covers
+        # its whole digit group: "455" or "14_88" as standalone tokens flag,
+        # but a subslice of a longer digit run ("segg" inside a timestamp's
+        # digits) is incidental noise.
+        def _glue_subslice(sp):
+            if any(kind[p] == 0 for p in range(sp[0], sp[1])):
+                return False
+            gs, ge = sp[0], sp[0] + 1
+            while gs > 0 and kind[gs - 1] != 0:
+                gs -= 1
+            while ge < n and kind[ge] != 0:
+                ge += 1
+            return sp[0] != gs or sp[1] != ge
+
+        spans = [sp for sp in spans if not _glue_subslice(sp)]
+
         # Mask the whole token(s) a match touches — leaving "W***D" behind
         # defeats the purpose.
         out = []

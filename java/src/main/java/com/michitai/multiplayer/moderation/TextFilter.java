@@ -934,6 +934,21 @@ public final class TextFilter {
             return sp.end <= re && allowOk(f, rs, re);
         });
 
+        // A match with zero literal letters is only evidence when it covers
+        // its whole digit group: "455" or "14_88" as standalone tokens flag,
+        // but a subslice of a longer digit run ("segg" inside a timestamp's
+        // digits) is incidental noise.
+        spans.removeIf(sp -> {
+            for (int p = sp.start; p < sp.end; p++) {
+                if (kind[p] == 0)
+                    return false;
+            }
+            int gs = sp.start, ge = sp.start + 1;
+            while (gs > 0 && kind[gs - 1] != 0) gs--;
+            while (ge < n && kind[ge] != 0) ge++;
+            return sp.start != gs || sp.end != ge;
+        });
+
         // Mask the whole token(s) a match touches — leaving "W***D" behind
         // defeats the purpose.
         for (int i = 0; i < spans.size(); i++) {
