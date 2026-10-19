@@ -81,6 +81,18 @@ public:
         return name != nullptr ? std::string(name) : std::string();
     }
 
+    /// Language the user picked for this game in the Steam client, as a
+    /// Steam language name ("english", "schinese", "brazilian", …) — empty
+    /// when unavailable. Optional interface; nullptr-safe.
+    std::string GameLanguage() const
+    {
+        if (!m_initialized) return {};
+        const ISteamApps* apps = SteamApps();
+        if (apps == nullptr) return {};
+        const char* lang = apps->GetCurrentGameLanguage();
+        return lang != nullptr ? std::string(lang) : std::string();
+    }
+
     /// Mints a fresh single-use web auth ticket and returns its hex encoding.
     /// Pumps SteamAPI_RunCallbacks internally while waiting — call from a
     /// thread where blocking ~seconds is acceptable. The ticket handle is
