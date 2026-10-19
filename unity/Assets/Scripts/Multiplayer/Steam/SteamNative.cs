@@ -102,6 +102,18 @@ namespace Michitai.Multiplayer.Steam
         internal delegate IntPtr SteamFriendsFn();
         internal static SteamFriendsFn SteamFriends;
 
+        /// <summary>SteamAPI_SteamApps_v008 — ISteamApps accessor (SteamApps008 in SDK 1.65).</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate IntPtr SteamAppsFn();
+        internal static SteamAppsFn SteamApps;
+
+        /// <summary>Returns a const char* (UTF-8) with the per-game language
+        /// key ("english", "schinese", ...), set by the client's language
+        /// dropdown for this game.</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate IntPtr GetCurrentGameLanguageFn(IntPtr self);
+        internal static GetCurrentGameLanguageFn GetCurrentGameLanguage;
+
         /// <summary>identity is a NUL-terminated UTF-8 buffer (const char*).</summary>
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate uint GetAuthTicketForWebApiFn(IntPtr self, byte[] identity);
@@ -262,6 +274,30 @@ namespace Michitai.Multiplayer.Steam
                 return false;
             }
 
+            // Optional bindings — a missing export disables the feature, not
+            // the whole API. Interface accessors are version-suffixed, so try
+            // every suffix the shipped DLL may export.
+            SteamAppsFn apps;
+            _ = TryBind("SteamAPI_SteamApps_v009", out apps)
+                || TryBind("SteamAPI_SteamApps_v008", out apps)
+                || TryBind("SteamAPI_SteamApps_v007", out apps)
+                || TryBind("SteamAPI_SteamApps_v006", out apps)
+                || TryBind("SteamAPI_SteamApps_v005", out apps);
+            SteamApps = apps;
+
+            if (SteamApps != null)
+                TryBind("SteamAPI_ISteamApps_GetCurrentGameLanguage", out GetCurrentGameLanguage);
+
+            return true;
+        }
+
+        static bool TryBind<T>(string name, out T del) where T : class
+        {
+            del = null;
+            if (_lib == IntPtr.Zero) return false;
+            IntPtr p = IsWindows ? GetProcAddress(_lib, name) : dlsym(_lib, name);
+            if (p == IntPtr.Zero) return false;
+            del = Marshal.GetDelegateForFunctionPointer<T>(p);
             return true;
         }
 

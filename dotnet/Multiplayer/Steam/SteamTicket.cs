@@ -88,6 +88,7 @@ namespace Michitai.Multiplayer.Steam
         static int _pipe;
         static IntPtr _user;
         static IntPtr _friends;
+        static IntPtr _apps;
         static readonly Dictionary<uint, PendingTicket> _pending = new Dictionary<uint, PendingTicket>();
 
         /// <summary>True after a successful Initialize — Steam client is running and bound.</summary>
@@ -98,6 +99,11 @@ namespace Michitai.Multiplayer.Steam
 
         /// <summary>Local user's Steam persona name, or null when unavailable.</summary>
         public static string PersonaName { get; private set; }
+
+        /// <summary>Steam client's per-game language pick (e.g. "english",
+        /// "schinese") from the game properties language dropdown — null when
+        /// unavailable. Set during Initialize.</summary>
+        public static string GameLanguage { get; private set; }
 
         /// <summary>The bound ISteamFriends interface pointer — used by
         /// SteamFriends; IntPtr.Zero when unavailable.</summary>
@@ -173,6 +179,11 @@ namespace Michitai.Multiplayer.Steam
             _pipe = SteamNative.GetHSteamPipe();
             _user = SteamNative.SteamUser();
             _friends = SteamNative.SteamFriends();
+            if (SteamNative.SteamApps != null && SteamNative.GetCurrentGameLanguage != null)
+            {
+                _apps = SteamNative.SteamApps();
+                GameLanguage = PtrToUtf8(SteamNative.GetCurrentGameLanguage(_apps));
+            }
             SteamId = SteamNative.GetSteamID(_user);
             PersonaName = PtrToUtf8(SteamNative.GetPersonaName(_friends));
             InitError = null;
@@ -286,9 +297,11 @@ namespace Michitai.Multiplayer.Steam
             try { SteamNative.Shutdown(); } catch { }
             _user = IntPtr.Zero;
             _friends = IntPtr.Zero;
+            _apps = IntPtr.Zero;
             _pipe = 0;
             SteamId = 0;
             PersonaName = null;
+            GameLanguage = null;
         }
 
         internal static void CancelAuthTicket(uint handle)
