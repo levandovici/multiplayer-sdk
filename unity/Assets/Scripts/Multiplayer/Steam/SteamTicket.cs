@@ -139,7 +139,11 @@ namespace Michitai.Multiplayer.Steam
         /// <param name="appId">The game's Steam AppID.</param>
         public static bool RestartAppIfNecessary(uint appId)
         {
-            return SteamNative.Loaded && SteamNative.RestartAppIfNecessary(appId);
+            // Same no-Steam-client guard as Initialize — the native call execs
+            // steam.sh to relaunch and can crash when the client is absent.
+            return SteamNative.Loaded
+                && (SteamNative.IsSteamRunning == null || SteamNative.IsSteamRunning())
+                && SteamNative.RestartAppIfNecessary(appId);
         }
 
         /// <summary>
@@ -154,6 +158,15 @@ namespace Michitai.Multiplayer.Steam
             if (!SteamNative.Load())
             {
                 InitError = SteamNative.LoadError;
+                return false;
+            }
+
+            // InitFlat can hard-crash inside libsteam_api on Linux when no
+            // Steam client exists (it attempts a steam.sh relaunch first).
+            // Cheap pre-check keeps the no-Steam path a clean offline fallback.
+            if (SteamNative.IsSteamRunning != null && !SteamNative.IsSteamRunning())
+            {
+                InitError = "Steam client is not running";
                 return false;
             }
 

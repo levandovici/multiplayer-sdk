@@ -44,11 +44,34 @@ namespace Michitai.Multiplayer.Steam
         [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Ansi)]
         static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
 
-        [DllImport("libdl", CharSet = CharSet.Ansi)]
-        static extern IntPtr dlopen(string filename, int flags);
+        // macOS resolves "libdl" to the libSystem stub; glibc distros only ship
+        // the SONAME libdl.so.2 (dlopen/dlsym moved into libc in glibc 2.34 but
+        // the stub remains for compatibility).
+        [DllImport("libdl", EntryPoint = "dlopen", CharSet = CharSet.Ansi)]
+        static extern IntPtr dlopen_osx(string filename, int flags);
 
-        [DllImport("libdl", CharSet = CharSet.Ansi)]
-        static extern IntPtr dlsym(IntPtr handle, string symbol);
+        [DllImport("libdl.so.2", EntryPoint = "dlopen", CharSet = CharSet.Ansi)]
+        static extern IntPtr dlopen_linux(string filename, int flags);
+
+        [DllImport("libdl", EntryPoint = "dlsym", CharSet = CharSet.Ansi)]
+        static extern IntPtr dlsym_osx(IntPtr handle, string symbol);
+
+        [DllImport("libdl.so.2", EntryPoint = "dlsym", CharSet = CharSet.Ansi)]
+        static extern IntPtr dlsym_linux(IntPtr handle, string symbol);
+
+        static IntPtr dlopen(string filename, int flags)
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                ? dlopen_osx(filename, flags)
+                : dlopen_linux(filename, flags);
+        }
+
+        static IntPtr dlsym(IntPtr handle, string symbol)
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                ? dlsym_osx(handle, symbol)
+                : dlsym_linux(handle, symbol);
+        }
 
         static bool IsWindows
         {
@@ -204,6 +227,14 @@ namespace Michitai.Multiplayer.Steam
         internal delegate void SetPlayedWithFn(IntPtr self, ulong steamIDUserPlayedWith);
         internal static SetPlayedWithFn SetPlayedWith;
 
+        /// <summary>SteamAPI_IsSteamRunning — true when a Steam client owns the
+        /// pipe. Callable before init; used as a pre-InitFlat guard because
+        /// InitFlat can hard-crash inside libsteam_api on Linux when no Steam
+        /// client exists (it attempts a steam.sh relaunch first).</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate bool IsSteamRunningFn();
+        internal static IsSteamRunningFn IsSteamRunning;
+
         /// <summary>
         /// Loads the Steamworks native library and binds every export the shim
         /// needs. Returns false (with <see cref="LoadError"/> set) when the DLL
@@ -223,7 +254,7 @@ namespace Michitai.Multiplayer.Steam
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     _lib = dlopen("libsteam_api.dylib", RtldNow);
                 else
-                    _lib = dlopen("libsteam_api.so", RtldNow);
+                    _lib = LoadPosixLibrary("libsteam_api.so");
             }
             catch (Exception ex)
             {
@@ -288,7 +319,22 @@ namespace Michitai.Multiplayer.Steam
             if (SteamApps != null)
                 TryBind("SteamAPI_ISteamApps_GetCurrentGameLanguage", out GetCurrentGameLanguage);
 
+            TryBind("SteamAPI_IsSteamRunning", out IsSteamRunning);
+
             return true;
+        }
+
+        /// <summary>
+        /// Locates steam_api on Linux. Bare-name dlopen never searches the app
+        /// directory where a shipped libsteam_api.so lives, so try the explicit
+        /// path first, then the OS search order (LD_LIBRARY_PATH — the Steam
+        /// client populates it when launching the game).
+        /// </summary>
+        static IntPtr LoadPosixLibrary(string name)
+        {
+            IntPtr h = dlopen(System.IO.Path.Combine(AppContext.BaseDirectory, name), RtldNow);
+            if (h != IntPtr.Zero) return h;
+            return dlopen(name, RtldNow);
         }
 
         static bool TryBind<T>(string name, out T del) where T : class

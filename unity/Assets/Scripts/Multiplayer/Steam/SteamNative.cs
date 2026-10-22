@@ -44,11 +44,34 @@ namespace Michitai.Multiplayer.Steam
         [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Ansi)]
         static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
 
-        [DllImport("libdl", CharSet = CharSet.Ansi)]
-        static extern IntPtr dlopen(string filename, int flags);
+        // macOS resolves "libdl" to the libSystem stub; glibc distros only ship
+        // the SONAME libdl.so.2 (dlopen/dlsym moved into libc in glibc 2.34 but
+        // the stub remains for compatibility).
+        [DllImport("libdl", EntryPoint = "dlopen", CharSet = CharSet.Ansi)]
+        static extern IntPtr dlopen_osx(string filename, int flags);
 
-        [DllImport("libdl", CharSet = CharSet.Ansi)]
-        static extern IntPtr dlsym(IntPtr handle, string symbol);
+        [DllImport("libdl.so.2", EntryPoint = "dlopen", CharSet = CharSet.Ansi)]
+        static extern IntPtr dlopen_linux(string filename, int flags);
+
+        [DllImport("libdl", EntryPoint = "dlsym", CharSet = CharSet.Ansi)]
+        static extern IntPtr dlsym_osx(IntPtr handle, string symbol);
+
+        [DllImport("libdl.so.2", EntryPoint = "dlsym", CharSet = CharSet.Ansi)]
+        static extern IntPtr dlsym_linux(IntPtr handle, string symbol);
+
+        static IntPtr dlopen(string filename, int flags)
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                ? dlopen_osx(filename, flags)
+                : dlopen_linux(filename, flags);
+        }
+
+        static IntPtr dlsym(IntPtr handle, string symbol)
+        {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+                ? dlsym_osx(handle, symbol)
+                : dlsym_linux(handle, symbol);
+        }
 
         static bool IsWindows
         {
@@ -204,6 +227,14 @@ namespace Michitai.Multiplayer.Steam
         internal delegate void SetPlayedWithFn(IntPtr self, ulong steamIDUserPlayedWith);
         internal static SetPlayedWithFn SetPlayedWith;
 
+        /// <summary>SteamAPI_IsSteamRunning — true when a Steam client owns the
+        /// pipe. Callable before init; used as a pre-InitFlat guard because
+        /// InitFlat can hard-crash inside libsteam_api on Linux when no Steam
+        /// client exists (it attempts a steam.sh relaunch first).</summary>
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate bool IsSteamRunningFn();
+        internal static IsSteamRunningFn IsSteamRunning;
+
         /// <summary>
         /// Loads the Steamworks native library and binds every export the shim
         /// needs. Returns false (with <see cref="LoadError"/> set) when the DLL
@@ -223,7 +254,7 @@ namespace Michitai.Multiplayer.Steam
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     _lib = dlopen("libsteam_api.dylib", RtldNow);
                 else
-                    _lib = dlopen("libsteam_api.so", RtldNow);
+                    _lib = LoadPosixLibrary("libsteam_api.so");
             }
             catch (Exception ex)
             {
@@ -288,6 +319,8 @@ namespace Michitai.Multiplayer.Steam
             if (SteamApps != null)
                 TryBind("SteamAPI_ISteamApps_GetCurrentGameLanguage", out GetCurrentGameLanguage);
 
+            TryBind("SteamAPI_IsSteamRunning", out IsSteamRunning);
+
             return true;
         }
 
@@ -319,6 +352,23 @@ namespace Michitai.Multiplayer.Steam
                 "Plugins", IntPtr.Size == 8 ? "x86_64" : "x86", name));
 #endif
             return h;
+        }
+
+        /// <summary>
+        /// Locates steam_api on Linux. Bare-name dlopen never searches Unity's
+        /// plugin folder — in the editor it is Assets/Plugins/x86_64, in a player
+        /// build &lt;Game&gt;_Data/Plugins/x86_64 — so try the explicit path via
+        /// Application.dataPath first, then the OS search order (LD_LIBRARY_PATH,
+        /// which the Steam client populates when launching the game).
+        /// </summary>
+        static IntPtr LoadPosixLibrary(string name)
+        {
+#if UNITY_5_3_OR_NEWER
+            IntPtr h = dlopen(System.IO.Path.Combine(UnityEngine.Application.dataPath,
+                "Plugins", "x86_64", name), RtldNow);
+            if (h != IntPtr.Zero) return h;
+#endif
+            return dlopen(name, RtldNow);
         }
 
         static T Bind<T>(string name) where T : class
