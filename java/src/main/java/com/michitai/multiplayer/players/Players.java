@@ -52,9 +52,31 @@ public class Players {
      */
     public static PlayerRegisterResponse registerPlayerWithSteam(Client client, String steamTicket,
             String steamIdentity, String name, Object playerData) throws IOException {
+        return registerPlayerWithSteam(client, steamTicket, steamIdentity, name, playerData, null);
+    }
+
+    /**
+     * Registers or logs in a player via a Steam auth ticket, optionally
+     * linking the verified SteamID to an existing account. When
+     * {@code playerToken} identifies a player of this game, the server binds
+     * the SteamID to that row instead of creating a second account
+     * (account="linked") — name, tag, friends and progress survive.
+     *
+     * @param client The API client instance.
+     * @param steamTicket Hex-encoded ticket from GetAuthTicketForWebApi.
+     * @param steamIdentity Identity string passed to GetAuthTicketForWebApi (pass null if none was used).
+     * @param name Optional display name; the server generates one from the SteamID when null.
+     * @param playerData Optional initial player data.
+     * @param playerToken Optional existing player token to link the SteamID to.
+     * @return Response containing the player ID, private key token and steam ID.
+     * @throws IOException if the request fails.
+     */
+    public static PlayerRegisterResponse registerPlayerWithSteam(Client client, String steamTicket,
+            String steamIdentity, String name, Object playerData, String playerToken) throws IOException {
         String dataJson = playerData != null ? objectMapper.writeValueAsString(playerData) : null;
         PlayerRegisterRequest request = new PlayerRegisterRequest(name, dataJson, steamTicket, steamIdentity);
-        return client.post(client.url(Endpoints.GAME_PLAYERS_REGISTER), request, PlayerRegisterResponse.class);
+        return client.send("POST", client.url(Endpoints.GAME_PLAYERS_REGISTER), request,
+            PlayerRegisterResponse.class, playerToken, false);
     }
 
     /**

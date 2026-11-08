@@ -27,6 +27,7 @@ from .leaderboard import Leaderboard
 from .matchmaking import Matchmaking, MatchmakingRequests
 from .moderation import Moderation
 from .players import BanTime, Players, is_banned
+from .regions import DiscoverResponse, GameNodeResponse, RealtimeEndpoint, Regions, ServiceNode
 from .rooms import Rooms, RoomTargetPlayers
 from .rooms.actions import Actions, RoomActionStatus, RoomCompleteActionStatus
 from .rooms.realtime import Realtime, RoomTargetPlayer
@@ -62,5 +63,10 @@ __all__ = [
     "RoomTargetPlayer",
     "Updates",
     "Time",
+    "Regions",
+    "DiscoverResponse",
+    "GameNodeResponse",
+    "ServiceNode",
+    "RealtimeEndpoint",
     "__version__",
 ]

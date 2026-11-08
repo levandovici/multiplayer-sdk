@@ -61,6 +61,7 @@ class Client:
         from .moderation.moderation import Moderation
         from .players.players import Players
         from .rooms.actions.actions import Actions
+        from .regions.regions import Regions
         from .rooms.rooms import Rooms
         from .rooms.updates.updates import Updates
         from .time.time import Time
@@ -75,6 +76,7 @@ class Client:
         self.games = Games(self)
         self.time = Time(self)
         self.moderation = Moderation(self)
+        self.regions = Regions(self)
 
     @property
     def api_token(self) -> str:

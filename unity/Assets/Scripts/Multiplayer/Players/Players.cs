@@ -42,10 +42,13 @@ namespace Michitai.Multiplayer.Players
         /// <param name="steamIdentity">Identity string passed to GetAuthTicketForWebApi (omit if none was used).</param>
         /// <param name="name">Optional display name; the server generates one from the SteamID when omitted.</param>
         /// <param name="playerData">Optional initial player data.</param>
+        /// <param name="playerToken">Optional existing player token; sent alongside the ticket the
+        /// server links the verified SteamID to that account (account="linked") instead of
+        /// creating a second one — name, tag, friends and progress survive.</param>
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the player ID, private key token and steam_id.</returns>
-        public static Task<PlayerRegisterResponse> RegisterPlayerWithSteam<T>(Client client, string steamTicket, string steamIdentity = null, string name = null, T playerData = null, CancellationToken ct = default) where T : class, new()
-            => client.Send<PlayerRegisterResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData), steamTicket, steamIdentity), ct);
+        public static Task<PlayerRegisterResponse> RegisterPlayerWithSteam<T>(Client client, string steamTicket, string steamIdentity = null, string name = null, T playerData = null, string playerToken = null, CancellationToken ct = default) where T : class, new()
+            => client.Send<PlayerRegisterResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData), steamTicket, steamIdentity), ct, playerToken: playerToken);
 
         /// <summary>
         /// Authenticates a player using their private token and retrieves their data.

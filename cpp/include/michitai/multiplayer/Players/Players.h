@@ -336,17 +336,20 @@ public:
     /// @param steamIdentity Identity string passed to GetAuthTicketForWebApi (omit if none was used)
     /// @param name Optional display name; the server generates one from the SteamID when omitted
     /// @param playerData Optional initial player data
+    /// @param playerToken Optional existing player token; sent alongside the ticket the server
+    ///        links the verified SteamID to that account instead of creating a second one
     /// @return Response containing the player ID, private key token and steamId
     template<typename T = nlohmann::json>
     static PlayerRegisterResponse registerPlayerWithSteam(Client& client,
                                                           const std::string& steamTicket,
                                                           const std::optional<std::string>& steamIdentity = std::nullopt,
                                                           const std::optional<std::string>& name = std::nullopt,
-                                                          const std::optional<T>& playerData = std::nullopt) {
+                                                          const std::optional<T>& playerData = std::nullopt,
+                                                          const std::string& playerToken = "") {
         PlayerRegisterRequest<T> request(name.value_or(""), playerData, steamTicket, steamIdentity);
         return client.post<PlayerRegisterResponse>(
             client.url(Endpoints::GamePlayersRegister),
-            request.toJson()
+            request.toJson(), playerToken
         );
     }
 

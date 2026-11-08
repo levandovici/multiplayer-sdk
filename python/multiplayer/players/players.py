@@ -64,6 +64,7 @@ class Players:
         steam_identity: Optional[str] = None,
         name: Optional[str] = None,
         player_data: Any = None,
+        player_token: Optional[str] = None,
     ) -> PlayerRegisterResponse:
         """Register or log in a player via a Steam auth ticket.
 
@@ -83,6 +84,9 @@ class Players:
         :param name: Optional display name; the server generates one from the
             SteamID when omitted.
         :param player_data: Optional initial player data (dict or dataclass).
+        :param player_token: Optional existing player token; sent alongside
+            the ticket the server links the verified SteamID to that account
+            (``account="linked"``) instead of creating a second one.
         :returns: Response with ``player_id``, ``private_key`` and ``steam_id``.
         """
         return self._client.send(
@@ -95,6 +99,7 @@ class Players:
                 "player_data": player_data,
             },
             PlayerRegisterResponse,
+            player_token=player_token,
         )
 
     def authenticate(

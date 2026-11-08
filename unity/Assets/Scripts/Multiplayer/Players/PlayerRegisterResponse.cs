@@ -41,8 +41,9 @@ namespace Michitai.Multiplayer.Players
         public string auth;
 
         /// <summary>
-        /// Whether this call created a new account ("created") or logged into
-        /// an existing one ("existing").
+        /// Whether this call created a new account ("created"), logged into an
+        /// existing one ("existing"), or bound the SteamID to an existing
+        /// account passed via player token ("linked").
         /// </summary>
         public string account;
 
