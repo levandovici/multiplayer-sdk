@@ -23,6 +23,10 @@ namespace Michitai.Multiplayer.Players
         internal string? Steam_ticket { get; set; }
         [JsonInclude]
         internal string? Steam_identity { get; set; }
+        [JsonInclude]
+        internal string? Google_auth_code { get; set; }
+        [JsonInclude]
+        internal string? Google_integrity_token { get; set; }
 
         /// <summary>
         /// Initializes a new PlayerRegisterRequest.
@@ -31,13 +35,17 @@ namespace Michitai.Multiplayer.Players
         /// <param name="playerData">Optional player data to include.</param>
         /// <param name="steamTicket">Optional hex-encoded Steam auth ticket.</param>
         /// <param name="steamIdentity">Optional Steam ticket identity string.</param>
+        /// <param name="googleAuthCode">Optional Play Games server auth code.</param>
+        /// <param name="googleIntegrityToken">Optional Play Integrity token for the ownership check.</param>
         [SetsRequiredMembers]
-        public PlayerRegisterRequest(string playerName, T? playerData = null, string? steamTicket = null, string? steamIdentity = null)
+        public PlayerRegisterRequest(string playerName, T? playerData = null, string? steamTicket = null, string? steamIdentity = null, string? googleAuthCode = null, string? googleIntegrityToken = null)
         {
             this.Player_name = playerName;
             this.Player_data = playerData;
             this.Steam_ticket = steamTicket;
             this.Steam_identity = steamIdentity;
+            this.Google_auth_code = googleAuthCode;
+            this.Google_integrity_token = googleIntegrityToken;
         }
     }
 }

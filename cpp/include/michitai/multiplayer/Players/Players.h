@@ -41,6 +41,7 @@ struct PlayerInfo {
     std::string createdAt;
     std::string updatedAt;
     std::string steamId;
+    std::string googlePlayerId;
     std::string playerTag; // public friend tag ("#XXXXXXXX")
 
     static PlayerInfo fromJson(const nlohmann::json& j) {
@@ -71,6 +72,9 @@ struct PlayerInfo {
         if (j.contains("steam_id") && !j["steam_id"].is_null()) {
             info.steamId = j["steam_id"].get<std::string>();
         }
+        if (j.contains("google_player_id") && !j["google_player_id"].is_null()) {
+            info.googlePlayerId = j["google_player_id"].get<std::string>();
+        }
         if (j.contains("player_tag") && !j["player_tag"].is_null()) {
             info.playerTag = j["player_tag"].get<std::string>();
         }
@@ -85,9 +89,10 @@ struct PlayerRegisterResponse : public ApiResponse {
     std::string privateKey;
     std::string playerName;
     int gameId = 0;
-    std::string auth;      // "steam" or "guest"
+    std::string auth;      // "steam", "google_play" or "guest"
     std::string account;   // "created" or "existing"
     std::string steamId;   // SteamID64 when auth == "steam"
+    std::string googlePlayerId; // Play Games player_id when auth == "google_play"
     std::string playerTag; // public friend tag ("#XXXXXXXX")
 
     static PlayerRegisterResponse fromJson(const nlohmann::json& j) {
@@ -102,6 +107,9 @@ struct PlayerRegisterResponse : public ApiResponse {
         response.account = j.value("account", "");
         if (j.contains("steam_id") && !j["steam_id"].is_null()) {
             response.steamId = j["steam_id"].get<std::string>();
+        }
+        if (j.contains("google_player_id") && !j["google_player_id"].is_null()) {
+            response.googlePlayerId = j["google_player_id"].get<std::string>();
         }
         if (j.contains("player_tag") && !j["player_tag"].is_null()) {
             response.playerTag = j["player_tag"].get<std::string>();
@@ -234,12 +242,17 @@ struct PlayerRegisterRequest {
     std::optional<T> playerData;
     std::optional<std::string> steamTicket;
     std::optional<std::string> steamIdentity;
+    std::optional<std::string> googleAuthCode;
+    std::optional<std::string> googleIntegrityToken;
 
     PlayerRegisterRequest(const std::string& name,
                           const std::optional<T>& data = std::nullopt,
                           const std::optional<std::string>& ticket = std::nullopt,
-                          const std::optional<std::string>& identity = std::nullopt)
-        : name(name), playerData(data), steamTicket(ticket), steamIdentity(identity) {}
+                          const std::optional<std::string>& identity = std::nullopt,
+                          const std::optional<std::string>& authCode = std::nullopt,
+                          const std::optional<std::string>& integrityToken = std::nullopt)
+        : name(name), playerData(data), steamTicket(ticket), steamIdentity(identity),
+          googleAuthCode(authCode), googleIntegrityToken(integrityToken) {}
 
     nlohmann::json toJson() const {
         nlohmann::json j;
@@ -256,6 +269,12 @@ struct PlayerRegisterRequest {
         }
         if (steamIdentity.has_value()) {
             j["steam_identity"] = steamIdentity.value();
+        }
+        if (googleAuthCode.has_value()) {
+            j["google_auth_code"] = googleAuthCode.value();
+        }
+        if (googleIntegrityToken.has_value()) {
+            j["google_integrity_token"] = googleIntegrityToken.value();
         }
         return j;
     }
@@ -347,6 +366,40 @@ public:
                                                           const std::optional<T>& playerData = std::nullopt,
                                                           const std::string& playerToken = "") {
         PlayerRegisterRequest<T> request(name.value_or(""), playerData, steamTicket, steamIdentity);
+        return client.post<PlayerRegisterResponse>(
+            client.url(Endpoints::GamePlayersRegister),
+            request.toJson(), playerToken
+        );
+    }
+
+    /// Registers or logs in a player via a Google Play Games Services server
+    /// auth code. Requires the project to enable Google Play accounts in the
+    /// API cabinet. The code comes from
+    /// GamesSignInClient.requestServerSideAccess (minted for the project's
+    /// OAuth web credential) and is single-use — request a fresh one for
+    /// every login. The same call creates the account on first use and logs
+    /// the player in afterwards, so the account survives reinstalls via the
+    /// Play Games player_id.
+    /// @param client The API client instance
+    /// @param googleAuthCode Server auth code from requestServerSideAccess
+    /// @param googleIntegrityToken Play Integrity token — required when the
+    ///        project enables the ownership check (appLicensingVerdict=LICENSED)
+    /// @param name Optional display name; the server generates one from the
+    ///        player_id when omitted
+    /// @param playerData Optional initial player data
+    /// @param playerToken Optional existing player token; sent alongside the code the
+    ///        server links the verified player_id to that account instead of
+    ///        creating a second one
+    /// @return Response containing the player ID, private key token and googlePlayerId
+    template<typename T = nlohmann::json>
+    static PlayerRegisterResponse registerPlayerWithGoogle(Client& client,
+                                                          const std::string& googleAuthCode,
+                                                          const std::optional<std::string>& googleIntegrityToken = std::nullopt,
+                                                          const std::optional<std::string>& name = std::nullopt,
+                                                          const std::optional<T>& playerData = std::nullopt,
+                                                          const std::string& playerToken = "") {
+        PlayerRegisterRequest<T> request(name.value_or(""), playerData, std::nullopt, std::nullopt,
+                                         googleAuthCode, googleIntegrityToken);
         return client.post<PlayerRegisterResponse>(
             client.url(Endpoints::GamePlayersRegister),
             request.toJson(), playerToken

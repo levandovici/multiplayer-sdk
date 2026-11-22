@@ -51,6 +51,30 @@ namespace Michitai.Multiplayer.Players
             => client.Send<PlayerRegisterResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData), steamTicket, steamIdentity), ct, playerToken: playerToken);
 
         /// <summary>
+        /// Registers or logs in a player via a Google Play Games Services
+        /// server auth code. Requires the project to enable Google Play
+        /// accounts in the API cabinet. The code comes from
+        /// GamesSignInClient.requestServerSideAccess (minted for the project's
+        /// OAuth web credential) and is single-use — request a fresh one for
+        /// every login. The same call creates the account on first use and
+        /// logs the player in afterwards, so the account survives reinstalls
+        /// via the Play Games player_id.
+        /// </summary>
+        /// <typeparam name="T">The type of optional player data to include.</typeparam>
+        /// <param name="client">The API client instance.</param>
+        /// <param name="googleAuthCode">Server auth code from requestServerSideAccess.</param>
+        /// <param name="googleIntegrityToken">Play Integrity token — required when the project enables the ownership check.</param>
+        /// <param name="name">Optional display name; the server generates one from the player_id when omitted.</param>
+        /// <param name="playerData">Optional initial player data.</param>
+        /// <param name="playerToken">Optional existing player token; sent alongside the code the
+        /// server links the verified player_id to that account (account="linked") instead of
+        /// creating a second one — name, tag, friends and progress survive.</param>
+        /// <param name="ct">Cancellation token for the async operation.</param>
+        /// <returns>Response containing the player ID, private key token and google_player_id.</returns>
+        public static Task<PlayerRegisterResponse> RegisterPlayerWithGoogle<T>(Client client, string googleAuthCode, string googleIntegrityToken = null, string name = null, T playerData = null, string playerToken = null, CancellationToken ct = default) where T : class, new()
+            => client.Send<PlayerRegisterResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData), null, null, googleAuthCode, googleIntegrityToken), ct, playerToken: playerToken);
+
+        /// <summary>
         /// Authenticates a player using their private token and retrieves their data.
         /// </summary>
         /// <typeparam name="T">The type to deserialize player data into.</typeparam>

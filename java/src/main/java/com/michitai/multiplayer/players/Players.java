@@ -93,6 +93,67 @@ public class Players {
     }
 
     /**
+     * Registers or logs in a player via a Google Play Games Services server
+     * auth code. Requires the project to enable Google Play accounts in the
+     * API cabinet. The code comes from
+     * GamesSignInClient.requestServerSideAccess (minted for the project's
+     * OAuth web credential) and is single-use — request a fresh one for
+     * every login. The same call creates the account on first use and logs
+     * the player in afterwards, so the account survives reinstalls via the
+     * Play Games player_id.
+     *
+     * @param client The API client instance.
+     * @param googleAuthCode Server auth code from requestServerSideAccess.
+     * @param googleIntegrityToken Play Integrity token — required when the project enables the ownership check (null otherwise).
+     * @param name Optional display name; the server generates one from the player_id when null.
+     * @param playerData Optional initial player data.
+     * @return Response containing the player ID, private key token and google player ID.
+     * @throws IOException if the request fails.
+     */
+    public static PlayerRegisterResponse registerPlayerWithGoogle(Client client, String googleAuthCode,
+            String googleIntegrityToken, String name, Object playerData) throws IOException {
+        return registerPlayerWithGoogle(client, googleAuthCode, googleIntegrityToken, name, playerData, null);
+    }
+
+    /**
+     * Registers or logs in a player via a Google Play server auth code,
+     * optionally linking the verified player_id to an existing account. When
+     * {@code playerToken} identifies a player of this game, the server binds
+     * the player_id to that row instead of creating a second account
+     * (account="linked") — name, tag, friends and progress survive.
+     *
+     * @param client The API client instance.
+     * @param googleAuthCode Server auth code from requestServerSideAccess.
+     * @param googleIntegrityToken Play Integrity token — required when the project enables the ownership check (null otherwise).
+     * @param name Optional display name; the server generates one from the player_id when null.
+     * @param playerData Optional initial player data.
+     * @param playerToken Optional existing player token to link the player_id to.
+     * @return Response containing the player ID, private key token and google player ID.
+     * @throws IOException if the request fails.
+     */
+    public static PlayerRegisterResponse registerPlayerWithGoogle(Client client, String googleAuthCode,
+            String googleIntegrityToken, String name, Object playerData, String playerToken) throws IOException {
+        String dataJson = playerData != null ? objectMapper.writeValueAsString(playerData) : null;
+        PlayerRegisterRequest request = new PlayerRegisterRequest(name, dataJson, null, null,
+            googleAuthCode, googleIntegrityToken);
+        return client.send("POST", client.url(Endpoints.GAME_PLAYERS_REGISTER), request,
+            PlayerRegisterResponse.class, playerToken, false);
+    }
+
+    /**
+     * Registers or logs in a player via a Google Play server auth code with defaults.
+     * See {@link #registerPlayerWithGoogle(Client, String, String, String, Object)}.
+     *
+     * @param client The API client instance.
+     * @param googleAuthCode Server auth code from requestServerSideAccess.
+     * @return Response containing the player ID, private key token and google player ID.
+     * @throws IOException if the request fails.
+     */
+    public static PlayerRegisterResponse registerPlayerWithGoogle(Client client, String googleAuthCode) throws IOException {
+        return registerPlayerWithGoogle(client, googleAuthCode, null, null, null);
+    }
+
+    /**
      * Authenticates a player using their private token and retrieves their data.
      *
      * @param client The API client instance.

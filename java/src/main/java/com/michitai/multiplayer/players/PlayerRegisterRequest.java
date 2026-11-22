@@ -18,15 +18,28 @@ public class PlayerRegisterRequest {
     @JsonProperty("steam_identity")
     private String steamIdentity;
 
+    @JsonProperty("google_auth_code")
+    private String googleAuthCode;
+
+    @JsonProperty("google_integrity_token")
+    private String googleIntegrityToken;
+
     public PlayerRegisterRequest(String playerName, String playerData) {
         this(playerName, playerData, null, null);
     }
 
     public PlayerRegisterRequest(String playerName, String playerData, String steamTicket, String steamIdentity) {
+        this(playerName, playerData, steamTicket, steamIdentity, null, null);
+    }
+
+    public PlayerRegisterRequest(String playerName, String playerData, String steamTicket, String steamIdentity,
+            String googleAuthCode, String googleIntegrityToken) {
         this.playerName = playerName;
         this.playerData = playerData;
         this.steamTicket = steamTicket;
         this.steamIdentity = steamIdentity;
+        this.googleAuthCode = googleAuthCode;
+        this.googleIntegrityToken = googleIntegrityToken;
     }
 
     public String getPlayerName() {
@@ -59,5 +72,21 @@ public class PlayerRegisterRequest {
 
     public void setSteamIdentity(String steamIdentity) {
         this.steamIdentity = steamIdentity;
+    }
+
+    public String getGoogleAuthCode() {
+        return googleAuthCode;
+    }
+
+    public void setGoogleAuthCode(String googleAuthCode) {
+        this.googleAuthCode = googleAuthCode;
+    }
+
+    public String getGoogleIntegrityToken() {
+        return googleIntegrityToken;
+    }
+
+    public void setGoogleIntegrityToken(String googleIntegrityToken) {
+        this.googleIntegrityToken = googleIntegrityToken;
     }
 }

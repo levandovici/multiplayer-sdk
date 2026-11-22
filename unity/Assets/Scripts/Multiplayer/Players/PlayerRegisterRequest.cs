@@ -34,18 +34,32 @@ namespace Michitai.Multiplayer.Players
         public string steam_identity;
 
         /// <summary>
+        /// Play Games server auth code from GamesSignInClient.requestServerSideAccess (optional).
+        /// </summary>
+        public string google_auth_code;
+
+        /// <summary>
+        /// Play Integrity token for the ownership check (optional).
+        /// </summary>
+        public string google_integrity_token;
+
+        /// <summary>
         /// Initializes a new PlayerRegisterRequest.
         /// </summary>
         /// <param name="playerName">The player's display name.</param>
         /// <param name="playerDataJson">Serialized JSON string of player data.</param>
         /// <param name="steamTicket">Optional hex-encoded Steam auth ticket.</param>
         /// <param name="steamIdentity">Optional Steam ticket identity string.</param>
-        public PlayerRegisterRequest(string playerName, string playerDataJson, string steamTicket = null, string steamIdentity = null)
+        /// <param name="googleAuthCode">Optional Play Games server auth code.</param>
+        /// <param name="googleIntegrityToken">Optional Play Integrity token for the ownership check.</param>
+        public PlayerRegisterRequest(string playerName, string playerDataJson, string steamTicket = null, string steamIdentity = null, string googleAuthCode = null, string googleIntegrityToken = null)
         {
             this.player_name = playerName;
             this.player_data_json = playerDataJson;
             this.steam_ticket = steamTicket;
             this.steam_identity = steamIdentity;
+            this.google_auth_code = googleAuthCode;
+            this.google_integrity_token = googleIntegrityToken;
         }
     }
 }

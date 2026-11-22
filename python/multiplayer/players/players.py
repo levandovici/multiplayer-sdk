@@ -102,6 +102,51 @@ class Players:
             player_token=player_token,
         )
 
+    def register_google(
+        self,
+        google_auth_code: str,
+        google_integrity_token: Optional[str] = None,
+        name: Optional[str] = None,
+        player_data: Any = None,
+        player_token: Optional[str] = None,
+    ) -> PlayerRegisterResponse:
+        """Register or log in a player via a Google Play server auth code.
+
+        Requires the project to enable Google Play accounts in the API
+        cabinet. The code comes from
+        ``GamesSignInClient.requestServerSideAccess`` (minted for the
+        project's OAuth web credential) and is single-use — request a fresh
+        one for every login. The same call creates the account on first use
+        and logs the player in afterwards, so the account survives
+        reinstalls via the Play Games player_id.
+
+        :param google_auth_code: Server auth code from
+            requestServerSideAccess.
+        :param google_integrity_token: Play Integrity token — required when
+            the project enables the ownership check
+            (``appLicensingVerdict=LICENSED``).
+        :param name: Optional display name; the server generates one from the
+            player_id when omitted.
+        :param player_data: Optional initial player data (dict or dataclass).
+        :param player_token: Optional existing player token; sent alongside
+            the code the server links the verified player_id to that account
+            (``account="linked"``) instead of creating a second one.
+        :returns: Response with ``player_id``, ``private_key`` and
+            ``google_player_id``.
+        """
+        return self._client.send(
+            "POST",
+            self._client.url(GAME_PLAYERS_REGISTER),
+            {
+                "google_auth_code": google_auth_code,
+                "google_integrity_token": google_integrity_token,
+                "player_name": name,
+                "player_data": player_data,
+            },
+            PlayerRegisterResponse,
+            player_token=player_token,
+        )
+
     def authenticate(
         self,
         player_token: str,

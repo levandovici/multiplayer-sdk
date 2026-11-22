@@ -35,6 +35,7 @@ class PlayerInfo:
     last_heartbeat: Optional[datetime] = None
     created_at: Optional[datetime] = None
     steam_id: Optional[str] = None
+    google_player_id: Optional[str] = None
     player_tag: Optional[str] = None
 
 
@@ -51,6 +52,7 @@ class PlayerRegisterResponse(ApiResponse):
     auth: str = ""
     account: str = ""
     steam_id: Optional[str] = None
+    google_player_id: Optional[str] = None
     player_tag: Optional[str] = None
 
 

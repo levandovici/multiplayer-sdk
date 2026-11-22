@@ -52,6 +52,11 @@ namespace Michitai.Multiplayer.Players
         public string? Steam_id { get; set; }
 
         /// <summary>
+        /// The verified Play Games player_id when auth is "google_play", otherwise null.
+        /// </summary>
+        public string? Google_player_id { get; set; }
+
+        /// <summary>
         /// The player's public friend tag in display form ("#XXXXXXXX"), or null.
         /// </summary>
         public string? Player_tag { get; set; }

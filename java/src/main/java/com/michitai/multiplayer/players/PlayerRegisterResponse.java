@@ -29,6 +29,9 @@ public class PlayerRegisterResponse extends ApiResponse {
     @JsonProperty("steam_id")
     private String steamId;
 
+    @JsonProperty("google_player_id")
+    private String googlePlayerId;
+
     /** The player's public friend tag in display form ("#XXXXXXXX"). */
     @JsonProperty("player_tag")
     private String playerTag;
@@ -88,6 +91,14 @@ public class PlayerRegisterResponse extends ApiResponse {
 
     public void setSteamId(String steamId) {
         this.steamId = steamId;
+    }
+
+    public String getGooglePlayerId() {
+        return googlePlayerId;
+    }
+
+    public void setGooglePlayerId(String googlePlayerId) {
+        this.googlePlayerId = googlePlayerId;
     }
 
     public String getPlayerTag() {
