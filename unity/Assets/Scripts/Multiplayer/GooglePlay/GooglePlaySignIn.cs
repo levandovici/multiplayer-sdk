@@ -16,10 +16,10 @@ namespace Michitai.Multiplayer.GooglePlay
         /// <summary>Last sign-in error, for offline-reason logging.</summary>
         public static string LastError { get; private set; }
 
+#if UNITY_ANDROID && !UNITY_EDITOR
         private static bool _initialized;
         private static bool _available;
 
-#if UNITY_ANDROID && !UNITY_EDITOR
         private static AndroidJavaObject _activity;
         private static AndroidJavaObject _signInClient;
         private static AndroidJavaObject _playersClient;
@@ -88,9 +88,9 @@ namespace Michitai.Multiplayer.GooglePlay
         /// True when a Play Games account is signed in. Triggers the explicit
         /// signIn() flow once when the silent sign-in hasn't completed yet.
         /// </summary>
+#if UNITY_ANDROID && !UNITY_EDITOR
         public static async Task<bool> EnsureSignedInAsync()
         {
-#if UNITY_ANDROID && !UNITY_EDITOR
             if (!Initialize()) return false;
 
             try
@@ -113,19 +113,22 @@ namespace Michitai.Multiplayer.GooglePlay
                 Debug.LogWarning($"[Online] Play Games sign-in failed: {e.Message}");
                 return false;
             }
-#else
-            return false;
-#endif
         }
+#else
+        public static Task<bool> EnsureSignedInAsync()
+        {
+            return Task.FromResult<bool>(false);
+        }
+#endif
 
         /// <summary>
         /// The app-scoped Play Games player_id of the signed-in account —
         /// same value the backend derives from the server auth code. Null
         /// when signed out or off Android.
         /// </summary>
+#if UNITY_ANDROID && !UNITY_EDITOR
         public static async Task<string> CurrentPlayerIdAsync()
         {
-#if UNITY_ANDROID && !UNITY_EDITOR
             // getCurrentPlayerId returns Task<String> — the getResult() value
             // is a boxed java.lang.String, unboxed via toString.
             using (AndroidJavaObject result = await GmsTask.Await(
@@ -133,46 +136,55 @@ namespace Michitai.Multiplayer.GooglePlay
             {
                 return result?.Call<string>("toString");
             }
-#else
-            return null;
-#endif
         }
+#else
+        public static Task<string> CurrentPlayerIdAsync()
+        {
+            return Task.FromResult<string>(null);
+        }
+#endif
 
         /// <summary>
         /// Display name of the signed-in account (PlayersClient.getCurrentPlayer
         /// → Player.getDisplayName). Used only as the initial persona on
         /// account creation. Null when unavailable.
         /// </summary>
+#if UNITY_ANDROID && !UNITY_EDITOR
         public static async Task<string> CurrentDisplayNameAsync()
         {
-#if UNITY_ANDROID && !UNITY_EDITOR
             using (AndroidJavaObject player = await GmsTask.Await(
                 PlayersClient().Call<AndroidJavaObject>("getCurrentPlayer")))
             {
                 return player?.Call<string>("getDisplayName");
             }
-#else
-            return null;
-#endif
         }
+#else
+        public static Task<string> CurrentDisplayNameAsync()
+        {
+            return Task.FromResult<string>(null);
+        }
+#endif
 
         /// <summary>
         /// Mints the single-use server auth code (requestServerSideAccess)
         /// the backend exchanges for the verified identity. serverClientId is
         /// the OAuth *web* client ID of the backend, not an Android client.
         /// </summary>
+#if UNITY_ANDROID && !UNITY_EDITOR
         public static async Task<string> RequestServerAuthCodeAsync(string serverClientId)
         {
-#if UNITY_ANDROID && !UNITY_EDITOR
             using (AndroidJavaObject result = await GmsTask.Await(
                 SignInClient().Call<AndroidJavaObject>("requestServerSideAccess", serverClientId, false)))
             {
                 return result.Call<string>("getAuthCode");
             }
-#else
-            return null;
-#endif
         }
+#else
+        public static Task<string> RequestServerAuthCodeAsync(string serverClientId)
+        {
+            return Task.FromResult<string>(null);
+        }
+#endif
     }
 
     /// <summary>

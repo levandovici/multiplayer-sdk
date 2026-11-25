@@ -1,3 +1,5 @@
+#nullable enable
+
 using Michitai.Multiplayer.Errors;
 using System;
 using System.Collections.Generic;
