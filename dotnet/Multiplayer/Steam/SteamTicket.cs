@@ -153,6 +153,15 @@ namespace Michitai.Multiplayer.Steam
         /// </summary>
         public static bool Initialize()
         {
+            // Steamworks ships no Android binaries — fail fast with a clear
+            // reason instead of a dlopen error for a library that cannot
+            // exist (Xamarin / .NET Android consumers).
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("ANDROID")))
+            {
+                InitError = "Steam is not supported on Android";
+                return false;
+            }
+
             if (_initialized) return true;
             if (!SteamNative.Load())
             {

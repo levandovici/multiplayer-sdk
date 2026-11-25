@@ -154,6 +154,13 @@ namespace Michitai.Multiplayer.Steam
         /// </summary>
         public static bool Initialize()
         {
+#if UNITY_ANDROID
+            // Steamworks has no Android build at all — the compile-time target
+            // (not Application.platform, which reports the editor OS) decides,
+            // so the editor follows the target platform too.
+            InitError = "Steam is not supported on Android";
+            return false;
+#else
             if (_initialized) return true;
             if (!SteamNative.Load())
             {
@@ -203,6 +210,7 @@ namespace Michitai.Multiplayer.Steam
             InitError = null;
             _initialized = true;
             return true;
+#endif
         }
 
         /// <summary>
