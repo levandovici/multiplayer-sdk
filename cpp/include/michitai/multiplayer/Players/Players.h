@@ -21,6 +21,7 @@ namespace Endpoints {
     constexpr const char* GamePlayersBan = "game_players.php/ban";
     constexpr const char* GamePlayersUnban = "game_players.php/unban";
     constexpr const char* GamePlayersRotate = "game_players.php/rotate";
+    constexpr const char* GamePlayersDelete = "game_players.php/delete";
     constexpr const char* GameDataPlayerGet = "game_data.php/player/get";
     constexpr const char* GameDataPlayerUpdate = "game_data.php/player/update";
 }
@@ -176,6 +177,22 @@ struct PlayerRotateResponse : public ApiResponse {
         response.error = j.value("error", "");
         response.playerId = j.value("player_id", 0);
         response.privateKey = j.value("private_key", "");
+        return response;
+    }
+};
+
+/// Response for player-initiated account deletion. Irreversible: the token
+/// dies with the account and every linked record is removed.
+struct PlayerDeleteResponse : public ApiResponse {
+    int playerId = 0;
+    std::string message;
+
+    static PlayerDeleteResponse fromJson(const nlohmann::json& j) {
+        PlayerDeleteResponse response;
+        response.success = j.value("success", false);
+        response.error = j.value("error", "");
+        response.playerId = j.value("player_id", 0);
+        response.message = j.value("message", "");
         return response;
     }
 };
@@ -468,6 +485,21 @@ public:
         return client.post<PlayerRotateResponse>(
             client.url(Endpoints::GamePlayersRotate),
             nlohmann::json{}, playerToken
+        );
+    }
+
+    /// Permanently deletes the player's own account (store/data-rights
+    /// compliance). Authenticated by the current token only — banned
+    /// players can still delete their account. Irreversible; discard all
+    /// local credentials on success.
+    /// @param client The API client instance
+    /// @param playerToken The player's private authentication token
+    /// @return Response confirming the deletion
+    static PlayerDeleteResponse deleteAccount(Client& client,
+                                              const std::string& playerToken) {
+        return client.del<PlayerDeleteResponse>(
+            client.url(Endpoints::GamePlayersDelete),
+            playerToken
         );
     }
 

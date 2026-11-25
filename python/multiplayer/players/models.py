@@ -105,6 +105,20 @@ class PlayerRotateResponse(ApiResponse):
 
 
 @dataclass
+class PlayerDeleteResponse(ApiResponse):
+    """Confirmation of player-initiated account deletion.
+
+    Deletion is irreversible: the token dies with the account and every
+    linked record (friends, room membership, matchmaking, stats) is removed.
+    """
+
+    error_enum: ClassVar[Type[enum.Enum]] = PlayerLoginError
+
+    message: str = ""
+    player_id: int = 0
+
+
+@dataclass
 class PlayerBanResponse(ApiResponse):
     """Response containing the ban details."""
 

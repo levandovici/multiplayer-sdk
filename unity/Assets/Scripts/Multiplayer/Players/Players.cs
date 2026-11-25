@@ -117,6 +117,21 @@ namespace Michitai.Multiplayer.Players
             => client.Send<PlayerRenameResponse>(HttpMethod.Put, client.Url(Endpoints.GamePlayersRename), new PlayerRenameRequest(newName), ct, playerToken: playerToken);
 
         /// <summary>
+        /// Permanently deletes the player's own account (store/data-rights
+        /// compliance). Authenticated by the current token only — banned
+        /// players can still delete their account. Irreversible: the token
+        /// dies with the account and every linked record (friends, room
+        /// membership, matchmaking entries, gameplay data) is removed.
+        /// Discard all local credentials on success.
+        /// </summary>
+        /// <param name="client">The API client instance.</param>
+        /// <param name="playerToken">The player's private authentication token.</param>
+        /// <param name="ct">Cancellation token for the async operation.</param>
+        /// <returns>Response confirming the deletion.</returns>
+        public static Task<PlayerDeleteResponse> DeleteAccountAsync(Client client, string playerToken, CancellationToken ct = default)
+            => client.Send<PlayerDeleteResponse>(HttpMethod.Delete, client.Url(Endpoints.GamePlayersDelete), null, ct, playerToken: playerToken);
+
+        /// <summary>
         /// Bans a player from the game with a specified duration.
         /// Requires the private API token for authentication.
         /// </summary>

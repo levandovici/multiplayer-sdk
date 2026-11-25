@@ -151,6 +151,20 @@ namespace Michitai.Multiplayer.Players
             => client.Send<PlayerRotateResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRotate), null, ct, playerToken: playerToken);
 
         /// <summary>
+        /// Permanently deletes the player's own account (store/data-rights
+        /// compliance). Authenticated by the current token only — banned
+        /// players can still delete their account. Irreversible: the token
+        /// dies with the account and every linked record is removed.
+        /// Discard all local credentials on success.
+        /// </summary>
+        /// <param name="client">The API client instance.</param>
+        /// <param name="playerToken">The player's private authentication token.</param>
+        /// <param name="ct">Cancellation token for the async operation.</param>
+        /// <returns>Response confirming the deletion.</returns>
+        public static Task<PlayerDeleteResponse> DeleteAccountAsync(Client client, string playerToken, CancellationToken ct = default)
+            => client.Send<PlayerDeleteResponse>(HttpMethod.Delete, client.Url(Endpoints.GamePlayersDelete), null, ct, playerToken: playerToken);
+
+        /// <summary>
         /// Retrieves a player's data with typed deserialization support.
         /// </summary>
         /// <typeparam name="T">The type to deserialize player data into.</typeparam>

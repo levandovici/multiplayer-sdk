@@ -232,6 +232,22 @@ public class Players {
     }
 
     /**
+     * Permanently deletes the player's own account (store/data-rights
+     * compliance). Authenticated by the current token only — banned
+     * players can still delete their account. Irreversible: the token
+     * dies with the account and every linked record is removed.
+     * Discard all local credentials on success.
+     *
+     * @param client The API client instance.
+     * @param playerToken The player's private authentication token.
+     * @return Response confirming the deletion.
+     * @throws IOException if the request fails.
+     */
+    public static PlayerDeleteResponse deleteAccount(Client client, String playerToken) throws IOException {
+        return client.send("DELETE",client.url(Endpoints.GAME_PLAYERS_DELETE), null, PlayerDeleteResponse.class, playerToken, false);
+    }
+
+    /**
      * Bans a player from the game with a specified duration.
      * Requires the private API token for authentication.
      *

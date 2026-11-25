@@ -11,6 +11,7 @@ from .models import (
     PlayerAuthResponse,
     PlayerBanResponse,
     PlayerDataResponse,
+    PlayerDeleteResponse,
     PlayerHeartbeatResponse,
     PlayerLogoutResponse,
     PlayerRegisterResponse,
@@ -28,6 +29,7 @@ GAME_PLAYERS_HEARTBEAT = "game_players.php/heartbeat"
 GAME_PLAYERS_LOGOUT = "game_players.php/logout"
 GAME_PLAYERS_RENAME = "game_players.php/rename"
 GAME_PLAYERS_ROTATE = "game_players.php/rotate"
+GAME_PLAYERS_DELETE = "game_players.php/delete"
 GAME_PLAYERS_BAN = "game_players.php/ban"
 GAME_PLAYERS_UNBAN = "game_players.php/unban"
 GAME_DATA_PLAYER_GET = "game_data.php/player/get"
@@ -211,6 +213,21 @@ class Players:
             self._client.url(GAME_PLAYERS_ROTATE),
             None,
             PlayerRotateResponse,
+            player_token=player_token
+        )
+
+    def delete_account(self, player_token: str) -> PlayerDeleteResponse:
+        """Permanently delete the player's own account.
+
+        Store/data-rights compliance endpoint: authenticated by the current
+        token only — banned players can still delete their account.
+        Irreversible; discard all local credentials on success.
+        """
+        return self._client.send(
+            "DELETE",
+            self._client.url(GAME_PLAYERS_DELETE),
+            None,
+            PlayerDeleteResponse,
             player_token=player_token
         )
 

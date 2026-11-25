@@ -13,6 +13,7 @@ public class Endpoints {
     public static final String GAME_PLAYERS_BAN = "game_players.php/ban";
     public static final String GAME_PLAYERS_UNBAN = "game_players.php/unban";
     public static final String GAME_PLAYERS_ROTATE = "game_players.php/rotate";
+    public static final String GAME_PLAYERS_DELETE = "game_players.php/delete";
     public static final String GAME_DATA_PLAYER_GET = "game_data.php/player/get";
     public static final String GAME_DATA_PLAYER_UPDATE = "game_data.php/player/update";
 }
