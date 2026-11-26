@@ -43,5 +43,18 @@ namespace Michitai.Multiplayer
         /// Error message if the request failed, null otherwise.
         /// </summary>
         public string error;
+
+        /// <summary>
+        /// True when the authenticated player's account is inside the deletion
+        /// grace window — every player-scoped endpoint then fails with this
+        /// flag set. Restore via Players.RestoreAccountAsync before purge_after.
+        /// </summary>
+        public bool deletion_pending;
+
+        /// <summary>
+        /// UTC timestamp (ISO 8601) after which an account pending deletion is
+        /// permanently purged unless restored. Empty when not pending.
+        /// </summary>
+        public string purge_after;
     }
 }

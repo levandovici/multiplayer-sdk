@@ -45,10 +45,13 @@ namespace Michitai.Multiplayer.Players
         /// <param name="playerToken">Optional existing player token; sent alongside the ticket the
         /// server links the verified SteamID to that account (account="linked") instead of
         /// creating a second one — name, tag, friends and progress survive.</param>
+        /// <param name="restore">Explicit user consent to cancel a pending account deletion.
+        /// Set only after the client showed the restore prompt and the player confirmed;
+        /// the fresh provider ticket proves identity even after a reinstall. Never set automatically.</param>
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the player ID, private key token and steam_id.</returns>
-        public static Task<PlayerRegisterResponse> RegisterPlayerWithSteam<T>(Client client, string steamTicket, string steamIdentity = null, string name = null, T playerData = null, string playerToken = null, CancellationToken ct = default) where T : class, new()
-            => client.Send<PlayerRegisterResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData), steamTicket, steamIdentity), ct, playerToken: playerToken);
+        public static Task<PlayerRegisterResponse> RegisterPlayerWithSteam<T>(Client client, string steamTicket, string steamIdentity = null, string name = null, T playerData = null, string playerToken = null, bool restore = false, CancellationToken ct = default) where T : class, new()
+            => client.Send<PlayerRegisterResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData), steamTicket, steamIdentity, restore: restore), ct, playerToken: playerToken);
 
         /// <summary>
         /// Registers or logs in a player via a Google Play Games Services
@@ -69,10 +72,13 @@ namespace Michitai.Multiplayer.Players
         /// <param name="playerToken">Optional existing player token; sent alongside the code the
         /// server links the verified player_id to that account (account="linked") instead of
         /// creating a second one — name, tag, friends and progress survive.</param>
+        /// <param name="restore">Explicit user consent to cancel a pending account deletion.
+        /// Set only after the client showed the restore prompt and the player confirmed;
+        /// the fresh provider ticket proves identity even after a reinstall. Never set automatically.</param>
         /// <param name="ct">Cancellation token for the async operation.</param>
         /// <returns>Response containing the player ID, private key token and google_player_id.</returns>
-        public static Task<PlayerRegisterResponse> RegisterPlayerWithGoogle<T>(Client client, string googleAuthCode, string googleIntegrityToken = null, string name = null, T playerData = null, string playerToken = null, CancellationToken ct = default) where T : class, new()
-            => client.Send<PlayerRegisterResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData), null, null, googleAuthCode, googleIntegrityToken), ct, playerToken: playerToken);
+        public static Task<PlayerRegisterResponse> RegisterPlayerWithGoogle<T>(Client client, string googleAuthCode, string googleIntegrityToken = null, string name = null, T playerData = null, string playerToken = null, bool restore = false, CancellationToken ct = default) where T : class, new()
+            => client.Send<PlayerRegisterResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRegister), new PlayerRegisterRequest(name, JsonUtility.ToJson(playerData), null, null, googleAuthCode, googleIntegrityToken, restore), ct, playerToken: playerToken);
 
         /// <summary>
         /// Authenticates a player using their private token and retrieves their data.
@@ -117,12 +123,13 @@ namespace Michitai.Multiplayer.Players
             => client.Send<PlayerRenameResponse>(HttpMethod.Put, client.Url(Endpoints.GamePlayersRename), new PlayerRenameRequest(newName), ct, playerToken: playerToken);
 
         /// <summary>
-        /// Permanently deletes the player's own account (store/data-rights
+        /// Schedules deletion of the player's own account (store/data-rights
         /// compliance). Authenticated by the current token only — banned
-        /// players can still delete their account. Irreversible: the token
-        /// dies with the account and every linked record (friends, room
-        /// membership, matchmaking entries, gameplay data) is removed.
-        /// Discard all local credentials on success.
+        /// players can still delete their account. The account freezes
+        /// immediately and is permanently purged after the grace window unless
+        /// restored. Keep the credential during the window so the player can
+        /// restore; provider-linked accounts can also restore through a fresh
+        /// provider sign-in with the explicit restore flag after a reinstall.
         /// </summary>
         /// <param name="client">The API client instance.</param>
         /// <param name="playerToken">The player's private authentication token.</param>
@@ -130,6 +137,19 @@ namespace Michitai.Multiplayer.Players
         /// <returns>Response confirming the deletion.</returns>
         public static Task<PlayerDeleteResponse> DeleteAccountAsync(Client client, string playerToken, CancellationToken ct = default)
             => client.Send<PlayerDeleteResponse>(HttpMethod.Delete, client.Url(Endpoints.GamePlayersDelete), null, ct, playerToken: playerToken);
+
+        /// <summary>
+        /// Cancels a pending account deletion inside the grace window.
+        /// Authenticated by the player token — always a deliberate user
+        /// action, never automatic, so background logins and heartbeats
+        /// cannot silently undo a deletion the player actually wants.
+        /// </summary>
+        /// <param name="client">The API client instance.</param>
+        /// <param name="playerToken">The player's private authentication token.</param>
+        /// <param name="ct">Cancellation token for the async operation.</param>
+        /// <returns>Response confirming the restoration.</returns>
+        public static Task<PlayerRestoreResponse> RestoreAccountAsync(Client client, string playerToken, CancellationToken ct = default)
+            => client.Send<PlayerRestoreResponse>(HttpMethod.Post, client.Url(Endpoints.GamePlayersRestore), null, ct, playerToken: playerToken);
 
         /// <summary>
         /// Bans a player from the game with a specified duration.

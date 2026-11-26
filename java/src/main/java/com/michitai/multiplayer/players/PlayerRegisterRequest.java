@@ -24,6 +24,9 @@ public class PlayerRegisterRequest {
     @JsonProperty("google_integrity_token")
     private String googleIntegrityToken;
 
+    @JsonProperty("restore")
+    private boolean restore;
+
     public PlayerRegisterRequest(String playerName, String playerData) {
         this(playerName, playerData, null, null);
     }
@@ -34,12 +37,18 @@ public class PlayerRegisterRequest {
 
     public PlayerRegisterRequest(String playerName, String playerData, String steamTicket, String steamIdentity,
             String googleAuthCode, String googleIntegrityToken) {
+        this(playerName, playerData, steamTicket, steamIdentity, googleAuthCode, googleIntegrityToken, false);
+    }
+
+    public PlayerRegisterRequest(String playerName, String playerData, String steamTicket, String steamIdentity,
+            String googleAuthCode, String googleIntegrityToken, boolean restore) {
         this.playerName = playerName;
         this.playerData = playerData;
         this.steamTicket = steamTicket;
         this.steamIdentity = steamIdentity;
         this.googleAuthCode = googleAuthCode;
         this.googleIntegrityToken = googleIntegrityToken;
+        this.restore = restore;
     }
 
     public String getPlayerName() {
@@ -88,5 +97,13 @@ public class PlayerRegisterRequest {
 
     public void setGoogleIntegrityToken(String googleIntegrityToken) {
         this.googleIntegrityToken = googleIntegrityToken;
+    }
+
+    public boolean isRestore() {
+        return restore;
+    }
+
+    public void setRestore(boolean restore) {
+        this.restore = restore;
     }
 }

@@ -32,6 +32,11 @@ class ApiResponse:
     success: bool = False
     error: Optional[str] = None
     ban_info: Optional[BanInfo] = field(default=None)
+    #: True when the authenticated player's account is inside the deletion
+    #: grace window — every player-scoped endpoint then fails with this set.
+    deletion_pending: bool = False
+    #: ISO 8601 UTC moment after which a pending-deletion account is purged.
+    purge_after: str = ""
 
     @property
     def error_type(self) -> enum.Enum:

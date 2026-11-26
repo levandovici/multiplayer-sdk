@@ -27,6 +27,8 @@ namespace Michitai.Multiplayer.Players
         internal string? Google_auth_code { get; set; }
         [JsonInclude]
         internal string? Google_integrity_token { get; set; }
+        [JsonInclude]
+        internal bool Restore { get; set; }
 
         /// <summary>
         /// Initializes a new PlayerRegisterRequest.
@@ -37,8 +39,9 @@ namespace Michitai.Multiplayer.Players
         /// <param name="steamIdentity">Optional Steam ticket identity string.</param>
         /// <param name="googleAuthCode">Optional Play Games server auth code.</param>
         /// <param name="googleIntegrityToken">Optional Play Integrity token for the ownership check.</param>
+        /// <param name="restore">Explicit user consent to cancel a pending account deletion. Send only after a restore prompt is confirmed; never set automatically.</param>
         [SetsRequiredMembers]
-        public PlayerRegisterRequest(string playerName, T? playerData = null, string? steamTicket = null, string? steamIdentity = null, string? googleAuthCode = null, string? googleIntegrityToken = null)
+        public PlayerRegisterRequest(string playerName, T? playerData = null, string? steamTicket = null, string? steamIdentity = null, string? googleAuthCode = null, string? googleIntegrityToken = null, bool restore = false)
         {
             this.Player_name = playerName;
             this.Player_data = playerData;
@@ -46,6 +49,7 @@ namespace Michitai.Multiplayer.Players
             this.Steam_identity = steamIdentity;
             this.Google_auth_code = googleAuthCode;
             this.Google_integrity_token = googleIntegrityToken;
+            this.Restore = restore;
         }
     }
 }

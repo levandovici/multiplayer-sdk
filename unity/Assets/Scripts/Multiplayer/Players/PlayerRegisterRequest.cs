@@ -44,6 +44,14 @@ namespace Michitai.Multiplayer.Players
         public string google_integrity_token;
 
         /// <summary>
+        /// Explicit user consent to cancel a pending account deletion — sent
+        /// only after the client showed the restore prompt and the player
+        /// confirmed. The provider ticket then proves identity even without
+        /// the original player token (e.g. after a reinstall).
+        /// </summary>
+        public bool restore;
+
+        /// <summary>
         /// Initializes a new PlayerRegisterRequest.
         /// </summary>
         /// <param name="playerName">The player's display name.</param>
@@ -52,7 +60,8 @@ namespace Michitai.Multiplayer.Players
         /// <param name="steamIdentity">Optional Steam ticket identity string.</param>
         /// <param name="googleAuthCode">Optional Play Games server auth code.</param>
         /// <param name="googleIntegrityToken">Optional Play Integrity token for the ownership check.</param>
-        public PlayerRegisterRequest(string playerName, string playerDataJson, string steamTicket = null, string steamIdentity = null, string googleAuthCode = null, string googleIntegrityToken = null)
+        /// <param name="restore">Explicit user consent to cancel a pending deletion; never set automatically.</param>
+        public PlayerRegisterRequest(string playerName, string playerDataJson, string steamTicket = null, string steamIdentity = null, string googleAuthCode = null, string googleIntegrityToken = null, bool restore = false)
         {
             this.player_name = playerName;
             this.player_data_json = playerDataJson;
@@ -60,6 +69,7 @@ namespace Michitai.Multiplayer.Players
             this.steam_identity = steamIdentity;
             this.google_auth_code = googleAuthCode;
             this.google_integrity_token = googleIntegrityToken;
+            this.restore = restore;
         }
     }
 }

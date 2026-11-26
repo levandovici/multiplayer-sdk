@@ -17,6 +17,7 @@ from .models import (
     PlayerRegisterResponse,
     PlayerRenameResponse,
     PlayerRotateResponse,
+    PlayerRestoreResponse,
     PlayerUnbanResponse,
 )
 
@@ -30,6 +31,7 @@ GAME_PLAYERS_LOGOUT = "game_players.php/logout"
 GAME_PLAYERS_RENAME = "game_players.php/rename"
 GAME_PLAYERS_ROTATE = "game_players.php/rotate"
 GAME_PLAYERS_DELETE = "game_players.php/delete"
+GAME_PLAYERS_RESTORE = "game_players.php/restore"
 GAME_PLAYERS_BAN = "game_players.php/ban"
 GAME_PLAYERS_UNBAN = "game_players.php/unban"
 GAME_DATA_PLAYER_GET = "game_data.php/player/get"
@@ -67,6 +69,7 @@ class Players:
         name: Optional[str] = None,
         player_data: Any = None,
         player_token: Optional[str] = None,
+        restore: bool = False,
     ) -> PlayerRegisterResponse:
         """Register or log in a player via a Steam auth ticket.
 
@@ -89,6 +92,10 @@ class Players:
         :param player_token: Optional existing player token; sent alongside
             the ticket the server links the verified SteamID to that account
             (``account="linked"``) instead of creating a second one.
+        :param restore: Explicit user consent to cancel a pending account
+            deletion. Pass true only after the player confirms a restore
+            prompt; the fresh provider ticket proves identity even after a
+            reinstall. Never set automatically.
         :returns: Response with ``player_id``, ``private_key`` and ``steam_id``.
         """
         return self._client.send(
@@ -99,6 +106,7 @@ class Players:
                 "steam_identity": steam_identity,
                 "player_name": name,
                 "player_data": player_data,
+                "restore": restore,
             },
             PlayerRegisterResponse,
             player_token=player_token,
@@ -111,6 +119,7 @@ class Players:
         name: Optional[str] = None,
         player_data: Any = None,
         player_token: Optional[str] = None,
+        restore: bool = False,
     ) -> PlayerRegisterResponse:
         """Register or log in a player via a Google Play server auth code.
 
@@ -133,6 +142,10 @@ class Players:
         :param player_token: Optional existing player token; sent alongside
             the code the server links the verified player_id to that account
             (``account="linked"``) instead of creating a second one.
+        :param restore: Explicit user consent to cancel a pending account
+            deletion. Pass true only after the player confirms a restore
+            prompt; the fresh provider credential proves identity even after
+            a reinstall. Never set automatically.
         :returns: Response with ``player_id``, ``private_key`` and
             ``google_player_id``.
         """
@@ -144,6 +157,7 @@ class Players:
                 "google_integrity_token": google_integrity_token,
                 "player_name": name,
                 "player_data": player_data,
+                "restore": restore,
             },
             PlayerRegisterResponse,
             player_token=player_token,
@@ -217,17 +231,35 @@ class Players:
         )
 
     def delete_account(self, player_token: str) -> PlayerDeleteResponse:
-        """Permanently delete the player's own account.
+        """Schedule deletion of the player's own account.
 
         Store/data-rights compliance endpoint: authenticated by the current
-        token only — banned players can still delete their account.
-        Irreversible; discard all local credentials on success.
+        token only — banned players can still delete their account. The
+        account freezes immediately and is permanently purged after the grace
+        window unless restored. Keep the credential during the window so the
+        player can restore; provider-linked accounts can also restore through
+        a fresh provider sign-in with the explicit restore flag after a reinstall.
         """
         return self._client.send(
             "DELETE",
             self._client.url(GAME_PLAYERS_DELETE),
             None,
             PlayerDeleteResponse,
+            player_token=player_token
+        )
+
+    def restore_account(self, player_token: str) -> PlayerRestoreResponse:
+        """Cancel a pending account deletion inside the grace window.
+
+        Authenticated by the player token — always a deliberate user action,
+        never automatic, so background logins and heartbeats cannot silently
+        undo a deletion the player actually wants.
+        """
+        return self._client.send(
+            "POST",
+            self._client.url(GAME_PLAYERS_RESTORE),
+            None,
+            PlayerRestoreResponse,
             player_token=player_token
         )
 

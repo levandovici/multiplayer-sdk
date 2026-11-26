@@ -22,6 +22,7 @@ namespace Endpoints {
     constexpr const char* GamePlayersUnban = "game_players.php/unban";
     constexpr const char* GamePlayersRotate = "game_players.php/rotate";
     constexpr const char* GamePlayersDelete = "game_players.php/delete";
+    constexpr const char* GamePlayersRestore = "game_players.php/restore";
     constexpr const char* GameDataPlayerGet = "game_data.php/player/get";
     constexpr const char* GameDataPlayerUpdate = "game_data.php/player/update";
 }
@@ -181,14 +182,36 @@ struct PlayerRotateResponse : public ApiResponse {
     }
 };
 
-/// Response for player-initiated account deletion. Irreversible: the token
-/// dies with the account and every linked record is removed.
+/// Response for a scheduled player account deletion. The account is frozen
+/// immediately and purged permanently after the grace window unless
+/// restored — see restoreAccount().
 struct PlayerDeleteResponse : public ApiResponse {
     int playerId = 0;
     std::string message;
+    bool deletionPending = false;
+    std::string purgeAfter;
 
     static PlayerDeleteResponse fromJson(const nlohmann::json& j) {
         PlayerDeleteResponse response;
+        response.success = j.value("success", false);
+        response.error = j.value("error", "");
+        response.playerId = j.value("player_id", 0);
+        response.message = j.value("message", "");
+        response.deletionPending = j.value("deletion_pending", false);
+        response.purgeAfter = j.value("purge_after", "");
+        return response;
+    }
+};
+
+/// Response for cancelling a pending account deletion inside the grace
+/// window. The account is fully active again; the token was never
+/// invalidated.
+struct PlayerRestoreResponse : public ApiResponse {
+    int playerId = 0;
+    std::string message;
+
+    static PlayerRestoreResponse fromJson(const nlohmann::json& j) {
+        PlayerRestoreResponse response;
         response.success = j.value("success", false);
         response.error = j.value("error", "");
         response.playerId = j.value("player_id", 0);
@@ -261,15 +284,17 @@ struct PlayerRegisterRequest {
     std::optional<std::string> steamIdentity;
     std::optional<std::string> googleAuthCode;
     std::optional<std::string> googleIntegrityToken;
+    bool restore = false;
 
     PlayerRegisterRequest(const std::string& name,
                           const std::optional<T>& data = std::nullopt,
                           const std::optional<std::string>& ticket = std::nullopt,
                           const std::optional<std::string>& identity = std::nullopt,
                           const std::optional<std::string>& authCode = std::nullopt,
-                          const std::optional<std::string>& integrityToken = std::nullopt)
+                          const std::optional<std::string>& integrityToken = std::nullopt,
+                          bool restore = false)
         : name(name), playerData(data), steamTicket(ticket), steamIdentity(identity),
-          googleAuthCode(authCode), googleIntegrityToken(integrityToken) {}
+          googleAuthCode(authCode), googleIntegrityToken(integrityToken), restore(restore) {}
 
     nlohmann::json toJson() const {
         nlohmann::json j;
@@ -293,6 +318,7 @@ struct PlayerRegisterRequest {
         if (googleIntegrityToken.has_value()) {
             j["google_integrity_token"] = googleIntegrityToken.value();
         }
+        j["restore"] = restore;
         return j;
     }
 };
@@ -374,6 +400,9 @@ public:
     /// @param playerData Optional initial player data
     /// @param playerToken Optional existing player token; sent alongside the ticket the server
     ///        links the verified SteamID to that account instead of creating a second one
+    /// @param restore Explicit user consent to cancel a pending account deletion. Set only
+    ///        after the player confirms a restore prompt; the fresh provider ticket proves
+    ///        identity even after a reinstall. Never set automatically.
     /// @return Response containing the player ID, private key token and steamId
     template<typename T = nlohmann::json>
     static PlayerRegisterResponse registerPlayerWithSteam(Client& client,
@@ -381,8 +410,10 @@ public:
                                                           const std::optional<std::string>& steamIdentity = std::nullopt,
                                                           const std::optional<std::string>& name = std::nullopt,
                                                           const std::optional<T>& playerData = std::nullopt,
-                                                          const std::string& playerToken = "") {
-        PlayerRegisterRequest<T> request(name.value_or(""), playerData, steamTicket, steamIdentity);
+                                                          const std::string& playerToken = "",
+                                                          bool restore = false) {
+        PlayerRegisterRequest<T> request(name.value_or(""), playerData, steamTicket, steamIdentity,
+                                         std::nullopt, std::nullopt, restore);
         return client.post<PlayerRegisterResponse>(
             client.url(Endpoints::GamePlayersRegister),
             request.toJson(), playerToken
@@ -407,6 +438,9 @@ public:
     /// @param playerToken Optional existing player token; sent alongside the code the
     ///        server links the verified player_id to that account instead of
     ///        creating a second one
+    /// @param restore Explicit user consent to cancel a pending account deletion. Set only
+    ///        after the player confirms a restore prompt; the fresh provider credential proves
+    ///        identity even after a reinstall. Never set automatically.
     /// @return Response containing the player ID, private key token and googlePlayerId
     template<typename T = nlohmann::json>
     static PlayerRegisterResponse registerPlayerWithGoogle(Client& client,
@@ -414,9 +448,10 @@ public:
                                                           const std::optional<std::string>& googleIntegrityToken = std::nullopt,
                                                           const std::optional<std::string>& name = std::nullopt,
                                                           const std::optional<T>& playerData = std::nullopt,
-                                                          const std::string& playerToken = "") {
+                                                          const std::string& playerToken = "",
+                                                          bool restore = false) {
         PlayerRegisterRequest<T> request(name.value_or(""), playerData, std::nullopt, std::nullopt,
-                                         googleAuthCode, googleIntegrityToken);
+                                         googleAuthCode, googleIntegrityToken, restore);
         return client.post<PlayerRegisterResponse>(
             client.url(Endpoints::GamePlayersRegister),
             request.toJson(), playerToken
@@ -488,10 +523,13 @@ public:
         );
     }
 
-    /// Permanently deletes the player's own account (store/data-rights
+    /// Schedules deletion of the player's own account (store/data-rights
     /// compliance). Authenticated by the current token only — banned
-    /// players can still delete their account. Irreversible; discard all
-    /// local credentials on success.
+    /// players can still delete their account. The account freezes immediately
+    /// and is permanently purged after the grace window unless restored. Keep
+    /// the credential during the window so the player can restore;
+    /// provider-linked accounts can also restore through a fresh provider
+    /// sign-in with the explicit restore flag after a reinstall.
     /// @param client The API client instance
     /// @param playerToken The player's private authentication token
     /// @return Response confirming the deletion
@@ -499,6 +537,22 @@ public:
                                               const std::string& playerToken) {
         return client.del<PlayerDeleteResponse>(
             client.url(Endpoints::GamePlayersDelete),
+            playerToken
+        );
+    }
+
+    /// Cancels a pending account deletion inside the grace window.
+    /// Authenticated by the player token — always a deliberate user action,
+    /// never automatic, so background logins and heartbeats cannot silently
+    /// undo a deletion the player actually wants.
+    /// @param client Reference to the client instance
+    /// @param playerToken The player's private authentication token
+    /// @return Response confirming the restoration
+    static PlayerRestoreResponse restoreAccount(Client& client,
+                                                const std::string& playerToken) {
+        return client.post<PlayerRestoreResponse>(
+            client.url(Endpoints::GamePlayersRestore),
+            nlohmann::json::object(),
             playerToken
         );
     }

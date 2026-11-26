@@ -212,6 +212,27 @@ public class SdkTests {
         eq("{\"level\":3}", body.get("player_data").asText(), "register body player_data is JSON string");
     }
 
+    private static void testProviderRestoreFlag(MockApi api, Client client) throws IOException {
+        System.out.println("[TEST] provider restore flag");
+
+        api.when("game_players.php/register",
+            "{\"success\":true,\"player_id\":42,\"private_key\":\"pk-restore\",\"player_name\":\"Tester\",\"game_id\":7}");
+
+        Players.registerPlayerWithSteam(client, "steam-ticket", null, "Tester", null, null, true);
+        JsonNode body = parse(api.lastRequest("game_players.php/register").body);
+        eq("steam-ticket", body.get("steam_ticket").asText(), "steam restore body ticket");
+        check(body.get("restore") != null && body.get("restore").asBoolean(), "steam restore flag serialized");
+
+        Players.registerPlayerWithGoogle(client, "google-code", null, "Tester", null, null, true);
+        body = parse(api.lastRequest("game_players.php/register").body);
+        eq("google-code", body.get("google_auth_code").asText(), "google restore body auth code");
+        check(body.get("restore") != null && body.get("restore").asBoolean(), "google restore flag serialized");
+
+        Players.registerPlayerWithSteam(client, "steam-ticket", null, "Tester", null);
+        body = parse(api.lastRequest("game_players.php/register").body);
+        check(body.get("restore") != null && !body.get("restore").asBoolean(), "restore defaults to false");
+    }
+
     private static void testGameDataTyped(MockApi api, Client client) throws IOException {
         System.out.println("[TEST] getGameData typed deserialization");
 
@@ -440,6 +461,7 @@ public class SdkTests {
             testUrlConstruction();
             testEnumWireValues();
             testRegisterPlayer(api, client);
+            testProviderRestoreFlag(api, client);
             testGameDataTyped(api, client);
             testPendingActionsTyped(api, client);
             testPollActionsTyped(api, client);

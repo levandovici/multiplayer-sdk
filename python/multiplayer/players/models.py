@@ -106,10 +106,23 @@ class PlayerRotateResponse(ApiResponse):
 
 @dataclass
 class PlayerDeleteResponse(ApiResponse):
-    """Confirmation of player-initiated account deletion.
+    """Confirmation that account deletion was scheduled.
 
-    Deletion is irreversible: the token dies with the account and every
-    linked record (friends, room membership, matchmaking, stats) is removed.
+    The account is frozen immediately and purged permanently after the
+    grace window unless restored — see ``Players.restore_account``.
+    """
+
+    error_enum: ClassVar[Type[enum.Enum]] = PlayerLoginError
+
+    message: str = ""
+    player_id: int = 0
+
+
+@dataclass
+class PlayerRestoreResponse(ApiResponse):
+    """Confirmation that a pending account deletion was cancelled.
+
+    The account is fully active again; the token was never invalidated.
     """
 
     error_enum: ClassVar[Type[enum.Enum]] = PlayerLoginError

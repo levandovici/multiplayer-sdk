@@ -73,8 +73,30 @@ public class Players {
      */
     public static PlayerRegisterResponse registerPlayerWithSteam(Client client, String steamTicket,
             String steamIdentity, String name, Object playerData, String playerToken) throws IOException {
+        return registerPlayerWithSteam(client, steamTicket, steamIdentity, name, playerData, playerToken, false);
+    }
+
+    /**
+     * Registers or logs in a player via a Steam auth ticket, optionally
+     * restoring a pending-deletion account after explicit user confirmation.
+     * The fresh provider ticket proves identity even after a reinstall;
+     * {@code restore} must never be set automatically.
+     *
+     * @param client The API client instance.
+     * @param steamTicket Hex-encoded ticket from GetAuthTicketForWebApi.
+     * @param steamIdentity Identity string passed to GetAuthTicketForWebApi (pass null if none was used).
+     * @param name Optional display name; the server generates one from the SteamID when null.
+     * @param playerData Optional initial player data.
+     * @param playerToken Optional existing player token to link the SteamID to.
+     * @param restore Explicit user consent to cancel a pending account deletion.
+     * @return Response containing the player ID, private key token and steam ID.
+     * @throws IOException if the request fails.
+     */
+    public static PlayerRegisterResponse registerPlayerWithSteam(Client client, String steamTicket,
+            String steamIdentity, String name, Object playerData, String playerToken, boolean restore) throws IOException {
         String dataJson = playerData != null ? objectMapper.writeValueAsString(playerData) : null;
-        PlayerRegisterRequest request = new PlayerRegisterRequest(name, dataJson, steamTicket, steamIdentity);
+        PlayerRegisterRequest request = new PlayerRegisterRequest(name, dataJson, steamTicket, steamIdentity,
+            null, null, restore);
         return client.send("POST", client.url(Endpoints.GAME_PLAYERS_REGISTER), request,
             PlayerRegisterResponse.class, playerToken, false);
     }
@@ -133,9 +155,30 @@ public class Players {
      */
     public static PlayerRegisterResponse registerPlayerWithGoogle(Client client, String googleAuthCode,
             String googleIntegrityToken, String name, Object playerData, String playerToken) throws IOException {
+        return registerPlayerWithGoogle(client, googleAuthCode, googleIntegrityToken, name, playerData, playerToken, false);
+    }
+
+    /**
+     * Registers or logs in a player via a Google Play server auth code,
+     * optionally restoring a pending-deletion account after explicit user
+     * confirmation. The fresh provider credential proves identity even after
+     * a reinstall; {@code restore} must never be set automatically.
+     *
+     * @param client The API client instance.
+     * @param googleAuthCode Server auth code from requestServerSideAccess.
+     * @param googleIntegrityToken Play Integrity token — required when the project enables the ownership check (null otherwise).
+     * @param name Optional display name; the server generates one from the player_id when null.
+     * @param playerData Optional initial player data.
+     * @param playerToken Optional existing player token to link the player_id to.
+     * @param restore Explicit user consent to cancel a pending account deletion.
+     * @return Response containing the player ID, private key token and google player ID.
+     * @throws IOException if the request fails.
+     */
+    public static PlayerRegisterResponse registerPlayerWithGoogle(Client client, String googleAuthCode,
+            String googleIntegrityToken, String name, Object playerData, String playerToken, boolean restore) throws IOException {
         String dataJson = playerData != null ? objectMapper.writeValueAsString(playerData) : null;
         PlayerRegisterRequest request = new PlayerRegisterRequest(name, dataJson, null, null,
-            googleAuthCode, googleIntegrityToken);
+            googleAuthCode, googleIntegrityToken, restore);
         return client.send("POST", client.url(Endpoints.GAME_PLAYERS_REGISTER), request,
             PlayerRegisterResponse.class, playerToken, false);
     }
@@ -232,11 +275,13 @@ public class Players {
     }
 
     /**
-     * Permanently deletes the player's own account (store/data-rights
+     * Schedules deletion of the player's own account (store/data-rights
      * compliance). Authenticated by the current token only — banned
-     * players can still delete their account. Irreversible: the token
-     * dies with the account and every linked record is removed.
-     * Discard all local credentials on success.
+     * players can still delete their account. The account freezes immediately
+     * and is permanently purged after the grace window unless restored. Keep
+     * the credential during the window so the player can restore;
+     * provider-linked accounts can also restore through a fresh provider
+     * sign-in with the explicit restore flag after a reinstall.
      *
      * @param client The API client instance.
      * @param playerToken The player's private authentication token.
@@ -245,6 +290,21 @@ public class Players {
      */
     public static PlayerDeleteResponse deleteAccount(Client client, String playerToken) throws IOException {
         return client.send("DELETE",client.url(Endpoints.GAME_PLAYERS_DELETE), null, PlayerDeleteResponse.class, playerToken, false);
+    }
+
+    /**
+     * Cancels a pending account deletion inside the grace window.
+     * Authenticated by the player token — always a deliberate user action,
+     * never automatic, so background logins and heartbeats cannot silently
+     * undo a deletion the player actually wants.
+     *
+     * @param client The API client instance.
+     * @param playerToken The player's private authentication token.
+     * @return Response confirming the restoration.
+     * @throws IOException if the request fails.
+     */
+    public static PlayerRestoreResponse restoreAccount(Client client, String playerToken) throws IOException {
+        return client.send("POST",client.url(Endpoints.GAME_PLAYERS_RESTORE), null, PlayerRestoreResponse.class, playerToken, false);
     }
 
     /**

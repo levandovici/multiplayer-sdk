@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.michitai.multiplayer.ApiResponse;
 
 /**
- * Response returned when a player account is successfully deleted.
- * Deletion is irreversible: the token is dead and every linked record
- * (friends, room membership, matchmaking, stats) is gone with it.
+ * Response returned when a player account deletion is scheduled.
+ * The account is frozen immediately and purged permanently after the
+ * grace window unless restored — see Players.restoreAccount.
  */
 public class PlayerDeleteResponse extends ApiResponse {
     @JsonProperty("message")
